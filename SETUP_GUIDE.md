@@ -1,4 +1,4 @@
-# GP Ledger — Setup Guide (v7)
+# GP Ledger — Setup Guide (v8)
 
 This covers everything from "I have these files" to "the app is installed on my
 phone, syncing to my own Google Sheet, and pinging me on Telegram."
@@ -110,7 +110,14 @@ You'll get a real home-screen icon and a full-screen app with no browser bar.
 7. Copy the **Web app URL** it gives you (ends in `/exec`).
 8. In GP Ledger → **Settings → Google Sheet database**, paste that URL into **Apps Script Web App URL**.
 9. Tap **Test connection** — you should see a message confirming it's reachable, plus a debug log entry.
-10. Tap **Sync now**. Open your Google Sheet — you should now see tabs: `Data`, `Habits`, `Settings`, `Transactions_<year>`, `Routine`, `Reports`.
+10. Tap **Sync now**. Open your Google Sheet — you should now see tabs: `Data`, `Habits`, `Settings`, `Transactions_<year>`, `Routine`, `Reports`, `Debts`, `Journal`, `Diet`.
+
+> **Already on v7 and just adding v8?** You still need to redo step 3.3 —
+> paste in the *new* `apps-script.gs` — and step 5's **Deploy → Manage
+> deployments → ✏️ edit → New version → Deploy**. Saving alone does not
+> publish code changes to your live `/exec` URL (see the troubleshooting
+> note below). Without this, the new **Load from Sheet** button and the
+> `Debts`/`Journal`/`Diet` sheet tabs won't work.
 
 ### If sync ever stops updating the sheet correctly
 This was the exact bug fixed in v6. The app now checks that the response
@@ -121,6 +128,15 @@ really came from the sync handler (not a generic/error page), and shows a
    ✏️ edit → New version → Deploy** every time you change `apps-script.gs`.
 2. **Wrong URL** — make sure it's the `/exec` URL, not `/dev`.
 3. **Permissions revoked** — re-run step 6 if Google ever asks you to re-authorize.
+
+### Pulling data back down (Load from Sheet)
+Settings → Google Sheet database → **"⬇ Load from Sheet"** fetches the last
+snapshot saved to the `Data` tab and replaces everything currently on this
+device — habits, transactions, routine logs, debts, journal, diet, settings.
+Useful when setting up a new phone, or after reinstalling the app. It asks
+for confirmation first since it's a full replace, not a merge. This needs
+the same redeployed `apps-script.gs` as above (it adds the `action=load`
+endpoint) and at least one prior successful sync so there's something to load.
 
 ### Background reminders (Telegram fires even with the app closed)
 1. In the Apps Script editor, click the **clock icon (Triggers)** on the left.
@@ -158,39 +174,86 @@ to it:
 4. That's a second, separate trigger from `checkReminders` — you'll end up
    with two triggers listed, which is correct.
 
-## 5. Customize the app icon (fixed in v6)
+## 5. Customize the app icon
 
 The app ships with a default **"G"** icon. To change it:
 1. **Settings → App Icon** — type a new letter/emoji and pick two colors. This updates the **in-app badge** immediately (top-left of the header).
 2. To actually change the **real home-screen icon**, tap **"Download my icon files"** — this generates and downloads `icon-192.png`, `icon-512.png`, `icon-512-maskable.png`, and `apple-touch-icon.png` matching your chosen letter/colors.
 3. Replace those four files in your hosting (re-upload to GitHub/Netlify/etc. with the same filenames).
-4. Remove the app from your home screen and **Add to Home Screen** again — this is the step that was missing before; phones only re-read icon files on a fresh install, not a page refresh.
+4. Remove the app from your home screen and **Add to Home Screen** again — phones only re-read icon files on a fresh install, not a page refresh.
 
-## 6. Everyday use
+## 6. Habits: linking to Routine (no double entry)
+
+If you already log something under Routine — e.g. Sleep, or a workout —
+you can link it to a matching habit so you don't have to log it twice:
+1. Open a habit's detail view (tap ⌄) or **+ New habit**.
+2. Under **Linked Routine category**, pick the matching Routine category
+   (e.g. "Sleep").
+3. From then on, logging a time block, using the Quick-log timer, or
+   Quick-log Sleep for that category also logs the equivalent amount
+   against the linked habit automatically. Minutes convert to hours if
+   the habit's unit is "hr"; check-off habits are simply marked done.
+
+## 7. Debts / EMI tracking
+
+**More → Debts/EMI → + Add**: enter the loan name, current balance,
+monthly EMI amount, and the due day of the month (1–31). Loans past their
+due day and not yet marked paid that month show an **Overdue** badge.
+Tapping **"Mark this month paid"** reduces the balance by the EMI amount
+and creates a matching Finance transaction (category "EMI/Loan") in one
+step, so Finance and Debts stay in sync without entering the payment twice.
+
+## 8. Journal / diary
+
+**Journal** tab (bottom nav): write in the text box, pick a font and color
+if you like, then **Save entry** — it saves under whatever date is showing
+in the date bar at the top, *not* necessarily today. So if you forgot to
+write yesterday: open Journal, type your entry, tap **‹** to move the date
+back one day (or type the date directly), then Save — it files correctly
+under that date. Entries always export in true chronological (month/date)
+order via **Export whole diary**, regardless of what order you wrote them
+in. Print, PDF, and Word (.doc) export work per-entry too. Everything syncs
+to a `Journal` tab in your Google Sheet.
+
+## 9. Diet & nutrition
+
+1. **Settings → Diet & body stats**: enter height, weight, age, sex,
+   activity level and goal (fat loss / maintain / muscle gain), then
+   **Save body stats**. The Diet tab uses these to show a personal daily
+   calorie and macro target.
+2. **More → Diet → + Log meal**: enter a meal manually (name + calories/
+   protein/carbs/fat/fiber), or attach/take a photo first.
+3. **Optional — photo-based estimates:** get a free API key at
+   [aistudio.google.com](https://aistudio.google.com), paste it into
+   **Settings → Diet & body stats → Gemini API key**. With a key saved,
+   attaching a photo shows an **"✨ Estimate nutrition from photo"**
+   button that fills in the fields for you — review and adjust before
+   saving, since it's an estimate, not a lab measurement. Without a key,
+   just fill the fields in yourself; everything else works the same.
+4. View totals against your targets by Day/Week/Month, and export the log
+   to Excel or PDF from the Diet tab. Meals also sync to a `Diet` tab in
+   your Google Sheet.
+
+## 10. Everyday use
 
 - **Save & Sync** button (top right, always visible) pushes everything to your Google Sheet on demand.
 - **Settings → Auto-sync** toggles automatic syncing after every change (small delay, so it doesn't fire on every keystroke).
+- **Load from Sheet** (Settings) pulls the last synced snapshot back down — see section 3.
 - **Backup** (bottom of Settings) exports/imports a local `.json` file — a second safety net independent of the Sheet.
+- **Habits tab** now shows what's left **to do** at the top, and anything that's hit its target for the day in a **Completed ✅** section below.
 - **Expanding a habit** (tap ⌄): shows a custom-amount box, your quick-add
-  preset chips, and a ▲ button to close it again. By default, opening one
-  habit closes any other that was open, and tapping anywhere outside closes
-  it too — turn this off in **Settings → Habit list behaviour** if you'd
-  rather keep several open at once.
-- **Undo** appears on the toast at the top of the screen after logging or
-  checking off a habit — tap it to reverse that one action. Turn it off in
-  the same Settings group if you find it distracting.
+  preset chips, a **Linked Routine category** picker, and a ▲ button to
+  close it again.
 - **Quick-log timer** (Routine tab): tap a category chip to start timing it
-  now; tap it again (or a different category) to stop and log it. This is
-  the fast way to account for minutes you didn't plan to log in advance —
-  the dedicated **Quick-log sleep** button below it still works the same way
-  for bedtime/wake time specifically.
+  now; tap it again (or a different category) to stop and log it.
+- **More** tab (bottom nav): Trends, Reports, Debts/EMI, Diet, and Settings
+  all live here to keep the main nav bar uncluttered.
 - **About** (bottom of Settings) shows the app version and credit.
 
-## 7. Troubleshooting checklist
-- **Habits not showing on first open** — fixed in v6: the app now seeds default habits (Drink Water, Read, Walk, No Junk, Sleep) before the very first render, and re-seeds automatically if local storage ever comes back empty or corrupted.
-- **Page feels bouncy/jittery when tapping** — fixed in v6 with `touch-action: manipulation` and `overscroll-behavior: contain` globally, and by removing the old whole-card press animation.
-- **The "+" button seems stuck or sits on top of a habit** — fixed in v7: it was scrolling along with the list instead of staying pinned to the screen corner; it's now fixed in place on every screen.
-- **Can't see text I'm typing in a date/time field or dropdown** — fixed in v7 with `color-scheme: dark`, which tells the phone to draw those native controls in dark mode instead of light mode.
-- **Reminders don't seem to fire** — as of v7 you must explicitly set a reminder time on each habit (Habit detail → Reminder times) — see section 4 above. Also confirm the `checkReminders` trigger exists and Telegram is enabled with a valid token/chat ID.
-- **Sheet not updating** — see section 3 above.
-- **Icon won't change** — see section 5 above; the real fix is downloading fresh files and doing a clean reinstall, not just editing in-app.
+## 11. Troubleshooting checklist
+- **Habits not showing on first open** — the app seeds default habits (Drink Water, Read, Walk, No Junk, Sleep) before the very first render, and re-seeds automatically if local storage ever comes back empty or corrupted.
+- **Can't see text I'm typing** (habit custom amount, or any field) — fixed in v8: inputs now force explicit text color and override phone autofill styling.
+- **Reminders don't seem to fire** — you must explicitly set a reminder time on each habit (Habit detail → Reminder times). Also confirm the `checkReminders` trigger exists and Telegram is enabled with a valid token/chat ID.
+- **Sheet not updating, or Load from Sheet fails** — you likely need to redeploy `apps-script.gs`: **Deploy → Manage deployments → ✏️ edit → New version → Deploy**. See section 3.
+- **Diet photo button doesn't appear** — you need to save a Gemini API key first (Settings → Diet & body stats); without one, log meals manually.
+- **Icon won't change** — see section 5; the real fix is downloading fresh files and doing a clean reinstall, not just editing in-app.

@@ -1,22 +1,23 @@
 /**
- * GP LEDGER — Google Apps Script backend (v8)
+ * GP LEDGER — Google Apps Script backend (v9)
  * ---------------------------------------------------------------
  * Paste this whole file into script.google.com (Extensions > Apps
  * Script, from a Google Sheet), then deploy as a Web App.
  * Full click-by-click steps are in SETUP_GUIDE.md.
  *
- * v8 changes from v7:
- *  - doGet now supports action=load, which returns the last-synced
- *    full JSON snapshot from the Data tab — this is what the app's
- *    Settings → "Load from Sheet" button calls to pull data back
- *    down onto a device (e.g. after a reinstall, or a second phone).
- *  - handleSync now also writes three new readable tabs: Debts
- *    (loan name/balance/EMI/due day), Journal (one row per calendar
- *    date, in chronological order), and Diet (one row per logged
- *    meal). The Data tab's JSON snapshot (used by load/backup) already
- *    included these once the client started sending them.
- *  - Everything else (sync verification response shape, Routine tab,
- *    year-wise transactions, reminders, daily quote) is unchanged from v7.
+ * v9 changes from v8:
+ *  - handleSync now also writes six new readable tabs: Goals,
+ *    Subscriptions, Assets (net worth), Health (vitals + medicines +
+ *    appointments), Documents (vault), and Budgets — mirroring the six
+ *    new modules added to the app. The Data tab's JSON snapshot (used
+ *    by load/backup) already included these once the client started
+ *    sending them.
+ *  - Debts tab gained a "Debited From" column and now reflects
+ *    per-month paid/unpaid status with the account used, matching the
+ *    app's new undo-able EMI payment flow.
+ *  - Everything else (doGet/doPost shape, load endpoint, Habits,
+ *    Settings, year-wise Transactions, Routine, Journal, Diet,
+ *    Reports, reminders, daily quote) is unchanged from v8.
  * ---------------------------------------------------------------
  */
 
@@ -135,12 +136,17 @@ function handleSync(body) {
   }
   rows.reports = reportsSheet.getLastRow() - 1;
 
-  // 7) Debts / EMI tab
+  // 7) Debts / EMI tab — now shows per-month paid/unpaid status + debited-from account
   const debtsSheet = getOrCreateSheet('Debts');
   debtsSheet.clear();
-  debtsSheet.appendRow(['Name', 'Balance', 'Monthly EMI', 'Due Day', 'Notes']);
+  debtsSheet.appendRow(['Name', 'Balance', 'Monthly EMI', 'Due Day', 'Debited From', 'Status (this sync month)', 'Last Paid Date', 'Notes']);
+  const nowYm = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM');
   (body.debts || []).forEach(d => {
-    debtsSheet.appendRow([d.name, d.balance, d.emiAmount, d.dueDay, d.notes || '']);
+    const pm = d.paidMonths && d.paidMonths[nowYm];
+    const paid = !!pm;
+    const account = (paid && typeof pm === 'object') ? pm.account : (d.debitAccount || '');
+    const paidDate = (paid && typeof pm === 'object') ? pm.paidDate : '';
+    debtsSheet.appendRow([d.name, d.balance, d.emiAmount, d.dueDay, account, paid ? 'Paid' : 'Unpaid', paidDate, d.notes || '']);
   });
   rows.debts = (body.debts || []).length;
 
@@ -169,6 +175,71 @@ function handleSync(body) {
     });
   });
   rows.diet = dietTotal;
+
+  // 10) Goals tab
+  const goalsSheet = getOrCreateSheet('Goals');
+  goalsSheet.clear();
+  goalsSheet.appendRow(['Title', 'Type', 'Target', 'Current/Progress', 'Deadline']);
+  (body.goals || []).forEach(g => {
+    goalsSheet.appendRow([g.title, g.mode, g.target, g.current !== undefined ? g.current : '', g.deadline || '']);
+  });
+  rows.goals = (body.goals || []).length;
+
+  // 11) Subscriptions tab
+  const subsSheet = getOrCreateSheet('Subscriptions');
+  subsSheet.clear();
+  subsSheet.appendRow(['Name', 'Amount', 'Cycle', 'Renews', 'Category']);
+  (body.subscriptions || []).forEach(s => {
+    subsSheet.appendRow([s.name, s.amount, s.cycle, s.cycle === 'monthly' ? ('Day ' + s.renewDay) : s.renewDate, s.category || '']);
+  });
+  rows.subscriptions = (body.subscriptions || []).length;
+
+  // 12) Assets tab (net worth)
+  const assetsSheet = getOrCreateSheet('Assets');
+  assetsSheet.clear();
+  assetsSheet.appendRow(['Name', 'Type', 'Value']);
+  (body.assets || []).forEach(a => {
+    assetsSheet.appendRow([a.name, a.type, a.value]);
+  });
+  const totalAssets = (body.assets || []).reduce(function (s, a) { return s + Number(a.value || 0); }, 0);
+  const totalLiab = (body.debts || []).reduce(function (s, d) { return s + Number(d.balance || 0); }, 0);
+  assetsSheet.appendRow(['', '', '']);
+  assetsSheet.appendRow(['Net worth (assets − Debts/EMI balances)', '', totalAssets - totalLiab]);
+  rows.assets = (body.assets || []).length;
+
+  // 13) Health tab — vitals history + medicines
+  const healthSheet = getOrCreateSheet('Health');
+  healthSheet.clear();
+  healthSheet.appendRow(['Date', 'BP', 'Sugar', 'Weight']);
+  const vitals = (body.health && body.health.vitals) || {};
+  Object.keys(vitals).sort().forEach(ds => {
+    const v = vitals[ds];
+    healthSheet.appendRow([ds, v.bp || '', v.sugar || '', v.weight || '']);
+  });
+  healthSheet.appendRow(['', '', '', '']);
+  healthSheet.appendRow(['Medicine', 'Dose', 'Times', '']);
+  ((body.health && body.health.meds) || []).forEach(m => {
+    healthSheet.appendRow([m.name, m.dose || '', (m.times || []).join(', '), '']);
+  });
+  rows.health = Object.keys(vitals).length;
+
+  // 14) Documents tab (vault — reference info only)
+  const docsSheet = getOrCreateSheet('Documents');
+  docsSheet.clear();
+  docsSheet.appendRow(['Title', 'Category', 'Reference', 'Expiry', 'Notes']);
+  (body.documents || []).forEach(d => {
+    docsSheet.appendRow([d.title, d.category || '', d.ref || '', d.expiryDate || '', d.notes || '']);
+  });
+  rows.documents = (body.documents || []).length;
+
+  // 15) Budgets tab
+  const budgetsSheet = getOrCreateSheet('Budgets');
+  budgetsSheet.clear();
+  budgetsSheet.appendRow(['Category', 'Monthly Limit']);
+  (body.budgets || []).forEach(b => {
+    budgetsSheet.appendRow([b.category, b.limit]);
+  });
+  rows.budgets = (body.budgets || []).length;
 
   return { ok: true, source: 'handleSync', rows: rows, syncedAt: new Date().toISOString() };
 }
@@ -242,21 +313,74 @@ function checkReminders() {
  * the quote texted at midnight always matches the one shown in-app that day.
  */
 const QUOTES = [
+  ["It always seems impossible until it's done.", "Nelson Mandela"],
+  ["The way to get started is to quit talking and begin doing.", "Walt Disney"],
+  ["In the middle of difficulty lies opportunity.", "Albert Einstein"],
+  ["The only way to do great work is to love what you do.", "Steve Jobs"],
+  ["Simplicity is the ultimate sophistication.", "Leonardo da Vinci"],
+  ["He who has a why to live can bear almost any how.", "Friedrich Nietzsche"],
+  ["The journey of a thousand miles begins with a single step.", "Lao Tzu"],
+  ["What we think, we become.", "Buddha"],
+  ["The best way out is always through.", "Robert Frost"],
+  ["Do not go where the path may lead, go instead where there is no path and leave a trail.", "Ralph Waldo Emerson"],
+  ["Whether you think you can, or you think you can't — you're right.", "Henry Ford"],
+  ["The best time to plant a tree was twenty years ago. The second best time is now.", "Chinese Proverb"],
+  ["Happiness is not something ready made. It comes from your own actions.", "Dalai Lama"],
+  ["Believe you can and you're halfway there.", "Theodore Roosevelt"],
+  ["It does not matter how slowly you go as long as you do not stop.", "Confucius"],
+  ["Success is not final, failure is not fatal: it is the courage to continue that counts.", "Winston Churchill"],
+  ["The two most important days in your life are the day you are born, and the day you find out why.", "Mark Twain"],
+  ["Try not to become a person of success, but rather try to become a person of value.", "Albert Einstein"],
+  ["I have not failed. I've just found ten thousand ways that won't work.", "Thomas Edison"],
+  ["If you want to lift yourself up, lift up someone else.", "Booker T. Washington"],
+  ["The greatest glory in living lies not in never falling, but in rising every time we fall.", "Nelson Mandela"],
+  ["You must be the change you wish to see in the world.", "Mahatma Gandhi"],
+  ["Life is really simple, but we insist on making it complicated.", "Confucius"],
+  ["Keep your face always toward the sunshine, and shadows will fall behind you.", "Walt Whitman"],
+  ["The only true wisdom is in knowing you know nothing.", "Socrates"],
+  ["What lies behind us and what lies before us are tiny matters compared to what lies within us.", "Ralph Waldo Emerson"],
+  ["The future belongs to those who believe in the beauty of their dreams.", "Eleanor Roosevelt"],
+  ["Genius is one percent inspiration and ninety-nine percent perspiration.", "Thomas Edison"],
+  ["The purpose of our lives is to be happy.", "Dalai Lama"],
+  ["Life is ten percent what happens to us and ninety percent how we react to it.", "Charles R. Swindoll"],
+  ["The mind that opens to a new idea never returns to its original size.", "Albert Einstein"],
+  ["Courage is not the absence of fear, but the triumph over it.", "Nelson Mandela"],
+  ["You miss one hundred percent of the shots you don't take.", "Wayne Gretzky"],
+  ["Whatever you are, be a good one.", "Abraham Lincoln"],
+  ["The only person you are destined to become is the person you decide to be.", "Ralph Waldo Emerson"],
+  ["Act as if what you do makes a difference. It does.", "William James"],
+  ["Nothing is impossible. The word itself says 'I'm possible.'", "Audrey Hepburn"],
+  ["You are never too old to set another goal or to dream a new dream.", "C. S. Lewis"],
+  ["Do what you can, with what you have, where you are.", "Theodore Roosevelt"],
+  ["The only limit to our realization of tomorrow will be our doubts of today.", "Franklin D. Roosevelt"],
+  ["Everything has beauty, but not everyone can see it.", "Confucius"],
+  ["Twenty years from now you will be more disappointed by the things you didn't do than by the ones you did do.", "Mark Twain"],
+  ["The only way to have a friend is to be one.", "Ralph Waldo Emerson"],
+  ["Life shrinks or expands in proportion to one's courage.", "Anaïs Nin"],
+  ["Perfection is not attainable, but if we chase perfection we can catch excellence.", "Vince Lombardi"],
+  ["You can't use up creativity. The more you use, the more you have.", "Maya Angelou"],
+  ["Fall seven times, stand up eight.", "Japanese Proverb"],
+  ["Not everything that is faced can be changed, but nothing can be changed until it is faced.", "James Baldwin"],
+  ["There is only one way to avoid criticism: do nothing, say nothing, and be nothing.", "Aristotle"],
+  ["To be yourself in a world that is constantly trying to make you something else is the greatest accomplishment.", "Ralph Waldo Emerson"],
+  ["Turn your wounds into wisdom.", "Oprah Winfrey"],
+  ["A person who never made a mistake never tried anything new.", "Albert Einstein"],
+  ["Gratitude turns what we have into enough.", "Anonymous"],
+  ["Patience is not the ability to wait, but the ability to keep a good attitude while waiting.", "Joyce Meyer"],
+  ["The quieter you become, the more you are able to hear.", "Rumi"],
+  ["Kindness is a language which the deaf can hear and the blind can see.", "Mark Twain"],
+  ["Knowing yourself is the beginning of all wisdom.", "Aristotle"],
+  ["We are what we repeatedly do. Excellence, then, is not an act but a habit.", "Aristotle"],
+  ["The secret of getting ahead is getting started.", "Mark Twain"],
+  ["What gets measured gets managed.", "Peter Drucker"],
   ["Small steps every day beat big leaps once in a while.", "GP Ledger"],
   ["Discipline is choosing what you want most over what you want now.", "GP Ledger"],
   ["Your habits decide your future self — vote wisely today.", "GP Ledger"],
   ["Progress, not perfection.", "GP Ledger"],
-  ["The best time to start was yesterday. The next best time is now.", "GP Ledger"],
-  ["You don't have to be extreme, just consistent.", "GP Ledger"],
   ["Every tick on this app is a promise kept to yourself.", "GP Ledger"],
-  ["A little water, a little walk, a little less scrolling — it adds up.", "GP Ledger"],
   ["Track it, don't judge it. Awareness comes before change.", "GP Ledger"],
-  ["Rest is productive too — sleep is a habit, not a luxury.", "GP Ledger"],
   ["Money habits are just habits — small saves compound quietly.", "GP Ledger"],
   ["Show up for yourself today, even in a small way.", "GP Ledger"],
-  ["What gets measured gets managed.", "Peter Drucker"],
-  ["We are what we repeatedly do. Excellence, then, is not an act but a habit.", "Aristotle"],
-  ["The secret of getting ahead is getting started.", "Mark Twain"],
 ];
 function sendDailyQuote() {
   const dataSheet = SS.getSheetByName('Data');

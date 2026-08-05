@@ -592,7 +592,6 @@ label.fl{ display:block; font-size:12px; color:var(--sub); font-weight:700; marg
       <div class="more-card" data-open="coach"><div class="mc-icon">🤖</div><div class="mc-mid"><div class="mc-title">AI Coach</div><div class="mc-sub">Plain-language insights from your data</div></div><span class="chev">›</span></div>
       <div class="section-head"><h2>Track</h2></div>
       <div class="more-card" data-open="journal"><div class="mc-icon">📔</div><div class="mc-mid"><div class="mc-title">Journal</div><div class="mc-sub">One entry per day, font &amp; color, export</div></div><span class="chev">›</span></div>
-      <div class="more-card" data-open="diet"><div class="mc-icon">🥗</div><div class="mc-mid"><div class="mc-title">Diet &amp; Nutrition</div><div class="mc-sub">Log meals, photo estimate, macros</div></div><span class="chev">›</span></div>
       <div class="more-card" data-open="health"><div class="mc-icon">💊</div><div class="mc-mid"><div class="mc-title">Health</div><div class="mc-sub">Medicines, appointments, BP &amp; sugar</div></div><span class="chev">›</span></div>
       <div class="section-head"><h2>Money</h2></div>
       <div class="more-card" data-open="debts"><div class="mc-icon">🏦</div><div class="mc-mid"><div class="mc-title">Debts / EMI</div><div class="mc-sub">Loans, EMI dates, balances</div></div><span class="chev">›</span></div>
@@ -654,7 +653,6 @@ label.fl{ display:block; font-size:12px; color:var(--sub); font-weight:700; marg
 
     <!-- ===================== DIET / NUTRITION ===================== -->
     <section class="screen" id="screen-diet">
-      <button class="link-btn" data-back="more" style="margin-bottom:8px;">‹ More</button>
       <div class="card" id="dietTargetsCard"></div>
       <div class="seg" id="dietPeriod">
         <button data-p="day" class="active">Day</button>
@@ -926,7 +924,7 @@ label.fl{ display:block; font-size:12px; color:var(--sub); font-weight:700; marg
       <div class="settings-group">
         <h3>About</h3>
         <div class="settings-list">
-          <div class="settings-row" id="aboutRow" style="cursor:pointer;"><div class="sr-label">GP Ledger</div><div class="sr-val">v9.0 ›</div></div>
+          <div class="settings-row" id="aboutRow" style="cursor:pointer;"><div class="sr-label">GP Ledger</div><div class="sr-val">v9.3 ›</div></div>
         </div>
       </div>
     </section>
@@ -937,6 +935,7 @@ label.fl{ display:block; font-size:12px; color:var(--sub); font-weight:700; marg
     <button data-screen="habits"><span class="ic">✅</span>Habits</button>
     <button data-screen="finance"><span class="ic">💰</span>Finance</button>
     <button data-screen="routine"><span class="ic">⏱️</span>Routine</button>
+    <button data-screen="diet"><span class="ic">🥗</span>Diet</button>
     <button data-screen="more"><span class="ic">⋯</span>More</button>
   </nav>
 
@@ -2436,12 +2435,17 @@ function openMealModal(){
  */
 async function analyzeMealPhoto(imageData){
   const key = S.diet.settings.geminiKey;
-  if(!key || !imageData) return '';
   const hint = document.getElementById('mealAnalyzeHint');
+  if(!key){ hint.style.display='block'; hint.textContent='Add a Gemini API key in Settings → Diet & body stats to enable photo analysis.'; return ''; }
+  if(!imageData){ hint.style.display='block'; hint.textContent='Choose a photo first, then tap "Estimate nutrition from photo".'; return ''; }
   hint.style.display='block'; hint.textContent='Analyzing photo — identifying items and estimating portions…';
   try{
+    if(imageData.indexOf(',')===-1 || imageData.indexOf(';')===-1){
+      throw new Error('Photo could not be read — the file may be corrupted or in an unsupported format. Try a JPEG or PNG.');
+    }
     const base64 = imageData.split(',')[1];
     const mime = imageData.substring(5, imageData.indexOf(';'));
+    if(!base64){ throw new Error('Photo could not be read — no image data found. Try choosing the photo again.'); }
     const prompt = `You are a careful nutrition estimator working from a single food photo. Follow this process:
 1. Identify every visually distinct food/drink item in the photo separately (don't lump a mixed plate into one guess).
 2. For each item, estimate portion size using visible reference objects in the frame — a standard dinner plate is ~26cm across, a standard fork/spoon is ~18-20cm, a fist is roughly one cup, a palm is roughly 85-100g of dense protein, a thumb is roughly 1 tbsp. If no reference object is visible, say so and use a typical restaurant/home serving size as a fallback, and lower your confidence accordingly.
@@ -2452,24 +2456,41 @@ async function analyzeMealPhoto(imageData){
 
 Reply with ONLY compact JSON, no markdown, no explanation, in this exact shape:
 {"name":"combined dish name, max 6 words","calories":0,"protein":0,"carbs":0,"fat":0,"fiber":0,"confidence":"low|medium|high","assumptions":"one short sentence, max 30 words, explaining portion reasoning and any hidden-calorie risk"}`;
-    const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`, {
-      method:'POST', headers:{'Content-Type':'application/json', 'x-goog-api-key': key},
-      body: JSON.stringify({
-        contents:[{ parts:[
-          { text: prompt },
-          { inline_data:{ mime_type:mime, data:base64 } }
-        ]}]
-      })
-    });
-    const data = await resp.json();
+    let resp;
+    try{
+      resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`, {
+        method:'POST', headers:{'Content-Type':'application/json', 'x-goog-api-key': key},
+        body: JSON.stringify({
+          contents:[{ parts:[
+            { text: prompt },
+            { inline_data:{ mime_type:mime, data:base64 } }
+          ]}],
+          /* v9.3 fix: force plain-JSON output so a chatty reply (extra prose,
+             markdown fences, a leading "Here's the analysis:") can never break
+             JSON.parse below — this was the main cause of "could not analyze
+             photo" failures even when the photo itself was perfectly fine. */
+          generationConfig:{ responseMimeType:'application/json', temperature:0.2 }
+        })
+      });
+    }catch(networkErr){
+      throw new Error('Could not reach Gemini — check your internet connection and try again.');
+    }
+    let data;
+    try{ data = await resp.json(); }
+    catch(parseErr){ throw new Error(`Gemini API returned an unreadable response (HTTP ${resp.status}). Check your API key and try again.`); }
     if(!resp.ok || data.error){
       throw new Error(data.error && data.error.message ? data.error.message : `Gemini API returned ${resp.status}`);
     }
-    if(!data.candidates || !data.candidates[0]){
-      throw new Error('Gemini returned no result — the photo may have been blocked by a safety filter, try a clearer photo.');
+    const cand = data.candidates && data.candidates[0];
+    if(!cand || !cand.content || !cand.content.parts || !cand.content.parts[0]){
+      const reason = cand && cand.finishReason ? ` (${cand.finishReason})` : '';
+      throw new Error(`Gemini returned no result${reason} — the photo may have been blocked by a safety filter, try a clearer photo.`);
     }
-    const txt = data.candidates[0].content.parts[0].text.replace(/```json|```/g,'').trim();
-    const parsed = JSON.parse(txt);
+    const raw = cand.content.parts.map(p=>p.text||'').join('').replace(/```json|```/g,'').trim();
+    const jsonMatch = raw.match(/\{[\s\S]*\}/);
+    let parsed;
+    try{ parsed = JSON.parse(jsonMatch ? jsonMatch[0] : raw); }
+    catch(jsonErr){ throw new Error('Gemini\'s reply wasn\'t valid data — try again, or try a clearer/simpler photo.'); }
     document.getElementById('mealName').value = parsed.name || '';
     document.getElementById('mealCal').value = parsed.calories || '';
     document.getElementById('mealPro').value = parsed.protein || '';
@@ -2519,7 +2540,7 @@ function openAboutModal(){
       <img src="${LOGO_DATA_URI}" alt="Ledger" style="width:66px;height:66px;border-radius:19px;box-shadow:0 8px 20px rgba(0,0,0,.28); margin-bottom:10px;">
       <div style="font-family:var(--font-head); font-weight:800; font-size:22px; letter-spacing:.08em; color:var(--text);">LEDGER</div>
       <div style="font-size:12.5px; color:var(--sub); margin-top:4px;">Your Life. <span style="color:#22c55e;font-weight:800;">One</span> <span style="color:#6366f1;font-weight:800;">System</span>.</div>
-      <div class="hint" style="margin-top:6px;">Version 9.0</div>
+      <div class="hint" style="margin-top:6px;">Version 9.3</div>
     </div>
     <p style="font-size:13.5px; color:var(--text); line-height:1.65; margin:0 0 10px;">
       Fourteen trackers that usually live in fourteen different apps — habits, routine, sleep, money, debt, diet, journal, goals, health, subscriptions, net worth — collapsed into one screen that actually talks to itself. Log a run in Routine and Sleep fills itself in. Pay an EMI and Finance updates with zero double entry. Ask the AI Coach what's really going on and it reads your actual data, not a guess.
@@ -2547,7 +2568,7 @@ function closeModal(){ document.getElementById('modalBackdrop').classList.remove
 document.getElementById('modalBackdrop').addEventListener('click', (e)=>{ if(e.target.id==='modalBackdrop') closeModal(); });
 
 /* ---------- navigation ---------- */
-const DIRECT_NAV_SCREENS = ['dashboard','habits','finance','routine'];
+const DIRECT_NAV_SCREENS = ['dashboard','habits','finance','routine','diet'];
 function goToScreen(name){
   document.querySelectorAll('nav.bottom button').forEach(b=>b.classList.toggle('active', b.dataset.screen===name || (!DIRECT_NAV_SCREENS.includes(name) && b.dataset.screen==='more')));
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
@@ -2936,13 +2957,19 @@ function renderDashboard(){
   const sh = sleepHabit();
   const overdueDebts = S.debts.filter(debtIsOverdue);
 
-  /* ---- score ---- */
+  /* ---- score ----
+     v9.3 fix: this used to mix in arbitrary "not logged yet" fallback values
+     (45, 55) that made the ring show ~50% before anything was actually done
+     today. Each factor now only counts if that module is actually in use for
+     you, and a factor you haven't touched yet contributes 0 (not a guessed
+     middle value) — so a brand-new day with nothing logged shows 0%, and the
+     ring only rises as you actually log things. */
   const factors = [];
-  factors.push(habitPct*100);
-  factors.push(routineMin>0 ? 100 : 45);
-  factors.push(todaysMeals.length>0 ? 100 : 55);
-  factors.push(overdueDebts.length===0 ? 100 : 35);
-  const score = Math.round(factors.reduce((a,b)=>a+b,0)/factors.length);
+  if(habits.length) factors.push(habitPct*100);
+  if(S.routineLogs && Object.keys(S.routineLogs).length) factors.push(routineMin>0 ? 100 : 0);
+  if(dt) factors.push(todaysMeals.length>0 ? 100 : 0);
+  if(S.debts.length) factors.push(overdueDebts.length===0 ? 100 : 0);
+  const score = factors.length ? Math.round(factors.reduce((a,b)=>a+b,0)/factors.length) : 0;
   const circumference = 213.6;
   document.getElementById('dashRingFill').setAttribute('stroke-dashoffset', String(circumference*(1-score/100)));
   document.getElementById('dashRingText').textContent = score+'%';

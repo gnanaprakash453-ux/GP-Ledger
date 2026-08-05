@@ -1,4 +1,30 @@
-# Changelog — v8 → v9 (+ v9.2 logo/branding fix, v9.1 branding/logo/quotes patch)
+# Changelog — v8 → v9 (+ v9.3 dashboard/nutrition/nav fix, v9.2 logo/branding fix, v9.1 branding/logo/quotes patch)
+
+## v9.3 patch — dashboard score, photo nutrition, Diet on the front page
+
+- **Dashboard score no longer starts at ~50% for no reason.** The daily
+  score ring used to blend in guessed "not logged yet" values (45%, 55%)
+  for the Routine and Diet factors even on a brand-new day with nothing
+  logged, which made the ring show roughly half-full before you'd done
+  anything. Every factor now only counts once that module actually has
+  something to measure (habits exist, you've ever logged routine time, you
+  have diet targets set, you have a loan on file), and an unmet factor
+  contributes 0, not a guessed middle value — so a day with nothing logged
+  now correctly shows 0%, and the ring only rises as you actually log
+  things.
+- **Photo → nutrition estimate made far more reliable.** The Gemini request
+  now forces plain-JSON output (`responseMimeType: 'application/json'`),
+  which was the main cause of "could not analyze photo" failures — the
+  model would occasionally wrap its answer in a sentence or markdown fence,
+  which broke the JSON parser even though the photo itself was fine. Error
+  handling is also more specific now (no key set, no photo chosen, network
+  failure, an unreadable/blocked response, and a malformed reply are all
+  reported separately) so the hint under the button actually tells you what
+  went wrong instead of a generic failure every time.
+- **Diet & Nutrition moved to the front page.** It now has its own icon in
+  the bottom navigation bar, right next to Routine, instead of being buried
+  a tap deeper inside More. The duplicate entry has been removed from the
+  More menu's Track section.
 
 ## v9.2 patch — logo now embedded, simplified branding
 

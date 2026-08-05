@@ -1,9 +1,19 @@
 /**
- * GP LEDGER — Google Apps Script backend (v9)
+ * GP LEDGER — Google Apps Script backend (v9.4)
  * ---------------------------------------------------------------
  * Paste this whole file into script.google.com (Extensions > Apps
  * Script, from a Google Sheet), then deploy as a Web App.
  * Full click-by-click steps are in SETUP_GUIDE.md.
+ *
+ * v9.4 changes from v9.3:
+ *  - Added SCRIPT_VERSION, returned from both the ping (doGet) and sync
+ *    (handleSync) responses. The app now compares this against the version
+ *    it expects and tells you in plain language if your deployed script is
+ *    stale — this is what "Sync did not verify" usually means: you pasted
+ *    new code but didn't Deploy > Manage deployments > New version > Deploy.
+ *  - New RoutineTemplates tab — writes your two editable weekday/weekend
+ *    day-plans (and which days use which) so they're backed up to the Sheet
+ *    like everything else, not just kept on-device.
  *
  * v9 changes from v8:
  *  - handleSync now also writes six new readable tabs: Goals,
@@ -22,11 +32,15 @@
  */
 
 const SS = SpreadsheetApp.getActiveSpreadsheet();
+// Bump this every time you paste updated code, so the app's "Test connection"
+// and sync-failure messages can tell you when a deployment is stale (i.e. you
+// edited/pasted new code but forgot Deploy > Manage deployments > New version).
+const SCRIPT_VERSION = 'v9.4';
 
 function doGet(e) {
   const action = (e && e.parameter && e.parameter.action) || 'status';
   if (action === 'ping') {
-    return jsonOut({ ok: true, source: 'doGet', message: 'GP Ledger Apps Script is reachable.' });
+    return jsonOut({ ok: true, source: 'doGet', version: SCRIPT_VERSION, message: 'GP Ledger Apps Script is reachable.' });
   }
   if (action === 'load') {
     return jsonOut(handleLoad());
@@ -241,7 +255,26 @@ function handleSync(body) {
   });
   rows.budgets = (body.budgets || []).length;
 
-  return { ok: true, source: 'handleSync', rows: rows, syncedAt: new Date().toISOString() };
+  // 16) Routine templates tab — the two editable weekday/weekend day-plans and which days use which
+  const tplSheet = getOrCreateSheet('RoutineTemplates');
+  tplSheet.clear();
+  tplSheet.appendRow(['Plan', 'Applies To (days)', 'Start', 'End', 'Category', 'Note']);
+  const rtpl = body.routineTemplates || {};
+  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const dayAssign = rtpl.dayAssignment || {};
+  let rtplTotal = 0;
+  ['weekday', 'weekend'].forEach(key => {
+    const tpl = rtpl[key];
+    if (!tpl) return;
+    const days = Object.keys(dayAssign).filter(d => dayAssign[d] === key).map(d => dayNames[Number(d)]).join(', ');
+    (tpl.blocks || []).forEach(b => {
+      tplSheet.appendRow([tpl.label || key, days, b.start, b.end, b.cat, b.note || '']);
+      rtplTotal++;
+    });
+  });
+  rows.routineTemplates = rtplTotal;
+
+  return { ok: true, source: 'handleSync', version: SCRIPT_VERSION, rows: rows, syncedAt: new Date().toISOString() };
 }
 
 function durationMinutes(start, end) {

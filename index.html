@@ -572,14 +572,17 @@ label.fl{ display:block; font-size:12px; color:var(--sub); font-weight:700; marg
         <div class="chiprow" id="quickLogChips" style="margin-bottom:0;"></div>
         <div class="timer-hint" id="runningTimerHint" style="display:none;"><span class="rec-dot"></span><span id="runningTimerText"></span></div>
       </div>
-      <button class="btn primary" id="quickSleepBtn" style="margin-bottom:12px;">🌙 Quick-log sleep</button>
+      <div style="display:flex; gap:10px; margin-bottom:12px;">
+        <button class="btn primary" id="quickSleepBtn" style="flex:1; margin-bottom:0;">🌙 Quick-log sleep</button>
+        <button class="btn secondary" id="applyTemplateTodayBtn" style="flex:1;">📋 Apply today's plan</button>
+      </div>
       <div class="seg" id="routinePeriod">
         <button data-p="day" class="active">Day</button>
         <button data-p="week">Week</button>
         <button data-p="month">Month</button>
       </div>
       <div class="card" id="routineTotals"></div>
-      <div class="section-head"><h2>Blocks</h2><button class="link-btn" id="manageCatsBtn">Categories</button></div>
+      <div class="section-head"><h2>Blocks</h2><span><button class="link-btn" id="manageTemplatesBtn" style="margin-right:14px;">Templates</button><button class="link-btn" id="manageCatsBtn">Categories</button></span></div>
       <div class="card" id="routineBlocks"></div>
       <button class="fab" id="fabAddRoutine">+</button>
     </section>
@@ -924,7 +927,7 @@ label.fl{ display:block; font-size:12px; color:var(--sub); font-weight:700; marg
       <div class="settings-group">
         <h3>About</h3>
         <div class="settings-list">
-          <div class="settings-row" id="aboutRow" style="cursor:pointer;"><div class="sr-label">GP Ledger</div><div class="sr-val">v9.3 ›</div></div>
+          <div class="settings-row" id="aboutRow" style="cursor:pointer;"><div class="sr-label">GP Ledger</div><div class="sr-val">v9.4 ›</div></div>
         </div>
       </div>
     </section>
@@ -1015,6 +1018,67 @@ function defaultRoutineCats(){
     { name:'Junk/Scrolling', color:'#ef4444' }, { name:'Chores', color:'#38bdf8' },
     { name:'Social', color:'#a78bfa' }, { name:'Other', color:'#9aa3b5' },
   ];
+}
+function defaultDebts(){
+  // Imported once from your EMI sheet on first load (fully editable/deletable afterwards —
+  // this only seeds when the Debts list is empty, so it never overwrites data you've already entered).
+  return [
+    { id:uid(), name:'Ather', balance:175605, emiAmount:6000, dueDay:3, debitAccount:'', paidMonths:{}, notes:'Imported from your EMI sheet' },
+    { id:uid(), name:'Axis Finance', balance:412649, emiAmount:16500, dueDay:5, debitAccount:'', paidMonths:{}, notes:'Imported from your EMI sheet' },
+    { id:uid(), name:'Axis Bank', balance:181514, emiAmount:5700, dueDay:5, debitAccount:'', paidMonths:{}, notes:'Imported from your EMI sheet' },
+    { id:uid(), name:'Education Loan', balance:41000, emiAmount:3750, dueDay:5, debitAccount:'', paidMonths:{}, notes:'Imported from your EMI sheet' },
+    { id:uid(), name:'Kredit Bee', balance:186700, emiAmount:11600, dueDay:8, debitAccount:'', paidMonths:{}, notes:'Imported from your EMI sheet' },
+    { id:uid(), name:'Local Finance', balance:0, emiAmount:1500, dueDay:7, debitAccount:'', paidMonths:{}, notes:'Imported from your EMI sheet' },
+    { id:uid(), name:'Gold Loan', balance:135000, emiAmount:2000, dueDay:15, debitAccount:'', paidMonths:{}, notes:"Imported from your EMI sheet — no due day was listed, edit it above" },
+    { id:uid(), name:'Credit Card', balance:150000, emiAmount:3500, dueDay:11, debitAccount:'', paidMonths:{}, notes:'Imported from your EMI sheet' },
+    { id:uid(), name:'Rent', balance:0, emiAmount:10000, dueDay:8, debitAccount:'', paidMonths:{}, notes:'Imported from your EMI sheet — recurring, not a payoff loan' },
+    { id:uid(), name:'Chit', balance:0, emiAmount:12500, dueDay:8, debitAccount:'', paidMonths:{}, notes:'Imported from your EMI sheet — recurring, not a payoff loan' },
+  ];
+}
+function requiredRoutineCats(){
+  // Categories used by the default routine templates below — merged into
+  // whatever categories already exist (never removes or duplicates yours).
+  return [
+    { name:'BPO Shift', color:'#6366f1' },
+    { name:'Additional Job', color:'#f59e0b' },
+    { name:'Travel', color:'#38bdf8' },
+    { name:'Home Routine', color:'#22c55e' },
+    { name:'Get Ready', color:'#a78bfa' },
+    { name:'BBA Class', color:'#ec4899' },
+  ];
+}
+function defaultRoutineTemplates(){
+  // Two fully-editable day plans (Templates button on the Routine tab), plus
+  // which plan each day of the week uses. Change the job/class/timings any
+  // time your schedule changes — nothing here is hard-coded into the app logic.
+  return {
+    dayAssignment: { '0':'weekend', '1':'weekday', '2':'weekday', '3':'weekday', '4':'weekday', '5':'weekday', '6':'weekend' }, // 0=Sun .. 6=Sat
+    weekday: {
+      label: 'Weekday plan (Mon–Fri)',
+      blocks: [
+        { id:uid(), start:'04:30', end:'05:30', cat:'BPO Shift', note:'Finish BPO shift — wrap up work' },
+        { id:uid(), start:'05:30', end:'08:00', cat:'Additional Job', note:'Extra income' },
+        { id:uid(), start:'08:00', end:'09:00', cat:'Travel', note:'Commute to home' },
+        { id:uid(), start:'09:00', end:'09:30', cat:'Home Routine', note:'Shower, breakfast, relax, prepare clothes, iron if needed' },
+        { id:uid(), start:'09:30', end:'16:30', cat:'Sleep', note:'7 hours — non-negotiable' },
+        { id:uid(), start:'16:30', end:'17:30', cat:'Meals', note:'Lunch — first proper meal' },
+        { id:uid(), start:'17:30', end:'18:00', cat:'Get Ready', note:'Pack bag, water bottle, preparation' },
+        { id:uid(), start:'18:00', end:'18:30', cat:'Travel', note:'Travel to office — commute' },
+        { id:uid(), start:'18:30', end:'04:30', cat:'BPO Shift', note:'BPO Team Lead job — main income' },
+      ]
+    },
+    weekend: {
+      label: 'Weekend plan (Sat & Sun)',
+      blocks: [
+        { id:uid(), start:'07:00', end:'08:00', cat:'Home Routine', note:'Morning routine' },
+        { id:uid(), start:'08:00', end:'17:00', cat:'Additional Job', note:'9-hour work block — adjust to your actual weekend job hours' },
+        { id:uid(), start:'17:00', end:'18:00', cat:'Get Ready', note:'Freshen up, travel prep' },
+        { id:uid(), start:'18:00', end:'21:00', cat:'BBA Class', note:'College class' },
+        { id:uid(), start:'21:00', end:'22:00', cat:'Meals', note:'Dinner' },
+        { id:uid(), start:'22:00', end:'07:00', cat:'Sleep', note:'Rest & sleep' },
+      ]
+    }
+  };
 }
 function defaultSettings(){
   return {
@@ -1108,7 +1172,7 @@ function todaysQuote(){
 }
 
 /* ---------- state ---------- */
-let S = { habits:[], transactions:[], settings:{}, routineLogs:{}, routineCats:[], runningTimer:null, debts:[], journal:{}, diet:{ meals:{}, settings:{} },
+let S = { habits:[], transactions:[], settings:{}, routineLogs:{}, routineCats:[], routineTemplates:null, runningTimer:null, debts:[], journal:{}, diet:{ meals:{}, settings:{} },
   goals:[], subscriptions:[], assets:[], health:{ meds:[], vitals:{}, appts:[] }, documents:[], aiCoach:{ lastInsights:[], lastRun:'' }, budgets:[] };
 let selectedDate = todayStr();
 
@@ -1135,6 +1199,7 @@ function loadState(){
     const doc = localStorage.getItem('gpl_documents');
     const ai = localStorage.getItem('gpl_aiCoach');
     const bu = localStorage.getItem('gpl_budgets');
+    const rtp = localStorage.getItem('gpl_routineTemplates');
 
     S.habits = h ? JSON.parse(h) : null;
     S.transactions = t ? JSON.parse(t) : [];
@@ -1152,17 +1217,24 @@ function loadState(){
     S.documents = doc ? JSON.parse(doc) : [];
     S.aiCoach = ai ? JSON.parse(ai) : { lastInsights:[], lastRun:'' };
     S.budgets = bu ? JSON.parse(bu) : [];
+    S.routineTemplates = rtp ? JSON.parse(rtp) : null;
   }catch(e){
     console.warn('State parse failed, reseeding.', e);
     S.habits = null; S.transactions = []; S.settings = null; S.routineLogs = {}; S.routineCats = null; S.runningTimer = null;
     S.debts = []; S.journal = {}; S.diet = { meals:{}, settings:defaultDietSettings() };
     S.goals = []; S.subscriptions = []; S.assets = []; S.health = defaultHealth(); S.documents = []; S.aiCoach = { lastInsights:[], lastRun:'' };
-    S.budgets = [];
+    S.budgets = []; S.routineTemplates = null;
   }
   // Guard against the v5 "first-open glitch": if habits is missing, not an array,
   // or empty on a truly fresh install, seed defaults BEFORE first render.
   if(!Array.isArray(S.habits) || S.habits.length===0){ S.habits = defaultHabits(); }
   if(!Array.isArray(S.routineCats) || S.routineCats.length===0){ S.routineCats = defaultRoutineCats(); }
+  requiredRoutineCats().forEach(rc=>{ if(!S.routineCats.some(c=>c.name===rc.name)) S.routineCats.push(rc); });
+  if(!S.routineTemplates || typeof S.routineTemplates!=='object'){ S.routineTemplates = defaultRoutineTemplates(); }
+  if(!S.routineTemplates.dayAssignment) S.routineTemplates.dayAssignment = defaultRoutineTemplates().dayAssignment;
+  if(!S.routineTemplates.weekday) S.routineTemplates.weekday = defaultRoutineTemplates().weekday;
+  if(!S.routineTemplates.weekend) S.routineTemplates.weekend = defaultRoutineTemplates().weekend;
+  if(!Array.isArray(S.debts) || S.debts.length===0){ S.debts = defaultDebts(); }
   if(!S.settings || typeof S.settings!=='object'){ S.settings = defaultSettings(); }
   else { S.settings = Object.assign(defaultSettings(), S.settings); }
   if(!Array.isArray(S.transactions)) S.transactions = [];
@@ -1192,6 +1264,7 @@ function saveState(){
     localStorage.setItem('gpl_settings', JSON.stringify(S.settings));
     localStorage.setItem('gpl_routineLogs', JSON.stringify(S.routineLogs));
     localStorage.setItem('gpl_routineCats', JSON.stringify(S.routineCats));
+    localStorage.setItem('gpl_routineTemplates', JSON.stringify(S.routineTemplates));
     localStorage.setItem('gpl_runningTimer', JSON.stringify(S.runningTimer));
     localStorage.setItem('gpl_debts', JSON.stringify(S.debts));
     localStorage.setItem('gpl_journal', JSON.stringify(S.journal));
@@ -2063,6 +2136,121 @@ function openManageCats(){
   };
 }
 
+/* ---------- v9.4: routine templates (weekday/weekend day-plans, fully editable) ---------- */
+function templateForDate(dateStr){
+  const day = new Date(dateStr+'T00:00:00').getDay(); // 0=Sun..6=Sat
+  const key = (S.routineTemplates.dayAssignment && S.routineTemplates.dayAssignment[String(day)]) || 'weekday';
+  return { key, tpl: S.routineTemplates[key] };
+}
+function applyTemplateToDate(dateStr, silent){
+  const { tpl } = templateForDate(dateStr);
+  if(!tpl || !tpl.blocks || !tpl.blocks.length){ if(!silent) alert('That plan has no blocks yet — add some in Templates first.'); return false; }
+  const existing = S.routineLogs[dateStr]||[];
+  if(existing.length && !silent){
+    if(!confirm(`${dateStr} already has ${existing.length} logged block(s). Replace them with the template plan?`)) return false;
+  }
+  S.routineLogs[dateStr] = tpl.blocks.map(b=>({ id:uid(), cat:b.cat, start:b.start, end:b.end, note:b.note||'' }));
+  tpl.blocks.forEach(b=> syncRoutineToLinkedHabit(b.cat, dateStr, blockDuration(b)));
+  return true;
+}
+document.getElementById('manageTemplatesBtn').addEventListener('click', ()=> openTemplatesModal());
+document.getElementById('applyTemplateTodayBtn').addEventListener('click', ()=>{
+  if(applyTemplateToDate(todayStr())){ saveState(); renderRoutine(); renderDashboard(); showToast("Today's plan applied ✓",'📋'); }
+});
+function openTemplatesModal(){
+  openModal(`
+    <div class="modal-head"><h3>Routine templates</h3><button class="modal-close" data-close>✕</button></div>
+    <div class="hint" style="margin-bottom:8px;">Two reusable day plans, fully editable. If your job, class or shift timing changes, just edit the blocks below — nothing about this is hard-coded.</div>
+    <label class="fl">Which plan applies to which day?</label>
+    <div class="chiprow" id="dayAssignChips" style="margin-bottom:10px; flex-wrap:wrap;"></div>
+    <div id="tplSections"></div>
+    <div style="display:flex; gap:8px; margin-top:14px;">
+      <button class="btn secondary" id="tplApplyTodayBtn2" style="flex:1;">Apply to today</button>
+      <button class="btn secondary" id="tplApplyWeekBtn2" style="flex:1;">Fill this week</button>
+    </div>
+  `);
+  const dayNames=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  function drawDayChips(){
+    document.getElementById('dayAssignChips').innerHTML = dayNames.map((n,i)=>{
+      const val = S.routineTemplates.dayAssignment[String(i)]||'weekday';
+      const on = val==='weekend';
+      return `<button class="chip ${on?'active':''}" data-day="${i}" style="min-width:52px; text-align:center; line-height:1.3;">${n}<br><small style="font-size:9.5px;">${on?'Weekend':'Weekday'}</small></button>`;
+    }).join('');
+    document.querySelectorAll('#dayAssignChips [data-day]').forEach(btn=> btn.onclick=()=>{
+      const i = btn.dataset.day;
+      const cur = S.routineTemplates.dayAssignment[i]||'weekday';
+      S.routineTemplates.dayAssignment[i] = cur==='weekday' ? 'weekend' : 'weekday';
+      saveState(); drawDayChips();
+    });
+  }
+  function drawSections(){
+    const html = ['weekday','weekend'].map(key=>{
+      const tpl = S.routineTemplates[key];
+      const rows = (tpl.blocks||[]).map(b=>{
+        const col = (S.routineCats.find(c=>c.name===b.cat)||{color:'#9aa3b5'}).color;
+        return `<div class="tx-row">
+          <div class="tx-icon" style="background:${col}22;color:${col}">●</div>
+          <div class="tx-mid"><div class="tx-note">${b.start}–${b.end} · ${b.cat}</div><div style="font-size:11.5px;color:var(--sub);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${b.note||''}</div></div>
+          <button class="link-btn" data-edit-tpl="${key}|${b.id}">Edit</button>
+        </div>`;
+      }).join('') || '<div class="hint" style="padding:8px 0;">No blocks yet.</div>';
+      return `
+        <div class="section-head" style="margin-top:14px;"><h2>${tpl.label}</h2><button class="link-btn" data-add-tpl="${key}">+ Add block</button></div>
+        <div class="card">${rows}</div>`;
+    }).join('');
+    document.getElementById('tplSections').innerHTML = html;
+    document.querySelectorAll('[data-edit-tpl]').forEach(btn=>{
+      btn.onclick=()=>{ const [key,id]=btn.dataset.editTpl.split('|'); openTemplateBlockModal(key,id); };
+    });
+    document.querySelectorAll('[data-add-tpl]').forEach(btn=>{
+      btn.onclick=()=> openTemplateBlockModal(btn.dataset.addTpl, null);
+    });
+  }
+  drawDayChips(); drawSections();
+  document.getElementById('tplApplyTodayBtn2').onclick = ()=>{
+    if(applyTemplateToDate(todayStr())){ saveState(); renderRoutine(); renderDashboard(); closeModal(); showToast("Today's plan applied ✓",'📋'); }
+  };
+  document.getElementById('tplApplyWeekBtn2').onclick = ()=>{
+    if(!confirm('Fill in the next 7 days (today included) using the matching weekday/weekend plan? Days that already have logged blocks are skipped.')) return;
+    let applied=0;
+    for(let i=0;i<7;i++){
+      const d=new Date(); d.setDate(d.getDate()+i);
+      const ds = d.toISOString().slice(0,10);
+      if((S.routineLogs[ds]||[]).length) continue;
+      if(applyTemplateToDate(ds, true)) applied++;
+    }
+    saveState(); renderRoutine(); renderDashboard(); closeModal();
+    showToast(`Filled ${applied} day(s) from templates ✓`,'📋');
+  };
+}
+function openTemplateBlockModal(key, id){
+  const tpl = S.routineTemplates[key];
+  const b = id ? tpl.blocks.find(x=>x.id===id) : null;
+  const catOpts = S.routineCats.map(c=>`<option value="${c.name}" ${b&&b.cat===c.name?'selected':''}>${c.name}</option>`).join('');
+  openModal(`
+    <div class="modal-head"><h3>${b?'Edit':'Add'} — ${tpl.label}</h3><button class="modal-close" data-close>✕</button></div>
+    <label class="fl">Category</label><select id="tbCat">${catOpts}</select>
+    <div style="display:flex; gap:10px;">
+      <div style="flex:1;"><label class="fl">Start</label><input type="time" id="tbStart" value="${b?b.start:'09:00'}"></div>
+      <div style="flex:1;"><label class="fl">End</label><input type="time" id="tbEnd" value="${b?b.end:'10:00'}"></div>
+    </div>
+    <label class="fl">Note (optional)</label><input type="text" id="tbNote" value="${b?b.note||'':''}">
+    <button class="btn primary" id="tbSave" style="margin-top:16px;">Save</button>
+    ${b?'<button class="btn danger" id="tbDel" style="margin-top:10px;">Delete</button>':''}
+  `);
+  document.getElementById('tbSave').onclick = ()=>{
+    const rec = { id:b?b.id:uid(), cat:document.getElementById('tbCat').value, start:document.getElementById('tbStart').value, end:document.getElementById('tbEnd').value, note:document.getElementById('tbNote').value.trim() };
+    if(b){ Object.assign(b, rec); } else { tpl.blocks.push(rec); }
+    saveState();
+    openTemplatesModal();
+  };
+  if(b) document.getElementById('tbDel').onclick = ()=>{
+    tpl.blocks = tpl.blocks.filter(x=>x.id!==b.id);
+    saveState();
+    openTemplatesModal();
+  };
+}
+
 /* ---------- v9: debts / EMI (rewritten — undo payment, chronological sort, debit account, month labels) ---------- */
 function currentYM(){ return todayStr().slice(0,7); }
 function debtDueInfo(d){
@@ -2540,7 +2728,7 @@ function openAboutModal(){
       <img src="${LOGO_DATA_URI}" alt="Ledger" style="width:66px;height:66px;border-radius:19px;box-shadow:0 8px 20px rgba(0,0,0,.28); margin-bottom:10px;">
       <div style="font-family:var(--font-head); font-weight:800; font-size:22px; letter-spacing:.08em; color:var(--text);">LEDGER</div>
       <div style="font-size:12.5px; color:var(--sub); margin-top:4px;">Your Life. <span style="color:#22c55e;font-weight:800;">One</span> <span style="color:#6366f1;font-weight:800;">System</span>.</div>
-      <div class="hint" style="margin-top:6px;">Version 9.3</div>
+      <div class="hint" style="margin-top:6px;">Version 9.4</div>
     </div>
     <p style="font-size:13.5px; color:var(--text); line-height:1.65; margin:0 0 10px;">
       Fourteen trackers that usually live in fourteen different apps — habits, routine, sleep, money, debt, diet, journal, goals, health, subscriptions, net worth — collapsed into one screen that actually talks to itself. Log a run in Routine and Sleep fills itself in. Pay an EMI and Finance updates with zero double entry. Ask the AI Coach what's really going on and it reads your actual data, not a guess.
@@ -2758,6 +2946,7 @@ document.getElementById('testTgBtn').addEventListener('click', async ()=>{
 });
 
 /* ---------- Google Sheets sync ---------- */
+const APP_SCRIPT_VERSION = 'v9.4'; // must match SCRIPT_VERSION at the top of apps-script.gs
 function debugLog(msg){
   const box = document.getElementById('syncDebug'); box.style.display='block';
   box.textContent = `[${new Date().toLocaleTimeString()}] ${msg}\n` + box.textContent;
@@ -2772,7 +2961,16 @@ async function testConnection(){
     const res = await fetch(url+(url.includes('?')?'&':'?')+'action=ping', { method:'GET' });
     const text = await res.text();
     debugLog('Ping response: '+text.slice(0,300));
-    showToast('Connection reachable — check debug log below', '🔌');
+    let pdata; try{ pdata = JSON.parse(text); }catch{ pdata = null; }
+    if(pdata && pdata.version && pdata.version !== APP_SCRIPT_VERSION){
+      debugLog(`⚠️ Version mismatch — this app expects Apps Script ${APP_SCRIPT_VERSION} but your deployed script reports ${pdata.version}. You edited/pasted new code but didn't publish it: go to script.google.com → Deploy → Manage deployments → ✏️ (edit) → Version: "New version" → Deploy.`);
+      showToast('Connected, but your Apps Script is out of date — see debug log', '⚠️');
+    } else if(pdata && pdata.version){
+      debugLog(`Apps Script version OK (${pdata.version}).`);
+      showToast('Connection reachable — script is up to date ✓', '🔌');
+    } else {
+      showToast('Connection reachable — check debug log below', '🔌');
+    }
   }catch(e){ debugLog('Ping failed: '+e.message); alert('Could not reach the Apps Script URL.'); }
 }
 async function syncNow(silent, extra){
@@ -2780,7 +2978,7 @@ async function syncNow(silent, extra){
   const btn = document.getElementById('syncBtn'), label = document.getElementById('syncBtnLabel');
   if(!url){ if(!silent) alert('Add your Google Apps Script Web App URL in Settings first.'); return; }
   btn.classList.add('syncing'); label.textContent='Syncing…';
-  const payload = { action:'sync', habits:S.habits, transactions:S.transactions, settings:S.settings, routineLogs:S.routineLogs, routineCats:S.routineCats, debts:S.debts, journal:S.journal, diet:S.diet,
+  const payload = { action:'sync', habits:S.habits, transactions:S.transactions, settings:S.settings, routineLogs:S.routineLogs, routineCats:S.routineCats, routineTemplates:S.routineTemplates, debts:S.debts, journal:S.journal, diet:S.diet,
     goals:S.goals, subscriptions:S.subscriptions, assets:S.assets, health:S.health, documents:S.documents, budgets:S.budgets,
     extra: extra||null, clientTime: new Date().toISOString() };
   try{
@@ -2796,8 +2994,12 @@ async function syncNow(silent, extra){
       debugLog('Sync OK: '+text.slice(0,300));
       if(!silent) showToast('Synced to Google Sheet ✓', '☁️');
     } else {
-      debugLog('Sync verification FAILED — response did not match expected shape:\n'+text.slice(0,400));
-      if(!silent) alert('Sync did not verify. Your Apps Script may need a "New version" deployment, or the URL points to an old one. See the debug log in Settings.');
+      let hint = '';
+      if(data && data.version && data.version !== APP_SCRIPT_VERSION){
+        hint = ` Your deployed script reports version ${data.version} but this app expects ${APP_SCRIPT_VERSION} — you likely edited apps-script.gs but didn't publish it (Deploy → Manage deployments → ✏️ → New version → Deploy).`;
+      }
+      debugLog('Sync verification FAILED — response did not match expected shape:\n'+text.slice(0,400)+hint);
+      if(!silent) alert('Sync did not verify.'+(hint || ' Your Apps Script may need a "New version" deployment, or the URL points to an old one.')+' See the debug log in Settings.');
     }
   }catch(e){
     debugLog('Sync error: '+e.message);
@@ -2822,6 +3024,7 @@ document.getElementById('loadFromSheetBtn').addEventListener('click', async ()=>
       if(d.settings) S.settings = Object.assign(defaultSettings(), d.settings, { sheetUrl:url });
       if(d.routineLogs) S.routineLogs = d.routineLogs;
       if(Array.isArray(d.routineCats)) S.routineCats = d.routineCats;
+      if(d.routineTemplates) S.routineTemplates = d.routineTemplates;
       if(Array.isArray(d.debts)) S.debts = d.debts;
       if(d.journal) S.journal = d.journal;
       if(d.diet) S.diet = Object.assign({meals:{},settings:defaultDietSettings()}, d.diet);
@@ -2855,7 +3058,7 @@ document.getElementById('importBackupFile').addEventListener('change', (e)=>{
     try{
       const data = JSON.parse(reader.result);
       if(data.habits && data.settings){
-        S = Object.assign({ habits:[], transactions:[], settings:{}, routineLogs:{}, routineCats:[], debts:[], journal:{}, diet:{meals:{},settings:defaultDietSettings()},
+        S = Object.assign({ habits:[], transactions:[], settings:{}, routineLogs:{}, routineCats:[], routineTemplates:defaultRoutineTemplates(), debts:[], journal:{}, diet:{meals:{},settings:defaultDietSettings()},
           goals:[], subscriptions:[], assets:[], health:defaultHealth(), documents:[], aiCoach:{lastInsights:[],lastRun:''}, budgets:[] }, data);
         saveState(); loadSettingsForm(); applyTheme(); renderAll();
         showToast('Backup restored', '✅');

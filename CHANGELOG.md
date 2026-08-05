@@ -1,4 +1,47 @@
-# Changelog — v8 → v9 (+ v9.3 dashboard/nutrition/nav fix, v9.2 logo/branding fix, v9.1 branding/logo/quotes patch)
+# Changelog — v8 → v9 (+ v9.4 templates/EMI/sync-diagnostics, v9.3 dashboard/nutrition/nav fix, v9.2 logo/branding fix, v9.1 branding/logo/quotes patch)
+
+## v9.4 patch — routine templates, EMI import, sync version-check
+
+- **Routine → Templates (new).** The Routine tab now has a "Templates"
+  button next to Categories: two fully-editable day plans — a **Weekday
+  plan (Mon–Fri)** and a **Weekend plan (Sat & Sun)** — each a list of
+  time blocks (category, start/end time, note) you add/edit/delete freely.
+  A row of day chips lets you flip which plan applies to which day of the
+  week (e.g. if your off days move from Sat/Sun to something else). Two
+  action buttons apply a plan to actual logged data: **"Apply today's
+  plan"** (also on the Routine tab itself, next to Quick-log sleep) fills
+  in today from whichever plan matches today's weekday, and **"Fill this
+  week"** does the next 7 days at once, skipping any day that already has
+  logged blocks so it never overwrites real entries. The two plans ship
+  pre-filled from the BPO shift / additional job / travel / home routine /
+  sleep schedule you sent (weekday) and a 9-hour additional-work + BBA
+  class + sleep/rest layout (weekend) — edit every time and category on
+  both to match your actual schedule, and re-edit any time it changes
+  (new job, new class times, etc.) since nothing about the timing is
+  hard-coded into the app. Six new routine categories were added to
+  support this (BPO Shift, Additional Job, Travel, Home Routine, Get
+  Ready, BBA Class) — merged into your existing category list without
+  touching any categories you'd already added or renamed. Templates sync
+  to the Google Sheet in a new `RoutineTemplates` tab.
+
+- **Debts/EMI pre-loaded from your sheet.** Your 10 loans/EMIs (Ather,
+  Axis Finance, Axis Bank, Education Loan, Kredit Bee, Local Finance,
+  Gold Loan, Credit Card, Rent, Chit) are now seeded into Debts/EMI with
+  their balance, monthly EMI and due day from the sheet you sent — same
+  as everything else in that tab, fully editable and deletable per entry.
+  This only seeds once, the first time Debts/EMI is empty on a device —
+  it will never overwrite loans you've already added or edited.
+
+- **Sync failures now self-diagnose a stale deployment.** The single most
+  common cause of "Sync did not verify" is pasting updated
+  `apps-script.gs` code into the script editor without republishing it
+  (Apps Script's "Save" does not update the live `/exec` URL — that needs
+  **Deploy → Manage deployments → ✏️ → New version → Deploy**). The
+  backend now reports its own version (`SCRIPT_VERSION`) on both ping and
+  sync; the app compares that to the version it expects and, on a
+  mismatch, tells you exactly that in the debug log and the failure
+  alert — e.g. *"your deployed script reports v9.3 but the app expects
+  v9.4 — redeploy"* — instead of a generic failure message.
 
 ## v9.3 patch — dashboard score, photo nutrition, Diet on the front page
 
@@ -205,10 +248,15 @@
    are estimates, not lab-accurate figures, even with the improved
    prompt — always sanity-check before saving.
 4. Apps Script still requires a "New version" deployment after any code
-   change (see SETUP_GUIDE troubleshooting).
+   change — v9.4 now detects and tells you when this has been missed (see
+   SETUP_GUIDE troubleshooting), but it still has to be done manually.
 5. Quick-log timer remains single-slot (unchanged from v7).
 6. AI Coach and photo nutrition both require the same Gemini key and a
    live internet connection at the moment you tap them; nothing is
    cached beyond the day's insights/estimate.
 7. Documents Vault is reference-only by design — it does not store file
    attachments, scans or passwords.
+8. Applying a Routine template to a day that already has logged blocks
+   replaces that day's blocks (after a confirmation) rather than merging
+   with them — "Fill this week" avoids this by skipping any day that
+   already has something logged.

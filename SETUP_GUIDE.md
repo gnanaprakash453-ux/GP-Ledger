@@ -110,7 +110,13 @@ You'll get a real home-screen icon and a full-screen app with no browser bar.
 7. Copy the **Web app URL** it gives you (ends in `/exec`).
 8. In GP Ledger → **Settings → Google Sheet database**, paste that URL into **Apps Script Web App URL**.
 9. Tap **Test connection** — you should see a message confirming it's reachable, plus a debug log entry.
-10. Tap **Sync now**. Open your Google Sheet — you should now see tabs: `Data`, `Habits`, `Settings`, `Transactions_<year>`, `Routine`, `Reports`, `Debts`, `Journal`, `Diet`, `Goals`, `Subscriptions`, `Assets`, `Health`, `Documents`, `Budgets`.
+10. Tap **Sync now**. Open your Google Sheet — you should now see tabs: `Data`, `Habits`, `Settings`, `Transactions_<year>`, `Routine`, `RoutineTemplates`, `Reports`, `Debts`, `Journal`, `Diet`, `Goals`, `Subscriptions`, `Assets`, `Health`, `Documents`, `Budgets`.
+
+> **Already on v9.3 and just upgrading to v9.4?** Same deal — paste in the
+> *new* `apps-script.gs` and redeploy (**Deploy → Manage deployments →
+> ✏️ edit → New version → Deploy**), or the new `RoutineTemplates` tab
+> won't appear and Test connection will flag the version mismatch
+> described below.
 
 > **Already on v8 and just upgrading to v9?** You still need to redo step 3.3 —
 > paste in the *new* `apps-script.gs` — and step 5's **Deploy → Manage
@@ -127,6 +133,11 @@ really came from the sync handler (not a generic/error page), and shows a
 1. **You edited the script but didn't redeploy.** Apps Script's "Save" does *not*
    republish the live `/exec` URL. You must go **Deploy → Manage deployments →
    ✏️ edit → New version → Deploy** every time you change `apps-script.gs`.
+   As of v9.4, this is the easiest cause to catch: tap **Test connection**
+   in Settings — the debug log will explicitly say *"your deployed script
+   reports v9.3 but the app expects v9.4"* (or similar) if this is what's
+   wrong, instead of a generic failure. A sync failure alert does the same
+   check.
 2. **Wrong URL** — make sure it's the `/exec` URL, not `/dev`.
 3. **Permissions revoked** — re-run step 6 if Google ever asks you to re-authorize.
 
@@ -206,6 +217,43 @@ you can link it to a matching habit so you don't have to log it twice:
    against the linked habit automatically. Minutes convert to hours if
    the habit's unit is "hr"; check-off habits are simply marked done.
 
+## 6a. Routine → Templates (weekday/weekend day-plans)
+
+Routine tab → **Templates** button (next to Categories). This holds two
+reusable day plans instead of one, so you don't have to hand-type your
+schedule every day:
+
+- **Weekday plan (Mon–Fri)** — pre-filled from the BPO shift schedule you
+  sent: finish BPO shift, additional job, travel home, home routine,
+  sleep block, lunch, get ready, travel to office, then the main BPO Team
+  Lead shift again.
+- **Weekend plan (Sat & Sun)** — pre-filled with a 9-hour additional-work
+  block, BBA class, and a sleep/rest block, since you said Sat/Sun need
+  the extra job + college covered.
+
+**Everything is editable** — tap **Edit** on any block to change its
+category, start/end time, or note, or **+ Add block** for a new one. If
+you change jobs, shift timing, or class schedule, this is the only place
+you need to update — nothing about the timing is hard-coded elsewhere in
+the app.
+
+**Which plan applies to which day** is controlled by the row of day chips
+at the top of the Templates screen (tap a day to flip it between Weekday
+and Weekend) — so if your off days ever move off Sat/Sun, just re-tap them.
+
+**Putting a plan into your actual log:**
+- **"Apply today's plan"** (also available directly on the Routine tab,
+  next to Quick-log sleep) fills in *today* using whichever plan matches
+  today's weekday.
+- **"Fill this week"** (inside the Templates screen) does the next 7 days
+  at once — any day that already has logged blocks is skipped automatically,
+  so it never silently overwrites real entries; applying to a single day
+  that already has blocks asks for confirmation first.
+
+These sync to the Google Sheet in a new `RoutineTemplates` tab, same as
+everything else — remember to redeploy `apps-script.gs` (see section 3)
+for that tab to start appearing.
+
 ## 7. Debts / EMI tracking
 
 **More → Debts/EMI → + Add**: enter the loan name, current balance,
@@ -213,6 +261,13 @@ monthly EMI amount, the due day of the month (1–31), and (optionally) which
 account it's usually debited from. Unpaid loans sort to the top in
 due-date order; loans already paid this month sink to the bottom, dimmed,
 labeled e.g. **"Aug - Paid"**.
+
+> **Your existing loans are already in here.** The 10 entries from the EMI
+> sheet you sent (Ather, Axis Finance, Axis Bank, Education Loan, Kredit
+> Bee, Local Finance, Gold Loan, Credit Card, Rent, Chit) were pre-loaded
+> with their balance/EMI/due-day on first open — edit or delete any of them
+> like normal, this was only a one-time starting point, not something that
+> re-applies itself.
 
 - **Mark this month paid** → confirm the amount and pick the debited-from
   account (choose one of your Assets bank/cash entries, or type one in) →
@@ -369,7 +424,7 @@ to a `Journal` tab in your Google Sheet.
 - **Habits not showing on first open** — the app seeds default habits (Drink Water, Read, Walk, No Junk, Sleep) before the very first render, and re-seeds automatically if local storage ever comes back empty or corrupted.
 - **Can't see text I'm typing** (habit custom amount, or any field) — inputs force explicit text color and override phone autofill styling.
 - **Reminders don't seem to fire** — you must explicitly set a reminder time on each habit (Habit detail → Reminder times). Also confirm the `checkReminders` trigger exists and Telegram is enabled with a valid token/chat ID.
-- **Sheet not updating, or Load from Sheet fails** — you likely need to redeploy `apps-script.gs`: **Deploy → Manage deployments → ✏️ edit → New version → Deploy**. See section 3.
+- **Sheet not updating, or Load from Sheet fails** — you likely need to redeploy `apps-script.gs`: **Deploy → Manage deployments → ✏️ edit → New version → Deploy**. See section 3. Tap **Test connection** first — as of v9.4 it will tell you directly if this is the cause (a version-mismatch message).
 - **New Goals/Subscriptions/Assets/Health/Documents/Budgets tabs not appearing in the Sheet** — same fix as above: redeploy `apps-script.gs`, then Sync now.
 - **Diet photo button or AI Coach won't run** — you need to save a Gemini API key first (Settings → Diet & body stats → Gemini API key); both features share this one key.
 - **Marked an EMI paid by mistake** — open Debts/EMI, tap **"↩ Undo payment"** on that loan; don't edit the Finance transaction directly, it won't adjust the balance back.

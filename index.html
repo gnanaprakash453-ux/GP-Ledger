@@ -311,6 +311,7 @@ label.fl{ display:block; font-size:12px; color:var(--sub); font-weight:700; marg
 /* ============ v8: DEBT / EMI ============ */
 .debt-card{ background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:14px 16px; margin-bottom:10px; }
 .debt-card.overdue{ border-color:var(--danger); }
+.debt-card.paid{ opacity:.72; }
 .debt-top{ display:flex; justify-content:space-between; align-items:flex-start; }
 .debt-name{ font-weight:800; font-size:15px; }
 .debt-badge{ font-size:10.5px; font-weight:700; padding:3px 8px; border-radius:999px; background:rgba(239,68,68,.15); color:var(--danger); }
@@ -343,6 +344,103 @@ label.fl{ display:block; font-size:12px; color:var(--sub); font-weight:700; marg
 .macro-bar-track{ height:8px; border-radius:4px; background:var(--card2); overflow:hidden; }
 .macro-bar-fill{ height:100%; border-radius:4px; }
 .diet-drop{ border:1.5px dashed var(--line); border-radius:var(--radius); padding:20px; text-align:center; color:var(--sub); font-size:13px; }
+.meal-est-note{ font-size:10.5px; color:var(--sub2); margin-top:3px; font-style:italic; line-height:1.4; }
+
+/* ============ v9: DASHBOARD ============ */
+.dash-score-card{ border-radius:var(--radius); padding:18px; margin-bottom:14px; position:relative; overflow:hidden;
+  background:linear-gradient(135deg, rgba(34,197,94,.20), rgba(99,102,241,.16)); border:1px solid var(--line); display:flex; align-items:center; gap:16px; }
+.dash-ring{ width:74px; height:74px; flex-shrink:0; }
+.dash-score-mid{ flex:1; min-width:0; }
+.dash-score-mid .ds-label{ font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--sub); font-weight:700; }
+.dash-score-mid .ds-num{ font-family:var(--font-head); font-size:22px; font-weight:800; margin-top:2px; }
+.dash-score-mid .ds-sub{ font-size:12px; color:var(--sub); margin-top:3px; line-height:1.4; }
+.dash-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px; }
+.dash-tile{ background:var(--card); border:1px solid var(--line); border-radius:var(--radius-sm); padding:13px; }
+.dash-tile .dt-top{ display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
+.dash-tile .dt-icon{ font-size:16px; }
+.dash-tile .dt-num{ font-family:var(--font-mono); font-size:17px; font-weight:800; }
+.dash-tile .dt-lbl{ font-size:10.5px; color:var(--sub); margin-top:2px; }
+.dash-tile .dt-track{ height:5px; border-radius:3px; background:var(--card2); margin-top:8px; overflow:hidden; }
+.dash-tile .dt-fill{ height:100%; border-radius:3px; }
+.priority-row{ display:flex; align-items:center; gap:10px; background:var(--card); border:1px solid var(--line); border-radius:var(--radius-sm); padding:11px 12px; margin-bottom:8px; }
+.priority-row .pr-dot{ width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.priority-row .pr-text{ flex:1; font-size:13px; font-weight:600; }
+.priority-row .pr-tag{ font-size:10px; color:var(--sub); flex-shrink:0; }
+.insight-card{ background:linear-gradient(135deg, rgba(99,102,241,.14), rgba(34,197,94,.10)); border:1px solid var(--line); border-radius:var(--radius); padding:14px 16px; margin-bottom:10px; font-size:13px; line-height:1.5; }
+.insight-card .ic-tag{ font-size:10.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--accent); font-weight:800; margin-bottom:5px; }
+
+/* ============ v9: GOALS ============ */
+.goal-card{ background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:14px 16px; margin-bottom:10px; }
+.goal-top{ display:flex; align-items:center; gap:10px; }
+.goal-icon{ width:36px; height:36px; border-radius:11px; display:flex; align-items:center; justify-content:center; font-size:17px; background:var(--card2); flex-shrink:0; }
+.goal-title{ font-weight:800; font-size:14.5px; flex:1; min-width:0; }
+.goal-pct{ font-family:var(--font-mono); font-weight:700; font-size:13px; color:var(--accent); }
+.goal-track{ height:8px; border-radius:4px; background:var(--card2); margin-top:10px; overflow:hidden; }
+.goal-fill{ height:100%; border-radius:4px; background:linear-gradient(90deg, var(--accent), var(--accent2)); }
+.goal-meta{ display:flex; justify-content:space-between; font-size:11px; color:var(--sub); margin-top:7px; }
+
+/* ============ v9: CALENDAR ============ */
+.cal-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+.cal-head button{ width:36px; height:36px; border-radius:11px; border:1px solid var(--line); background:var(--card2); }
+.cal-head h3{ font-size:15px; }
+.cal-grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:5px; }
+.cal-dow{ text-align:center; font-size:10px; color:var(--sub2); font-weight:700; padding-bottom:4px; }
+.cal-cell{ aspect-ratio:1; border-radius:10px; background:var(--card); border:1px solid var(--line); display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:12px; font-weight:700; position:relative; }
+.cal-cell.today{ border-color:var(--accent); }
+.cal-cell.empty{ background:none; border:none; }
+.cal-cell .cal-dots{ display:flex; gap:2px; margin-top:3px; }
+.cal-cell .cal-dots span{ width:4px; height:4px; border-radius:50%; }
+.cal-legend{ display:flex; flex-wrap:wrap; gap:8px 14px; font-size:11px; color:var(--sub); margin-top:14px; }
+
+/* ============ v9: SEARCH ============ */
+.search-box{ position:relative; margin-bottom:14px; }
+.search-box input{ padding-left:38px; }
+.search-box .sicon{ position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--sub2); font-size:14px; }
+.search-result{ display:flex; align-items:center; gap:11px; background:var(--card); border:1px solid var(--line); border-radius:var(--radius-sm); padding:11px 12px; margin-bottom:8px; }
+.search-result .sr-icon{ width:32px; height:32px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:15px; background:var(--card2); flex-shrink:0; }
+.search-result .sr-mid{ flex:1; min-width:0; }
+.search-result .sr-title{ font-size:13.5px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.search-result .sr-sub{ font-size:11px; color:var(--sub); margin-top:1px; }
+.search-result .sr-tag{ font-size:9.5px; text-transform:uppercase; letter-spacing:.04em; color:var(--sub2); font-weight:700; flex-shrink:0; }
+
+/* ============ v9: SUBSCRIPTIONS ============ */
+.sub-card{ display:flex; align-items:center; gap:11px; background:var(--card); border:1px solid var(--line); border-radius:var(--radius-sm); padding:12px; margin-bottom:8px; }
+.sub-card.due-soon{ border-color:var(--warn); }
+.sub-icon{ width:38px; height:38px; border-radius:11px; display:flex; align-items:center; justify-content:center; font-size:17px; background:var(--card2); flex-shrink:0; }
+.sub-mid{ flex:1; min-width:0; }
+.sub-name{ font-weight:700; font-size:13.5px; }
+.sub-meta{ font-size:11px; color:var(--sub); margin-top:2px; }
+.sub-amt{ font-family:var(--font-mono); font-weight:800; font-size:14px; text-align:right; }
+
+/* ============ v9: ASSETS / NET WORTH ============ */
+.asset-row{ display:flex; align-items:center; gap:11px; background:var(--card); border:1px solid var(--line); border-radius:var(--radius-sm); padding:11px 12px; margin-bottom:8px; }
+.asset-row .as-icon{ width:32px; height:32px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:14px; background:var(--card2); flex-shrink:0; }
+.asset-row .as-mid{ flex:1; min-width:0; font-size:13.5px; font-weight:700; }
+.asset-row .as-type{ font-size:11px; color:var(--sub); }
+.asset-row .as-val{ font-family:var(--font-mono); font-weight:700; font-size:13.5px; }
+
+/* ============ v9: HEALTH ============ */
+.med-row{ display:flex; align-items:center; gap:11px; background:var(--card); border:1px solid var(--line); border-radius:var(--radius-sm); padding:11px 12px; margin-bottom:8px; }
+.med-icon{ width:34px; height:34px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:16px; background:var(--card2); flex-shrink:0; }
+.med-mid{ flex:1; min-width:0; }
+.med-name{ font-weight:700; font-size:13.5px; }
+.med-meta{ font-size:11px; color:var(--sub); margin-top:2px; }
+.vital-grid{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
+
+/* ============ v9: DOCUMENTS ============ */
+.doc-card{ display:flex; align-items:center; gap:11px; background:var(--card); border:1px solid var(--line); border-radius:var(--radius-sm); padding:12px; margin-bottom:8px; }
+.doc-icon{ width:36px; height:36px; border-radius:11px; display:flex; align-items:center; justify-content:center; font-size:16px; background:var(--card2); flex-shrink:0; }
+.doc-mid{ flex:1; min-width:0; }
+.doc-title{ font-weight:700; font-size:13.5px; }
+.doc-meta{ font-size:11px; color:var(--sub); margin-top:2px; }
+
+/* ============ v9: AI COACH ============ */
+.coach-msg{ background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:14px 16px; margin-bottom:10px; font-size:13.5px; line-height:1.55; display:flex; gap:10px; }
+.coach-msg .cm-icon{ font-size:18px; flex-shrink:0; }
+.coach-empty{ text-align:center; padding:30px 20px; color:var(--sub); font-size:13px; }
+
+/* ============ v9: header search btn ============ */
+.header-actions .icon-btn.search-open{ color:var(--accent); }
 </style>
 </head>
 <body>
@@ -350,20 +448,40 @@ label.fl{ display:block; font-size:12px; color:var(--sub); font-weight:700; marg
 
   <header class="top">
     <div class="greet">
-      <div class="badge" id="badgeEl">G</div>
+      <div class="badge" id="badgeEl"><img id="badgeLogoImg" alt="Ledger"></div>
       <div class="greet-text">
         <h1 id="greetName">Hey there</h1>
         <div class="sub" id="greetSub">Let's make today count</div>
       </div>
     </div>
     <div class="header-actions">
+      <button class="icon-btn" id="headerSearchBtn" title="Search everything">🔍</button>
       <button class="sync-btn" id="syncBtn" title="Save & Sync"><span class="sync-dot"></span><span id="syncBtnLabel">Save &amp; Sync</span></button>
     </div>
   </header>
 
   <main>
+    <!-- ===================== DASHBOARD ===================== -->
+    <section class="screen active" id="screen-dashboard">
+      <div class="dash-score-card">
+        <svg class="dash-ring" viewBox="0 0 80 80"><circle cx="40" cy="40" r="34" fill="none" stroke="var(--line)" stroke-width="8"/><circle id="dashRingFill" cx="40" cy="40" r="34" fill="none" stroke="var(--accent)" stroke-width="8" stroke-linecap="round" stroke-dasharray="213.6" stroke-dashoffset="213.6" transform="rotate(-90 40 40)"/><text id="dashRingText" x="40" y="46" text-anchor="middle" font-size="20" font-weight="800" fill="var(--text)">0%</text></svg>
+        <div class="dash-score-mid">
+          <div class="ds-label">Today's score</div>
+          <div class="ds-num" id="dashScoreHead">Getting started</div>
+          <div class="ds-sub" id="dashScoreSub">Log something to see today's score.</div>
+        </div>
+      </div>
+      <div class="dash-grid" id="dashGrid"></div>
+      <div class="section-head" style="margin-top:6px;"><h2>Top priorities</h2></div>
+      <div id="dashPriorities"></div>
+      <div class="section-head"><h2>Quick actions</h2></div>
+      <div class="chiprow" id="dashQuickActions" style="margin-bottom:2px;"></div>
+      <div class="section-head"><h2>Insight</h2></div>
+      <div class="insight-card"><div class="ic-tag">GP Ledger</div><div id="dashQuoteText">—</div></div>
+    </section>
+
     <!-- ===================== HABITS ===================== -->
-    <section class="screen active" id="screen-habits">
+    <section class="screen" id="screen-habits">
       <div class="quote-card">
         <div class="qlabel">Quote of the day</div>
         <div class="qtext" id="quoteText">—</div>
@@ -387,6 +505,8 @@ label.fl{ display:block; font-size:12px; color:var(--sub); font-weight:700; marg
         <div class="section-head" style="margin:0 0 8px;"><h2>Last 30 days</h2></div>
         <canvas id="financeDonut" height="180"></canvas>
       </div>
+      <div class="section-head"><h2>Budgets this month</h2><button class="link-btn" id="addBudgetBtn">+ Add</button></div>
+      <div class="card" id="budgetCard"></div>
       <div class="section-head"><h2>Ledger</h2><button class="link-btn" id="addTxBtn">+ Add</button></div>
       <div class="card" id="txListCard"><div id="txList"></div></div>
       <button class="fab" id="fabAddTx">+</button>
@@ -416,9 +536,10 @@ label.fl{ display:block; font-size:12px; color:var(--sub); font-weight:700; marg
         <button data-p="year">Year</button>
       </div>
       <div class="card" id="reportSummary"></div>
-      <div class="section-head"><h2>Export</h2></div>
+      <div id="reportExportArea"></div>
+      <div class="section-head"><h2>Export everything</h2></div>
       <div class="card">
-        <label class="fl">Period</label>
+        <label class="fl" style="margin-top:0;">Period</label>
         <select id="expPeriod">
           <option value="today">Today</option>
           <option value="week" selected>This week</option>
@@ -465,11 +586,23 @@ label.fl{ display:block; font-size:12px; color:var(--sub); font-weight:700; marg
 
     <!-- ===================== MORE (menu) ===================== -->
     <section class="screen" id="screen-more">
-      <div class="section-head" style="margin-top:2px;"><h2>More</h2></div>
-      <div class="more-card" data-open="diet"><div class="mc-icon">🥗</div><div class="mc-mid"><div class="mc-title">Diet &amp; Nutrition</div><div class="mc-sub">Log meals, track macros, get a plan</div></div><span class="chev">›</span></div>
+      <div class="section-head" style="margin-top:2px;"><h2>Plan</h2></div>
+      <div class="more-card" data-open="goals"><div class="mc-icon">🎯</div><div class="mc-mid"><div class="mc-title">Goals</div><div class="mc-sub">Debt-free, savings, weight, habits &amp; more</div></div><span class="chev">›</span></div>
+      <div class="more-card" data-open="calendar"><div class="mc-icon">📆</div><div class="mc-mid"><div class="mc-title">Calendar</div><div class="mc-sub">Every day, tap to see everything logged</div></div><span class="chev">›</span></div>
+      <div class="more-card" data-open="coach"><div class="mc-icon">🤖</div><div class="mc-mid"><div class="mc-title">AI Coach</div><div class="mc-sub">Plain-language insights from your data</div></div><span class="chev">›</span></div>
+      <div class="section-head"><h2>Track</h2></div>
+      <div class="more-card" data-open="journal"><div class="mc-icon">📔</div><div class="mc-mid"><div class="mc-title">Journal</div><div class="mc-sub">One entry per day, font &amp; color, export</div></div><span class="chev">›</span></div>
+      <div class="more-card" data-open="diet"><div class="mc-icon">🥗</div><div class="mc-mid"><div class="mc-title">Diet &amp; Nutrition</div><div class="mc-sub">Log meals, photo estimate, macros</div></div><span class="chev">›</span></div>
+      <div class="more-card" data-open="health"><div class="mc-icon">💊</div><div class="mc-mid"><div class="mc-title">Health</div><div class="mc-sub">Medicines, appointments, BP &amp; sugar</div></div><span class="chev">›</span></div>
+      <div class="section-head"><h2>Money</h2></div>
       <div class="more-card" data-open="debts"><div class="mc-icon">🏦</div><div class="mc-mid"><div class="mc-title">Debts / EMI</div><div class="mc-sub">Loans, EMI dates, balances</div></div><span class="chev">›</span></div>
+      <div class="more-card" data-open="subscriptions"><div class="mc-icon">🔁</div><div class="mc-mid"><div class="mc-title">Subscriptions</div><div class="mc-sub">Recurring bills, renewal reminders</div></div><span class="chev">›</span></div>
+      <div class="more-card" data-open="assets"><div class="mc-icon">🏛️</div><div class="mc-mid"><div class="mc-title">Assets &amp; Net Worth</div><div class="mc-sub">Bank, cash, investments, gold, property</div></div><span class="chev">›</span></div>
+      <div class="section-head"><h2>Review</h2></div>
       <div class="more-card" data-open="trends"><div class="mc-icon">📈</div><div class="mc-mid"><div class="mc-title">Trends</div><div class="mc-sub">Habit &amp; finance charts</div></div><span class="chev">›</span></div>
       <div class="more-card" data-open="reports"><div class="mc-icon">🧾</div><div class="mc-mid"><div class="mc-title">Reports</div><div class="mc-sub">Filter, export Excel/PDF</div></div><span class="chev">›</span></div>
+      <div class="more-card" data-open="documents"><div class="mc-icon">🗂️</div><div class="mc-mid"><div class="mc-title">Documents Vault</div><div class="mc-sub">Insurance, vehicle, loan &amp; ID references</div></div><span class="chev">›</span></div>
+      <div class="section-head"><h2>System</h2></div>
       <div class="more-card" data-open="settings"><div class="mc-icon">⚙️</div><div class="mc-mid"><div class="mc-title">Settings</div><div class="mc-sub">Sheet, Telegram, theme, backup</div></div><span class="chev">›</span></div>
     </section>
 
@@ -479,7 +612,9 @@ label.fl{ display:block; font-size:12px; color:var(--sub); font-weight:700; marg
       <div class="card">
         <div class="stat-grid">
           <div class="stat"><div class="num" id="debtTotalBalance">₹0</div><div class="lbl">Total balance owed</div></div>
-          <div class="stat"><div class="num" id="debtTotalEmi">₹0</div><div class="lbl">Total monthly EMI</div></div>
+          <div class="stat"><div class="num" id="debtTotalEmi">₹0</div><div class="lbl">Total EMI this month</div></div>
+          <div class="stat"><div class="num" id="debtPaidThisMonth" style="color:var(--good)">₹0</div><div class="lbl">Paid this month</div></div>
+          <div class="stat"><div class="num" id="debtRemainingThisMonth" style="color:var(--danger)">₹0</div><div class="lbl">Remaining this month</div></div>
         </div>
       </div>
       <div class="section-head"><h2>Your loans</h2><button class="link-btn" id="addDebtBtn">+ Add</button></div>
@@ -489,6 +624,7 @@ label.fl{ display:block; font-size:12px; color:var(--sub); font-weight:700; marg
 
     <!-- ===================== JOURNAL / DIARY ===================== -->
     <section class="screen" id="screen-journal">
+      <button class="link-btn" data-back="more" style="margin-bottom:8px;">‹ More</button>
       <div class="journal-datebar">
         <button class="journal-navbtn" id="jPrevDay">‹</button>
         <input type="date" id="journalDateInput">
@@ -535,6 +671,105 @@ label.fl{ display:block; font-size:12px; color:var(--sub); font-weight:700; marg
       <button class="fab" id="fabAddMeal">+</button>
     </section>
 
+    <!-- ===================== GOALS ===================== -->
+    <section class="screen" id="screen-goals">
+      <button class="link-btn" data-back="more" style="margin-bottom:8px;">‹ More</button>
+      <div class="section-head" style="margin-top:2px;"><h2>Your goals</h2><button class="link-btn" id="addGoalBtn">+ Add</button></div>
+      <div id="goalList"></div>
+      <button class="fab" id="fabAddGoal">+</button>
+    </section>
+
+    <!-- ===================== CALENDAR ===================== -->
+    <section class="screen" id="screen-calendar">
+      <button class="link-btn" data-back="more" style="margin-bottom:8px;">‹ More</button>
+      <div class="card">
+        <div class="cal-head">
+          <button id="calPrevBtn">‹</button>
+          <h3 id="calMonthLabel">—</h3>
+          <button id="calNextBtn">›</button>
+        </div>
+        <div class="cal-grid" id="calGrid"></div>
+        <div class="cal-legend">
+          <span class="li"><span class="dot" style="background:#22c55e;"></span>Habits</span>
+          <span class="li"><span class="dot" style="background:#f59e0b;"></span>Finance</span>
+          <span class="li"><span class="dot" style="background:#6366f1;"></span>Journal</span>
+          <span class="li"><span class="dot" style="background:#f43f5e;"></span>Diet</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== SEARCH ===================== -->
+    <section class="screen" id="screen-search">
+      <button class="link-btn" data-back="dashboard" style="margin-bottom:8px;">‹ Home</button>
+      <div class="search-box"><span class="sicon">🔍</span><input type="text" id="searchInput" placeholder="Search habits, transactions, journal, meals, EMI…"></div>
+      <div id="searchResults"><div class="empty-state"><div class="em-icon">🔍</div><div class="em-title">Search everything</div>Type to search across every module at once.</div></div>
+    </section>
+
+    <!-- ===================== SUBSCRIPTIONS ===================== -->
+    <section class="screen" id="screen-subscriptions">
+      <button class="link-btn" data-back="more" style="margin-bottom:8px;">‹ More</button>
+      <div class="card">
+        <div class="stat-grid">
+          <div class="stat"><div class="num" id="subMonthlyTotal">₹0</div><div class="lbl">Monthly total</div></div>
+          <div class="stat"><div class="num" id="subYearlyTotal">₹0</div><div class="lbl">Yearly total</div></div>
+        </div>
+      </div>
+      <div class="section-head"><h2>Recurring bills</h2><button class="link-btn" id="addSubBtn">+ Add</button></div>
+      <div id="subList"></div>
+      <button class="fab" id="fabAddSub">+</button>
+    </section>
+
+    <!-- ===================== ASSETS / NET WORTH ===================== -->
+    <section class="screen" id="screen-assets">
+      <button class="link-btn" data-back="more" style="margin-bottom:8px;">‹ More</button>
+      <div class="card">
+        <div class="stat-grid">
+          <div class="stat"><div class="num" id="netWorthNum">₹0</div><div class="lbl">Net worth</div></div>
+          <div class="stat"><div class="num" id="assetsTotalNum">₹0</div><div class="lbl">Total assets</div></div>
+        </div>
+        <div class="hint" id="netWorthHint" style="margin-top:10px;"></div>
+      </div>
+      <div class="section-head"><h2>Assets</h2><button class="link-btn" id="addAssetBtn">+ Add</button></div>
+      <div id="assetList"></div>
+      <div class="hint">Liabilities are pulled automatically from your Debts / EMI tab.</div>
+      <button class="fab" id="fabAddAsset">+</button>
+    </section>
+
+    <!-- ===================== HEALTH ===================== -->
+    <section class="screen" id="screen-health">
+      <button class="link-btn" data-back="more" style="margin-bottom:8px;">‹ More</button>
+      <div class="section-head" style="margin-top:2px;"><h2>Today's vitals</h2></div>
+      <div class="card">
+        <div class="vital-grid">
+          <div><label class="fl" style="margin-top:0;">BP</label><input type="text" id="vitalBp" placeholder="120/80"></div>
+          <div><label class="fl" style="margin-top:0;">Sugar</label><input type="text" id="vitalSugar" placeholder="mg/dL"></div>
+          <div><label class="fl" style="margin-top:0;">Weight</label><input type="text" id="vitalWeight" placeholder="kg"></div>
+        </div>
+        <button class="btn primary" id="saveVitalsBtn" style="margin-top:12px;">Save today's vitals</button>
+      </div>
+      <div class="section-head"><h2>Medicines</h2><button class="link-btn" id="addMedBtn">+ Add</button></div>
+      <div id="medList"></div>
+      <div class="section-head"><h2>Appointments</h2><button class="link-btn" id="addApptBtn">+ Add</button></div>
+      <div id="apptList"></div>
+    </section>
+
+    <!-- ===================== DOCUMENTS VAULT ===================== -->
+    <section class="screen" id="screen-documents">
+      <button class="link-btn" data-back="more" style="margin-bottom:8px;">‹ More</button>
+      <div class="hint" style="margin-bottom:12px;">Reference info only (numbers, dates, notes) — not a place to store scanned copies or passwords.</div>
+      <div class="section-head" style="margin-top:2px;"><h2>Documents</h2><button class="link-btn" id="addDocBtn">+ Add</button></div>
+      <div id="docList"></div>
+      <button class="fab" id="fabAddDoc">+</button>
+    </section>
+
+    <!-- ===================== AI COACH ===================== -->
+    <section class="screen" id="screen-coach">
+      <button class="link-btn" data-back="more" style="margin-bottom:8px;">‹ More</button>
+      <div class="hint" style="margin-bottom:12px;">Reads your last 30 days of habits, routine, finance, debts and diet, and explains it in plain language. Uses the same Gemini key as photo nutrition (Settings → Diet &amp; body stats). Nothing is sent anywhere except Google's Gemini API, directly from your device.</div>
+      <button class="btn primary" id="runCoachBtn" style="margin-bottom:14px;">✨ Get today's insights</button>
+      <div id="coachOutput"></div>
+    </section>
+
     <!-- ===================== SETTINGS ===================== -->
     <section class="screen" id="screen-settings">
       <button class="link-btn" data-back="more" style="margin-bottom:8px;">‹ More</button>
@@ -553,9 +788,10 @@ label.fl{ display:block; font-size:12px; color:var(--sub); font-weight:700; marg
 
       <div class="settings-group">
         <h3>App Icon</h3>
+        <div class="hint" style="padding:0 16px 10px;">The header, onboarding screen and About now always show the GP Ledger brand logo. The tools below generate an <b>alternate</b> letter/color icon you can download and swap in instead, if you'd rather not use the brand logo.</div>
         <div class="settings-list">
           <div class="settings-row">
-            <div class="sr-label">Icon letter / emoji<div class="sr-sub">Shown as the in-app badge above</div></div>
+            <div class="sr-label">Icon letter / emoji<div class="sr-sub">Used only for the downloadable alternate icon below</div></div>
           </div>
           <div style="padding:0 16px 14px; display:flex; gap:8px;">
             <input type="text" id="setIconInitial" maxlength="2" style="width:70px; text-align:center;" value="G">
@@ -566,7 +802,7 @@ label.fl{ display:block; font-size:12px; color:var(--sub); font-weight:700; marg
             <div class="sr-label">Real home-screen icon<div class="sr-sub">Phones cache the actual icon file — download it, then replace the file in your project and reinstall the app. See setup guide.</div></div>
           </div>
           <div style="padding:0 16px 16px;">
-            <button class="btn secondary" id="downloadIconsBtn">⬇ Download my icon files (all sizes)</button>
+            <button class="btn secondary" id="downloadIconsBtn">⬇ Download alternate icon files (all sizes)</button>
           </div>
         </div>
       </div>
@@ -690,17 +926,17 @@ label.fl{ display:block; font-size:12px; color:var(--sub); font-weight:700; marg
       <div class="settings-group">
         <h3>About</h3>
         <div class="settings-list">
-          <div class="settings-row" id="aboutRow" style="cursor:pointer;"><div class="sr-label">GP Ledger</div><div class="sr-val">v8.0 ›</div></div>
+          <div class="settings-row" id="aboutRow" style="cursor:pointer;"><div class="sr-label">GP Ledger</div><div class="sr-val">v9.0 ›</div></div>
         </div>
       </div>
     </section>
   </main>
 
   <nav class="bottom">
-    <button data-screen="habits" class="active"><span class="ic">✅</span>Habits</button>
+    <button data-screen="dashboard" class="active"><span class="ic">🏠</span>Home</button>
+    <button data-screen="habits"><span class="ic">✅</span>Habits</button>
     <button data-screen="finance"><span class="ic">💰</span>Finance</button>
     <button data-screen="routine"><span class="ic">⏱️</span>Routine</button>
-    <button data-screen="journal"><span class="ic">📔</span>Journal</button>
     <button data-screen="more"><span class="ic">⋯</span>More</button>
   </nav>
 
@@ -713,9 +949,9 @@ label.fl{ display:block; font-size:12px; color:var(--sub); font-weight:700; marg
 
   <!-- ============ ONBOARDING ============ -->
   <div class="onb" id="onboarding" style="display:none;">
-    <div class="badge" style="width:60px;height:60px;font-size:26px;border-radius:18px;margin-bottom:18px;">G</div>
-    <h1>Welcome to GP Ledger</h1>
-    <p>Habits, money and your daily routine — one simple app. What should we call you?</p>
+    <div class="badge" style="width:60px;height:60px;font-size:26px;border-radius:18px;margin-bottom:18px;"><img id="onbLogoImg" alt="Ledger"></div>
+    <h1>Welcome to Ledger</h1>
+    <p>Your life, one system — habits, money, health and more. What should we call you?</p>
     <input type="text" id="onbName" placeholder="Your name" style="margin-bottom:14px;">
     <button class="btn primary" id="onbStart">Let's go</button>
   </div>
@@ -723,9 +959,17 @@ label.fl{ display:block; font-size:12px; color:var(--sub); font-weight:700; marg
 
 <script>
 /* ======================================================================
-   GP LEDGER v6 — single-file app logic
+   GP LEDGER v9 — single-file app logic
    ====================================================================== */
 'use strict';
+
+/* ---------- v9.1: brand logo, embedded as a data URI so it never depends on
+   sibling files loading (works even in isolated previews) ---------- */
+const LOGO_DATA_URI = 'data:image/png;base64,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';
+(function applyBrandLogo(){
+  const b = document.getElementById('badgeLogoImg'); if(b) b.src = LOGO_DATA_URI;
+  const o = document.getElementById('onbLogoImg'); if(o) o.src = LOGO_DATA_URI;
+})();
 
 /* ---------- date helpers (LOCAL date, never UTC — v5/v6 fix) ---------- */
 function todayStr(){ return localDateStr(new Date()); }
@@ -774,21 +1018,74 @@ function defaultSettings(){
   };
 }
 const QUOTES = [
+  ["It always seems impossible until it's done.","Nelson Mandela"],
+  ["The way to get started is to quit talking and begin doing.","Walt Disney"],
+  ["In the middle of difficulty lies opportunity.","Albert Einstein"],
+  ["The only way to do great work is to love what you do.","Steve Jobs"],
+  ["Simplicity is the ultimate sophistication.","Leonardo da Vinci"],
+  ["He who has a why to live can bear almost any how.","Friedrich Nietzsche"],
+  ["The journey of a thousand miles begins with a single step.","Lao Tzu"],
+  ["What we think, we become.","Buddha"],
+  ["The best way out is always through.","Robert Frost"],
+  ["Do not go where the path may lead, go instead where there is no path and leave a trail.","Ralph Waldo Emerson"],
+  ["Whether you think you can, or you think you can't — you're right.","Henry Ford"],
+  ["The best time to plant a tree was twenty years ago. The second best time is now.","Chinese Proverb"],
+  ["Happiness is not something ready made. It comes from your own actions.","Dalai Lama"],
+  ["Believe you can and you're halfway there.","Theodore Roosevelt"],
+  ["It does not matter how slowly you go as long as you do not stop.","Confucius"],
+  ["Success is not final, failure is not fatal: it is the courage to continue that counts.","Winston Churchill"],
+  ["The two most important days in your life are the day you are born, and the day you find out why.","Mark Twain"],
+  ["Try not to become a person of success, but rather try to become a person of value.","Albert Einstein"],
+  ["I have not failed. I've just found ten thousand ways that won't work.","Thomas Edison"],
+  ["If you want to lift yourself up, lift up someone else.","Booker T. Washington"],
+  ["The greatest glory in living lies not in never falling, but in rising every time we fall.","Nelson Mandela"],
+  ["You must be the change you wish to see in the world.","Mahatma Gandhi"],
+  ["Life is really simple, but we insist on making it complicated.","Confucius"],
+  ["Keep your face always toward the sunshine, and shadows will fall behind you.","Walt Whitman"],
+  ["The only true wisdom is in knowing you know nothing.","Socrates"],
+  ["What lies behind us and what lies before us are tiny matters compared to what lies within us.","Ralph Waldo Emerson"],
+  ["The future belongs to those who believe in the beauty of their dreams.","Eleanor Roosevelt"],
+  ["Genius is one percent inspiration and ninety-nine percent perspiration.","Thomas Edison"],
+  ["The purpose of our lives is to be happy.","Dalai Lama"],
+  ["Life is ten percent what happens to us and ninety percent how we react to it.","Charles R. Swindoll"],
+  ["The mind that opens to a new idea never returns to its original size.","Albert Einstein"],
+  ["Courage is not the absence of fear, but the triumph over it.","Nelson Mandela"],
+  ["You miss one hundred percent of the shots you don't take.","Wayne Gretzky"],
+  ["Whatever you are, be a good one.","Abraham Lincoln"],
+  ["The only person you are destined to become is the person you decide to be.","Ralph Waldo Emerson"],
+  ["Act as if what you do makes a difference. It does.","William James"],
+  ["Nothing is impossible. The word itself says 'I'm possible.'","Audrey Hepburn"],
+  ["You are never too old to set another goal or to dream a new dream.","C. S. Lewis"],
+  ["Do what you can, with what you have, where you are.","Theodore Roosevelt"],
+  ["The only limit to our realization of tomorrow will be our doubts of today.","Franklin D. Roosevelt"],
+  ["Everything has beauty, but not everyone can see it.","Confucius"],
+  ["Twenty years from now you will be more disappointed by the things you didn't do than by the ones you did do.","Mark Twain"],
+  ["The only way to have a friend is to be one.","Ralph Waldo Emerson"],
+  ["Life shrinks or expands in proportion to one's courage.","Anaïs Nin"],
+  ["Perfection is not attainable, but if we chase perfection we can catch excellence.","Vince Lombardi"],
+  ["You can't use up creativity. The more you use, the more you have.","Maya Angelou"],
+  ["Fall seven times, stand up eight.","Japanese Proverb"],
+  ["Not everything that is faced can be changed, but nothing can be changed until it is faced.","James Baldwin"],
+  ["There is only one way to avoid criticism: do nothing, say nothing, and be nothing.","Aristotle"],
+  ["To be yourself in a world that is constantly trying to make you something else is the greatest accomplishment.","Ralph Waldo Emerson"],
+  ["Turn your wounds into wisdom.","Oprah Winfrey"],
+  ["A person who never made a mistake never tried anything new.","Albert Einstein"],
+  ["Gratitude turns what we have into enough.","Anonymous"],
+  ["Patience is not the ability to wait, but the ability to keep a good attitude while waiting.","Joyce Meyer"],
+  ["The quieter you become, the more you are able to hear.","Rumi"],
+  ["Kindness is a language which the deaf can hear and the blind can see.","Mark Twain"],
+  ["Knowing yourself is the beginning of all wisdom.","Aristotle"],
+  ["We are what we repeatedly do. Excellence, then, is not an act but a habit.","Aristotle"],
+  ["The secret of getting ahead is getting started.","Mark Twain"],
+  ["What gets measured gets managed.","Peter Drucker"],
   ["Small steps every day beat big leaps once in a while.","GP Ledger"],
   ["Discipline is choosing what you want most over what you want now.","GP Ledger"],
   ["Your habits decide your future self — vote wisely today.","GP Ledger"],
   ["Progress, not perfection.","GP Ledger"],
-  ["The best time to start was yesterday. The next best time is now.","GP Ledger"],
-  ["You don't have to be extreme, just consistent.","GP Ledger"],
   ["Every tick on this app is a promise kept to yourself.","GP Ledger"],
-  ["A little water, a little walk, a little less scrolling — it adds up.","GP Ledger"],
   ["Track it, don't judge it. Awareness comes before change.","GP Ledger"],
-  ["Rest is productive too — sleep is a habit, not a luxury.","GP Ledger"],
   ["Money habits are just habits — small saves compound quietly.","GP Ledger"],
   ["Show up for yourself today, even in a small way.","GP Ledger"],
-  ["What gets measured gets managed.","Peter Drucker"],
-  ["We are what we repeatedly do. Excellence, then, is not an act but a habit.","Aristotle"],
-  ["The secret of getting ahead is getting started.","Mark Twain"],
 ];
 function dayIndexSince2020(dateStr){
   const d = new Date(dateStr+'T00:00:00'); const epoch = new Date('2020-01-01T00:00:00');
@@ -800,12 +1097,14 @@ function todaysQuote(){
 }
 
 /* ---------- state ---------- */
-let S = { habits:[], transactions:[], settings:{}, routineLogs:{}, routineCats:[], runningTimer:null, debts:[], journal:{}, diet:{ meals:{}, settings:{} } };
+let S = { habits:[], transactions:[], settings:{}, routineLogs:{}, routineCats:[], runningTimer:null, debts:[], journal:{}, diet:{ meals:{}, settings:{} },
+  goals:[], subscriptions:[], assets:[], health:{ meds:[], vitals:{}, appts:[] }, documents:[], aiCoach:{ lastInsights:[], lastRun:'' }, budgets:[] };
 let selectedDate = todayStr();
 
 function defaultDietSettings(){
   return { height:'', weight:'', age:'', sex:'male', activity:'1.375', goal:'maintain', geminiKey:'' };
 }
+function defaultHealth(){ return { meds:[], vitals:{}, appts:[] }; }
 
 function loadState(){
   try{
@@ -818,6 +1117,13 @@ function loadState(){
     const db = localStorage.getItem('gpl_debts');
     const jr = localStorage.getItem('gpl_journal');
     const dt = localStorage.getItem('gpl_diet');
+    const go = localStorage.getItem('gpl_goals');
+    const su = localStorage.getItem('gpl_subscriptions');
+    const as = localStorage.getItem('gpl_assets');
+    const he = localStorage.getItem('gpl_health');
+    const doc = localStorage.getItem('gpl_documents');
+    const ai = localStorage.getItem('gpl_aiCoach');
+    const bu = localStorage.getItem('gpl_budgets');
 
     S.habits = h ? JSON.parse(h) : null;
     S.transactions = t ? JSON.parse(t) : [];
@@ -828,10 +1134,19 @@ function loadState(){
     S.debts = db ? JSON.parse(db) : [];
     S.journal = jr ? JSON.parse(jr) : {};
     S.diet = dt ? JSON.parse(dt) : { meals:{}, settings:defaultDietSettings() };
+    S.goals = go ? JSON.parse(go) : [];
+    S.subscriptions = su ? JSON.parse(su) : [];
+    S.assets = as ? JSON.parse(as) : [];
+    S.health = he ? JSON.parse(he) : defaultHealth();
+    S.documents = doc ? JSON.parse(doc) : [];
+    S.aiCoach = ai ? JSON.parse(ai) : { lastInsights:[], lastRun:'' };
+    S.budgets = bu ? JSON.parse(bu) : [];
   }catch(e){
     console.warn('State parse failed, reseeding.', e);
     S.habits = null; S.transactions = []; S.settings = null; S.routineLogs = {}; S.routineCats = null; S.runningTimer = null;
     S.debts = []; S.journal = {}; S.diet = { meals:{}, settings:defaultDietSettings() };
+    S.goals = []; S.subscriptions = []; S.assets = []; S.health = defaultHealth(); S.documents = []; S.aiCoach = { lastInsights:[], lastRun:'' };
+    S.budgets = [];
   }
   // Guard against the v5 "first-open glitch": if habits is missing, not an array,
   // or empty on a truly fresh install, seed defaults BEFORE first render.
@@ -847,6 +1162,16 @@ function loadState(){
   if(!S.diet.meals || typeof S.diet.meals!=='object') S.diet.meals = {};
   S.diet.settings = Object.assign(defaultDietSettings(), S.diet.settings||{});
   S.habits.forEach(h=>{ if(h.linkedRoutineCat===undefined) h.linkedRoutineCat=''; if(!h.quickAmounts) h.quickAmounts=[]; });
+  if(!Array.isArray(S.goals)) S.goals = [];
+  if(!Array.isArray(S.subscriptions)) S.subscriptions = [];
+  if(!Array.isArray(S.assets)) S.assets = [];
+  if(!S.health || typeof S.health!=='object') S.health = defaultHealth();
+  if(!Array.isArray(S.health.meds)) S.health.meds = [];
+  if(!S.health.vitals || typeof S.health.vitals!=='object') S.health.vitals = {};
+  if(!Array.isArray(S.health.appts)) S.health.appts = [];
+  if(!Array.isArray(S.documents)) S.documents = [];
+  if(!S.aiCoach || typeof S.aiCoach!=='object') S.aiCoach = { lastInsights:[], lastRun:'' };
+  if(!Array.isArray(S.budgets)) S.budgets = [];
   saveState(); // persist any seeding immediately so a refresh mid-session can't glitch
 }
 function saveState(){
@@ -860,6 +1185,13 @@ function saveState(){
     localStorage.setItem('gpl_debts', JSON.stringify(S.debts));
     localStorage.setItem('gpl_journal', JSON.stringify(S.journal));
     localStorage.setItem('gpl_diet', JSON.stringify(S.diet));
+    localStorage.setItem('gpl_goals', JSON.stringify(S.goals));
+    localStorage.setItem('gpl_subscriptions', JSON.stringify(S.subscriptions));
+    localStorage.setItem('gpl_assets', JSON.stringify(S.assets));
+    localStorage.setItem('gpl_health', JSON.stringify(S.health));
+    localStorage.setItem('gpl_documents', JSON.stringify(S.documents));
+    localStorage.setItem('gpl_aiCoach', JSON.stringify(S.aiCoach));
+    localStorage.setItem('gpl_budgets', JSON.stringify(S.budgets));
   }catch(e){ console.error('Save failed', e); }
   if(S.settings.autoSync && S.settings.sheetUrl){ scheduleAutoSync(); }
 }
@@ -880,9 +1212,10 @@ function applyTheme(){
   renderBadge();
 }
 function renderBadge(){
-  const b = document.getElementById('badgeEl');
-  b.style.background = `linear-gradient(135deg, ${S.settings.iconColor1}, ${S.settings.iconColor2})`;
-  b.textContent = (S.settings.iconInitial || 'G').slice(0,2);
+  // v9: the header badge is now the fixed GP Ledger brand mark (see index.html),
+  // not the user-customizable letter/color badge from Settings → App Icon.
+  // That control still works for generating alternate downloadable icon files
+  // (see downloadIconsBtn below) — it just no longer drives this element live.
 }
 
 /* ---------- toast / motivation ---------- */
@@ -1303,7 +1636,19 @@ function renderTrends(){
 let reportFilter='all', reportPeriod='week';
 function renderReportChips(){
   const chips = document.getElementById('reportChips');
-  const items = [{id:'all',label:'All',icon:'🧾'}, ...S.habits.map(h=>({id:h.id,label:h.name,icon:h.icon})), {id:'finance',label:'Finance',icon:'💰'}];
+  const items = [
+    {id:'all',label:'Overview',icon:'🧾'},
+    {id:'finance',label:'Finance',icon:'💰'},
+    {id:'debts',label:'Debts/EMI',icon:'🏦'},
+    {id:'routine',label:'Routine',icon:'⏱️'},
+    {id:'journal',label:'Journal',icon:'📔'},
+    {id:'diet',label:'Diet',icon:'🥗'},
+    {id:'goals',label:'Goals',icon:'🎯'},
+    {id:'subscriptions',label:'Subscriptions',icon:'🔁'},
+    {id:'assets',label:'Net Worth',icon:'🏛️'},
+    {id:'health',label:'Health',icon:'💊'},
+    ...S.habits.map(h=>({id:h.id,label:h.name,icon:h.icon})),
+  ];
   chips.innerHTML='';
   items.forEach(it=>{
     const b = document.createElement('button');
@@ -1321,11 +1666,32 @@ function periodRange(period){
   const d=new Date(); return [localDateStr(new Date(d.getFullYear(),0,1)), localDateStr(new Date(d.getFullYear(),11,31))];
 }
 function eachDate(a,b){ const out=[]; let d=a; while(d<=b && out.length<400){ out.push(d); d=addDays(d,1);} return out; }
+function reportExportBtns(kind){
+  return `<div class="section-head"><h2>Export this report</h2></div><div class="card"><div class="btn-row"><button class="btn secondary" data-rexp="xlsx" data-kind="${kind}">⬇ Excel</button><button class="btn secondary" data-rexp="pdf" data-kind="${kind}">⬇ PDF</button></div></div>`;
+}
+function wireReportExportBtns(){
+  document.querySelectorAll('#reportExportArea [data-rexp]').forEach(btn=>{
+    btn.onclick = ()=>{
+      const kind = btn.dataset.kind; const fmt = btn.dataset.rexp;
+      const [a,b] = periodRange(reportPeriod);
+      if(kind==='debts') fmt==='xlsx' ? exportDebtsExcel(a,b) : exportDebtsPdf(a,b);
+      if(kind==='journal') fmt==='xlsx' ? exportJournalReportExcel(a,b) : exportJournalReportPdf(a,b);
+      if(kind==='diet') fmt==='xlsx' ? exportDietReportExcel(a,b) : exportDietReportPdf(a,b);
+      if(kind==='routine') fmt==='xlsx' ? exportRoutineReportExcel(a,b) : exportRoutineReportPdf(a,b);
+      if(kind==='goals') fmt==='xlsx' ? exportGoalsExcel() : exportGoalsPdf();
+      if(kind==='subscriptions') fmt==='xlsx' ? exportSubscriptionsExcel() : exportSubscriptionsPdf();
+      if(kind==='assets') fmt==='xlsx' ? exportAssetsExcel() : exportAssetsPdf();
+      if(kind==='health') fmt==='xlsx' ? exportHealthExcel(a,b) : exportHealthPdf(a,b);
+    };
+  });
+}
 function renderReports(){
   renderReportChips();
   const summary = document.getElementById('reportSummary');
+  const expArea = document.getElementById('reportExportArea');
   const [a,b] = periodRange(reportPeriod);
   const dates = eachDate(a, b<todayStr()?b:todayStr());
+  expArea.innerHTML = '';
 
   if(reportFilter==='finance'){
     const txs = S.transactions.filter(t=>t.date>=a && t.date<=b);
@@ -1335,6 +1701,87 @@ function renderReports(){
       <div class="stat"><div class="num" style="color:var(--good)">${fmtMoney(inc)}</div><div class="lbl">Income</div></div>
       <div class="stat"><div class="num" style="color:var(--danger)">${fmtMoney(out)}</div><div class="lbl">Expense</div></div>
     </div><div class="stat" style="margin-top:10px;"><div class="num">${fmtMoney(inc-out)}</div><div class="lbl">Net</div></div>`;
+    return;
+  }
+  if(reportFilter==='debts'){
+    const ym = currentYM();
+    const paidTotal = S.debts.reduce((s,d)=>{ const pm=d.paidMonths&&d.paidMonths[ym]; return s + (pm ? (typeof pm==='object'?Number(pm.amount):Number(d.emiAmount)) : 0); },0);
+    const totalEmi = S.debts.reduce((s,d)=>s+Number(d.emiAmount||0),0);
+    const totalBal = S.debts.reduce((s,d)=>s+Number(d.balance||0),0);
+    summary.innerHTML = `<div class="stat-grid">
+      <div class="stat"><div class="num" style="color:var(--good)">${fmtMoney(paidTotal)}</div><div class="lbl">Paid this month</div></div>
+      <div class="stat"><div class="num" style="color:var(--danger)">${fmtMoney(Math.max(0,totalEmi-paidTotal))}</div><div class="lbl">Remaining this month</div></div>
+      <div class="stat"><div class="num">${fmtMoney(totalEmi)}</div><div class="lbl">Total EMI/month</div></div>
+      <div class="stat"><div class="num">${fmtMoney(totalBal)}</div><div class="lbl">Total balance owed</div></div>
+    </div>`;
+    expArea.innerHTML = reportExportBtns('debts'); wireReportExportBtns();
+    return;
+  }
+  if(reportFilter==='journal'){
+    const entries = Object.keys(S.journal).filter(ds=>ds>=a&&ds<=b);
+    const wordCount = entries.reduce((s,ds)=> s + (S.journal[ds].text||'').split(/\s+/).filter(Boolean).length, 0);
+    summary.innerHTML = `<div class="stat-grid">
+      <div class="stat"><div class="num">${entries.length}</div><div class="lbl">Days journaled</div></div>
+      <div class="stat"><div class="num">${wordCount}</div><div class="lbl">Words written</div></div>
+    </div>`;
+    expArea.innerHTML = reportExportBtns('journal'); wireReportExportBtns();
+    return;
+  }
+  if(reportFilter==='diet'){
+    const mealsInRange = []; Object.keys(S.diet.meals).forEach(ds=>{ if(ds>=a&&ds<=b) (S.diet.meals[ds]||[]).forEach(m=>mealsInRange.push(m)); });
+    const totalCal = mealsInRange.reduce((s,m)=>s+Number(m.calories||0),0);
+    const daysLogged = new Set(Object.keys(S.diet.meals).filter(ds=>ds>=a&&ds<=b&&(S.diet.meals[ds]||[]).length)).size;
+    summary.innerHTML = `<div class="stat-grid">
+      <div class="stat"><div class="num">${mealsInRange.length}</div><div class="lbl">Meals logged</div></div>
+      <div class="stat"><div class="num">${Math.round(totalCal)}</div><div class="lbl">Total calories</div></div>
+    </div><div class="stat" style="margin-top:10px;"><div class="num">${daysLogged}/${dates.length}</div><div class="lbl">Days logged</div></div>`;
+    expArea.innerHTML = reportExportBtns('diet'); wireReportExportBtns();
+    return;
+  }
+  if(reportFilter==='routine'){
+    let totalMin=0; dates.forEach(ds=> totalMin += routineMinutesForDate(ds));
+    summary.innerHTML = `<div class="stat-grid">
+      <div class="stat"><div class="num">${(totalMin/60).toFixed(1)}h</div><div class="lbl">Total logged</div></div>
+      <div class="stat"><div class="num">${dates.length?(totalMin/dates.length/60).toFixed(1):0}h</div><div class="lbl">Avg per day</div></div>
+    </div>`;
+    expArea.innerHTML = reportExportBtns('routine'); wireReportExportBtns();
+    return;
+  }
+  if(reportFilter==='goals'){
+    const onTrack = S.goals.filter(g=>!goalProgressCalc(g).behind).length;
+    summary.innerHTML = `<div class="stat-grid">
+      <div class="stat"><div class="num">${S.goals.length}</div><div class="lbl">Total goals</div></div>
+      <div class="stat"><div class="num" style="color:var(--good)">${onTrack}/${S.goals.length}</div><div class="lbl">On track</div></div>
+    </div>`;
+    expArea.innerHTML = reportExportBtns('goals'); wireReportExportBtns();
+    return;
+  }
+  if(reportFilter==='subscriptions'){
+    const monthly = S.subscriptions.reduce((s,x)=>s+subMonthlyAmount(x),0);
+    summary.innerHTML = `<div class="stat-grid">
+      <div class="stat"><div class="num">${fmtMoney(monthly)}</div><div class="lbl">Monthly total</div></div>
+      <div class="stat"><div class="num">${fmtMoney(monthly*12)}</div><div class="lbl">Yearly total</div></div>
+    </div>`;
+    expArea.innerHTML = reportExportBtns('subscriptions'); wireReportExportBtns();
+    return;
+  }
+  if(reportFilter==='assets'){
+    const totalAssets = S.assets.reduce((s,x)=>s+Number(x.value),0);
+    const totalDebt = S.debts.reduce((s,x)=>s+Number(x.balance),0);
+    summary.innerHTML = `<div class="stat-grid">
+      <div class="stat"><div class="num">${fmtMoney(totalAssets)}</div><div class="lbl">Total assets</div></div>
+      <div class="stat"><div class="num">${fmtMoney(totalAssets-totalDebt)}</div><div class="lbl">Net worth</div></div>
+    </div>`;
+    expArea.innerHTML = reportExportBtns('assets'); wireReportExportBtns();
+    return;
+  }
+  if(reportFilter==='health'){
+    const vitalsInRange = Object.keys(S.health.vitals).filter(ds=>ds>=a&&ds<=b);
+    summary.innerHTML = `<div class="stat-grid">
+      <div class="stat"><div class="num">${vitalsInRange.length}</div><div class="lbl">Vitals logged</div></div>
+      <div class="stat"><div class="num">${S.health.meds.length}</div><div class="lbl">Medicines tracked</div></div>
+    </div>`;
+    expArea.innerHTML = reportExportBtns('health'); wireReportExportBtns();
     return;
   }
   if(reportFilter==='all'){
@@ -1605,85 +2052,158 @@ function openManageCats(){
   };
 }
 
-/* ---------- v8: debts / EMI ---------- */
+/* ---------- v9: debts / EMI (rewritten — undo payment, chronological sort, debit account, month labels) ---------- */
 function currentYM(){ return todayStr().slice(0,7); }
-function debtIsOverdue(d){
-  const now = new Date(); const ym = currentYM();
-  if(d.paidMonths && d.paidMonths[ym]) return false;
-  return now.getDate() > Number(d.dueDay||28);
+function debtDueInfo(d){
+  const ym = currentYM();
+  const pm = d.paidMonths && d.paidMonths[ym];
+  const isPaidThisMonth = !!pm;
+  const now = new Date(todayStr()+'T00:00:00');
+  const dueDate = new Date(now.getFullYear(), now.getMonth(), Number(d.dueDay)||28);
+  const daysAway = Math.round((dueDate-now)/86400000);
+  return { isPaidThisMonth, dueDate, monthLabel: monthName(now.getMonth()).slice(0,3), daysAway, pm };
+}
+function debtIsOverdue(d){ const info = debtDueInfo(d); return !info.isPaidThisMonth && info.daysAway<0; }
+function debtAccountOptions(selected){
+  const opts = S.assets.filter(a=>a.type==='bank'||a.type==='cash').map(a=>`<option value="${a.name}" ${selected===a.name?'selected':''}>${a.name}</option>`).join('');
+  return `<option value="">— choose —</option>${opts}<option value="__other" ${selected&&!S.assets.some(a=>a.name===selected)?'selected':''}>Other (type manually)</option>`;
 }
 function renderDebts(){
   const totalBal = S.debts.reduce((a,d)=>a+Number(d.balance||0),0);
   const totalEmi = S.debts.reduce((a,d)=>a+Number(d.emiAmount||0),0);
+  const ym = currentYM();
+  const paidThisMonthTotal = S.debts.reduce((a,d)=>{ const pm=d.paidMonths&&d.paidMonths[ym]; if(!pm) return a; return a + (typeof pm==='object' ? Number(pm.amount)||0 : Number(d.emiAmount)||0); },0);
   document.getElementById('debtTotalBalance').textContent = fmtMoney(totalBal);
   document.getElementById('debtTotalEmi').textContent = fmtMoney(totalEmi);
+  document.getElementById('debtPaidThisMonth').textContent = fmtMoney(paidThisMonthTotal);
+  document.getElementById('debtRemainingThisMonth').textContent = fmtMoney(Math.max(0, totalEmi-paidThisMonthTotal));
   const list = document.getElementById('debtList'); list.innerHTML='';
   if(S.debts.length===0){ list.innerHTML = `<div class="empty-state"><div class="em-icon">🏦</div><div class="em-title">No loans added</div>Tap + to add your first EMI/loan.</div>`; return; }
-  const ym = currentYM();
-  S.debts.forEach(d=>{
-    const overdue = debtIsOverdue(d);
-    const paidThisMonth = d.paidMonths && d.paidMonths[ym];
+  const withInfo = S.debts.map(d=>({ d, info: debtDueInfo(d) }));
+  // unpaid first (chronological by due date), paid last
+  withInfo.sort((a,b)=>{
+    if(a.info.isPaidThisMonth !== b.info.isPaidThisMonth) return a.info.isPaidThisMonth ? 1 : -1;
+    return a.info.dueDate - b.info.dueDate;
+  });
+  withInfo.forEach(({d,info})=>{
+    const overdue = !info.isPaidThisMonth && info.daysAway<0;
+    const account = info.isPaidThisMonth && typeof info.pm==='object' ? info.pm.account : d.debitAccount;
     const el = document.createElement('div');
-    el.className = 'debt-card' + (overdue?' overdue':'');
+    el.className = 'debt-card' + (overdue?' overdue':'') + (info.isPaidThisMonth?' paid':'');
+    const badgeText = info.isPaidThisMonth
+      ? `${info.monthLabel} - Paid`
+      : (info.daysAway<0 ? `Overdue by ${Math.abs(info.daysAway)}d` : info.daysAway===0 ? 'Due today' : `Due in ${info.daysAway}d`);
     el.innerHTML = `
       <div class="debt-top">
         <div class="debt-name">${d.name}</div>
-        <div class="debt-badge ${paidThisMonth?'ok':''}">${paidThisMonth?'Paid this month':(overdue?'Overdue':'Due day '+d.dueDay)}</div>
+        <div class="debt-badge ${info.isPaidThisMonth?'ok':''}">${badgeText}</div>
       </div>
       <div class="debt-stats">
         <div>Balance<b>${fmtMoney(d.balance)}</b></div>
         <div>EMI<b>${fmtMoney(d.emiAmount)}</b></div>
-        <div>Due day<b>${d.dueDay||'—'}</b></div>
+        <div>Account<b style="font-size:12.5px;">${account||'—'}</b></div>
       </div>
       <div class="btn-row" style="margin-top:12px;">
-        ${!paidThisMonth ? `<button class="btn primary" data-act="pay">Mark this month paid</button>` : ''}
+        ${!info.isPaidThisMonth ? `<button class="btn primary" data-act="pay">Mark this month paid</button>` : `<button class="btn secondary" data-act="undo">↩ Undo payment</button>`}
         <button class="btn secondary" data-act="edit">Edit</button>
       </div>
     `;
     el.querySelector('[data-act="edit"]').onclick = ()=> openDebtModal(d.id);
-    const payBtn = el.querySelector('[data-act="pay"]');
-    if(payBtn) payBtn.onclick = ()=> payDebtEmi(d.id);
+    const payBtn = el.querySelector('[data-act="pay"]'); if(payBtn) payBtn.onclick = ()=> openPayEmiModal(d.id);
+    const undoBtn = el.querySelector('[data-act="undo"]'); if(undoBtn) undoBtn.onclick = ()=> undoDebtPayment(d.id);
     list.appendChild(el);
   });
 }
-function payDebtEmi(id){
+function openPayEmiModal(id){
   const d = S.debts.find(x=>x.id===id); if(!d) return;
-  const amt = Number(d.emiAmount)||0;
+  openModal(`
+    <div class="modal-head"><h3>Mark ${d.name} paid</h3><button class="modal-close" data-close>✕</button></div>
+    <label class="fl" style="margin-top:0;">Amount paid</label><input type="number" id="payAmt" value="${d.emiAmount}">
+    <label class="fl">Debited from account</label>
+    <select id="payAcctSel">${debtAccountOptions(d.debitAccount)}</select>
+    <input type="text" id="payAcctOther" placeholder="Account name" style="display:${!d.debitAccount||S.assets.some(a=>a.name===d.debitAccount)?'none':'block'}; margin-top:8px;" value="${!S.assets.some(a=>a.name===d.debitAccount)?(d.debitAccount||''):''}">
+    <button class="btn primary" id="paySave" style="margin-top:16px;">Confirm payment</button>
+    <div class="hint">This logs a matching expense in Finance (category "EMI/Loan") and reduces the loan balance. You can undo it later from this screen if marked by mistake.</div>
+  `);
+  const sel = document.getElementById('payAcctSel');
+  const syncAcct = ()=>{ document.getElementById('payAcctOther').style.display = sel.value==='__other' ? 'block':'none'; };
+  sel.onchange = syncAcct; syncAcct();
+  document.getElementById('paySave').onclick = ()=>{
+    const amt = Number(document.getElementById('payAmt').value) || Number(d.emiAmount) || 0;
+    let account = sel.value==='__other' ? document.getElementById('payAcctOther').value.trim() : sel.value;
+    if(!account) account = d.debitAccount || 'Not specified';
+    payDebtEmi(d.id, amt, account);
+    closeModal();
+  };
+}
+function payDebtEmi(id, amt, account){
+  const d = S.debts.find(x=>x.id===id); if(!d) return;
   if(!d.paidMonths) d.paidMonths={};
-  d.paidMonths[currentYM()] = true;
+  const ym = currentYM();
+  const txId = uid();
+  d.paidMonths[ym] = { paidDate: todayStr(), amount: amt, txId, account };
   d.balance = Math.max(0, Number(d.balance||0) - amt);
-  S.transactions.push({ id:uid(), amount:amt, type:'out', note:`EMI — ${d.name}`, category:'EMI/Loan', date: todayStr(), created:new Date().toISOString(), debtId:d.id });
-  saveState(); renderDebts();
-  showToast(`${d.name} EMI logged to Finance`, '🏦');
+  d.debitAccount = account;
+  S.transactions.push({ id:txId, amount:amt, type:'out', note:`EMI — ${d.name}`, category:'EMI/Loan', date: todayStr(), created:new Date().toISOString(), debtId:d.id, account });
+  saveState(); renderDebts(); renderDashboard();
+  showToast(`${d.name} EMI paid from ${account}`, '🏦');
+}
+function undoDebtPayment(id){
+  const d = S.debts.find(x=>x.id===id); if(!d) return;
+  const ym = currentYM();
+  const pm = d.paidMonths && d.paidMonths[ym];
+  if(!pm) return;
+  if(!confirm(`Undo this month's payment for "${d.name}"? This restores the loan balance and removes the matching Finance transaction.`)) return;
+  const amt = (typeof pm==='object') ? (Number(pm.amount)||Number(d.emiAmount)||0) : (Number(d.emiAmount)||0);
+  d.balance = Number(d.balance||0) + amt;
+  if(typeof pm==='object' && pm.txId){
+    S.transactions = S.transactions.filter(t=>t.id!==pm.txId);
+  } else {
+    for(let i=S.transactions.length-1;i>=0;i--){
+      const t=S.transactions[i];
+      if(t.debtId===d.id && t.date.slice(0,7)===ym){ S.transactions.splice(i,1); break; }
+    }
+  }
+  delete d.paidMonths[ym];
+  saveState(); renderDebts(); renderDashboard();
+  showToast(`Payment undone for ${d.name}`, '↩️');
 }
 function openDebtModal(id){
   const d = id ? S.debts.find(x=>x.id===id) : null;
   openModal(`
     <div class="modal-head"><h3>${d?'Edit':'Add'} loan</h3><button class="modal-close" data-close>✕</button></div>
-    <label class="fl">Name</label><input type="text" id="dbName" value="${d?d.name:''}" placeholder="e.g. Car loan">
+    <label class="fl" style="margin-top:0;">Name</label><input type="text" id="dbName" value="${d?d.name:''}" placeholder="e.g. Car loan">
     <label class="fl">Current balance</label><input type="number" id="dbBalance" value="${d?d.balance:''}">
     <label class="fl">Monthly EMI amount</label><input type="number" id="dbEmi" value="${d?d.emiAmount:''}">
     <label class="fl">Due day of month (1-31)</label><input type="number" id="dbDueDay" min="1" max="31" value="${d?d.dueDay:'5'}">
+    <label class="fl">Usually debited from</label>
+    <select id="dbAcctSel">${debtAccountOptions(d?d.debitAccount:'')}</select>
+    <input type="text" id="dbAcctOther" placeholder="Account name" style="display:${d&&d.debitAccount&&!S.assets.some(a=>a.name===d.debitAccount)?'block':'none'}; margin-top:8px;" value="${d&&d.debitAccount&&!S.assets.some(a=>a.name===d.debitAccount)?d.debitAccount:''}">
     <label class="fl">Notes (optional)</label><input type="text" id="dbNotes" value="${d?d.notes||'':''}">
     <button class="btn primary" id="dbSave" style="margin-top:16px;">Save</button>
     ${d?'<button class="btn danger" id="dbDel" style="margin-top:10px;">Delete loan</button>':''}
   `);
+  const acctSel = document.getElementById('dbAcctSel');
+  const syncAcct = ()=>{ document.getElementById('dbAcctOther').style.display = acctSel.value==='__other' ? 'block':'none'; };
+  acctSel.onchange = syncAcct; syncAcct();
   document.getElementById('dbSave').onclick = ()=>{
     const name = document.getElementById('dbName').value.trim(); if(!name){ alert('Please enter a name'); return; }
+    let account = acctSel.value==='__other' ? document.getElementById('dbAcctOther').value.trim() : acctSel.value;
     const rec = {
       id: d?d.id:uid(), name,
       balance: Number(document.getElementById('dbBalance').value)||0,
       emiAmount: Number(document.getElementById('dbEmi').value)||0,
       dueDay: Number(document.getElementById('dbDueDay').value)||5,
+      debitAccount: account || (d?d.debitAccount:'') || '',
       notes: document.getElementById('dbNotes').value.trim(),
       paidMonths: d?d.paidMonths||{}:{}
     };
     if(!d) rec.principal = rec.balance;
     if(d){ Object.assign(d, rec); } else { S.debts.push(rec); }
-    saveState(); renderDebts(); closeModal();
+    saveState(); renderDebts(); renderDashboard(); closeModal();
   };
   if(d) document.getElementById('dbDel').onclick = ()=>{
-    if(confirm(`Delete "${d.name}"?`)){ S.debts = S.debts.filter(x=>x.id!==d.id); saveState(); renderDebts(); closeModal(); }
+    if(confirm(`Delete "${d.name}"?`)){ S.debts = S.debts.filter(x=>x.id!==d.id); saveState(); renderDebts(); renderDashboard(); closeModal(); }
   };
 }
 document.getElementById('addDebtBtn').addEventListener('click', ()=>openDebtModal(null));
@@ -1823,7 +2343,8 @@ function renderDiet(){
     el.innerHTML = `
       ${m.image ? `<img class="meal-thumb" src="${m.image}">` : `<div class="meal-thumb" style="display:flex;align-items:center;justify-content:center;">🍽</div>`}
       <div class="meal-mid"><div class="meal-name">${m.name}${dietPeriod!=='day'?' · '+m.date.slice(5):''}</div>
-      <div class="meal-macros">${Math.round(m.calories||0)} kcal · P${Math.round(m.protein||0)} C${Math.round(m.carbs||0)} F${Math.round(m.fat||0)} · Fib${Math.round(m.fiber||0)}</div></div>
+      <div class="meal-macros">${Math.round(m.calories||0)} kcal · P${Math.round(m.protein||0)} C${Math.round(m.carbs||0)} F${Math.round(m.fat||0)} · Fib${Math.round(m.fiber||0)}</div>
+      ${m.estimateNote ? `<div class="meal-est-note">✨ AI estimate: ${m.estimateNote}</div>` : ''}</div>
       <button class="link-btn" data-del="${m.id}" data-date="${m.date}">✕</button>
     `;
     el.querySelector('[data-del]').onclick = ()=>{
@@ -1856,8 +2377,10 @@ function openMealModal(){
     </div>
     <label class="fl">Fiber (g)</label><input type="number" id="mealFib">
     <button class="btn primary" id="mealSave" style="margin-top:16px;">Log meal</button>
+    <div class="hint">Photo estimates are AI approximations, not lab measurements — always sanity-check before saving, especially for oils, sauces and hidden sugar.</div>
   `);
   let imageData = null;
+  let estimateNote = '';
   document.getElementById('mealImg').addEventListener('change', (e)=>{
     const f = e.target.files[0]; if(!f) return;
     const reader = new FileReader();
@@ -1868,7 +2391,7 @@ function openMealModal(){
     };
     reader.readAsDataURL(f);
   });
-  document.getElementById('mealAnalyzeBtn').addEventListener('click', ()=> analyzeMealPhoto(imageData));
+  document.getElementById('mealAnalyzeBtn').addEventListener('click', async ()=>{ estimateNote = await analyzeMealPhoto(imageData); });
   document.getElementById('mealSave').onclick = ()=>{
     const name = document.getElementById('mealName').value.trim(); if(!name){ alert('Please enter a meal name'); return; }
     const rec = {
@@ -1878,7 +2401,8 @@ function openMealModal(){
       carbs:Number(document.getElementById('mealCarb').value)||0,
       fat:Number(document.getElementById('mealFat').value)||0,
       fiber:Number(document.getElementById('mealFib').value)||0,
-      image: imageData
+      image: imageData,
+      estimateNote: estimateNote || ''
     };
     if(!S.diet.meals[todayStr()]) S.diet.meals[todayStr()]=[];
     S.diet.meals[todayStr()].push(rec);
@@ -1886,19 +2410,41 @@ function openMealModal(){
     showToast(`${name} logged`, '🥗');
   };
 }
+/**
+ * v9: much more rigorous nutrition-from-photo prompt.
+ * Asks the model to (1) identify every distinct food item separately,
+ * (2) reason about portion size against visual reference objects (plate
+ * diameter ~26cm, standard cutlery, cupped-hand size, palm size) rather
+ * than guessing a portion out of thin air, (3) sum per-item nutrition into
+ * one combined total, and (4) report its own confidence + assumptions so
+ * the person can see exactly what was guessed and correct it before saving.
+ * This measurably improves accuracy over a bare "guess the nutrition" prompt,
+ * but it is still an AI estimate from a 2D photo, not a lab measurement —
+ * it cannot see oil/butter/sugar mixed in, or weigh anything.
+ */
 async function analyzeMealPhoto(imageData){
   const key = S.diet.settings.geminiKey;
-  if(!key || !imageData) return;
+  if(!key || !imageData) return '';
   const hint = document.getElementById('mealAnalyzeHint');
-  hint.style.display='block'; hint.textContent='Analyzing photo…';
+  hint.style.display='block'; hint.textContent='Analyzing photo — identifying items and estimating portions…';
   try{
     const base64 = imageData.split(',')[1];
     const mime = imageData.substring(5, imageData.indexOf(';'));
+    const prompt = `You are a careful nutrition estimator working from a single food photo. Follow this process:
+1. Identify every visually distinct food/drink item in the photo separately (don't lump a mixed plate into one guess).
+2. For each item, estimate portion size using visible reference objects in the frame — a standard dinner plate is ~26cm across, a standard fork/spoon is ~18-20cm, a fist is roughly one cup, a palm is roughly 85-100g of dense protein, a thumb is roughly 1 tbsp. If no reference object is visible, say so and use a typical restaurant/home serving size as a fallback, and lower your confidence accordingly.
+3. Estimate calories, protein (g), carbs (g), fat (g) and fiber (g) for each item using standard nutrition-per-100g data for that food, scaled to your estimated portion.
+4. Sum all items into one combined total for the whole plate/photo.
+5. Note any hidden-calorie risk (oil, butter, ghee, sauce, sugar) you can't see but is likely present given the dish, and mention it in assumptions rather than silently ignoring it.
+6. State overall confidence: "high" only if reference objects were visible and the food is simple and clearly identifiable; "medium" for typical cases; "low" if the photo is unclear, portion is ambiguous, or the dish likely has hidden ingredients you couldn't account for.
+
+Reply with ONLY compact JSON, no markdown, no explanation, in this exact shape:
+{"name":"combined dish name, max 6 words","calories":0,"protein":0,"carbs":0,"fat":0,"fiber":0,"confidence":"low|medium|high","assumptions":"one short sentence, max 30 words, explaining portion reasoning and any hidden-calorie risk"}`;
     const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`, {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
         contents:[{ parts:[
-          { text:'Identify the food in this photo and estimate its nutrition for the visible portion. Reply with ONLY compact JSON, no markdown, no explanation: {"name":"...","calories":0,"protein":0,"carbs":0,"fat":0,"fiber":0}' },
+          { text: prompt },
           { inline_data:{ mime_type:mime, data:base64 } }
         ]}]
       })
@@ -1912,9 +2458,12 @@ async function analyzeMealPhoto(imageData){
     document.getElementById('mealCarb').value = parsed.carbs || '';
     document.getElementById('mealFat').value = parsed.fat || '';
     document.getElementById('mealFib').value = parsed.fiber || '';
-    hint.textContent = 'Estimate filled in — adjust anything that looks off before saving.';
+    const confidence = parsed.confidence || 'medium';
+    hint.textContent = `Estimate filled in (confidence: ${confidence}) — ${parsed.assumptions||''} Adjust anything that looks off before saving.`;
+    return `[${confidence} confidence] ${parsed.assumptions||''}`;
   }catch(e){
     hint.textContent = 'Could not analyze photo — enter the nutrition manually.';
+    return '';
   }
 }
 document.getElementById('addMealBtn').addEventListener('click', openMealModal);
@@ -1948,18 +2497,23 @@ document.getElementById('dietExportPdf').addEventListener('click', ()=>{
 function openAboutModal(){
   openModal(`
     <div class="modal-head"><h3>About</h3><button class="modal-close" data-close>✕</button></div>
-    <div style="text-align:center; margin-bottom:14px;">
-      <div class="badge" style="width:56px;height:56px;font-size:24px;border-radius:16px;margin:0 auto 10px;">${(S.settings.iconInitial||'G').slice(0,2)}</div>
-      <div style="font-weight:800; font-size:17px;">GP Ledger</div>
-      <div class="hint">Version 8.0</div>
+    <div style="text-align:center; margin-bottom:16px; padding:24px 16px; border-radius:20px; background:linear-gradient(135deg, rgba(34,197,94,.20), rgba(99,102,241,.18), rgba(236,72,153,.16)); border:1px solid var(--line);">
+      <img src="${LOGO_DATA_URI}" alt="Ledger" style="width:66px;height:66px;border-radius:19px;box-shadow:0 8px 20px rgba(0,0,0,.28); margin-bottom:10px;">
+      <div style="font-family:var(--font-head); font-weight:800; font-size:22px; letter-spacing:.08em; color:var(--text);">LEDGER</div>
+      <div style="font-size:12.5px; color:var(--sub); margin-top:4px;">Your Life. <span style="color:#22c55e;font-weight:800;">One</span> <span style="color:#6366f1;font-weight:800;">System</span>.</div>
+      <div class="hint" style="margin-top:6px;">Version 9.0</div>
     </div>
-    <p style="font-size:13.5px; color:var(--sub); line-height:1.6; margin:0;">
-      A personal habit tracker, finance ledger, and daily routine journal in one app —
-      stays on your own device, syncs to your own Google Sheet, and reminds you through
-      your own Telegram bot. No accounts, no ads, nobody else's server holding your data.
+    <p style="font-size:13.5px; color:var(--text); line-height:1.65; margin:0 0 10px;">
+      Fourteen trackers that usually live in fourteen different apps — habits, routine, sleep, money, debt, diet, journal, goals, health, subscriptions, net worth — collapsed into one screen that actually talks to itself. Log a run in Routine and Sleep fills itself in. Pay an EMI and Finance updates with zero double entry. Ask the AI Coach what's really going on and it reads your actual data, not a guess.
     </p>
-    <p style="font-size:13px; color:var(--sub); line-height:1.6; margin-top:10px;">
-      Built by <b style="color:var(--text)">Gnanaprakash Xavier</b>.
+    <p style="font-size:12.5px; color:var(--sub); line-height:1.6; margin:0 0 12px;">
+      Nothing leaves your device except what you choose to sync — your own Google Sheet for backup, your own Telegram bot for reminders, your own Gemini key for photo nutrition &amp; coaching. No accounts. No ads. No one else's server holding your data.
+    </p>
+    <div style="display:flex; flex-wrap:wrap; gap:6px; margin:2px 0 14px;">
+      ${['✅ Habits','🎯 Goals','⏱️ Routine','💰 Finance','🏦 Debts','🥗 Diet','📔 Journal','📆 Calendar','🔁 Subs','🏛️ Net Worth','💊 Health','🗂️ Docs','🤖 AI Coach','🔍 Search'].map(t=>`<span style="font-size:10.5px; font-weight:700; padding:4px 9px; border-radius:999px; background:var(--card2); color:var(--sub);">${t}</span>`).join('')}
+    </div>
+    <p style="font-size:12.5px; color:var(--sub); line-height:1.6; margin:0;">
+      Founder — <b style="color:var(--text)">GP</b>.
     </p>
     <button class="btn secondary" data-close style="margin-top:16px;">Close</button>
   `);
@@ -1975,18 +2529,29 @@ function closeModal(){ document.getElementById('modalBackdrop').classList.remove
 document.getElementById('modalBackdrop').addEventListener('click', (e)=>{ if(e.target.id==='modalBackdrop') closeModal(); });
 
 /* ---------- navigation ---------- */
+const DIRECT_NAV_SCREENS = ['dashboard','habits','finance','routine'];
 function goToScreen(name){
-  document.querySelectorAll('nav.bottom button').forEach(b=>b.classList.toggle('active', b.dataset.screen===name || (name!=='habits'&&name!=='finance'&&name!=='routine'&&name!=='journal'&&b.dataset.screen==='more')));
+  document.querySelectorAll('nav.bottom button').forEach(b=>b.classList.toggle('active', b.dataset.screen===name || (!DIRECT_NAV_SCREENS.includes(name) && b.dataset.screen==='more')));
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById('screen-'+name).classList.add('active');
-  if(name==='finance') renderFinance();
+  if(name==='dashboard') renderDashboard();
+  if(name==='finance'){ renderFinance(); renderBudgets(); }
   if(name==='trends') renderTrends();
   if(name==='reports') renderReports();
   if(name==='routine') renderRoutine();
   if(name==='debts') renderDebts();
   if(name==='journal') renderJournal();
   if(name==='diet') renderDiet();
+  if(name==='goals') renderGoals();
+  if(name==='calendar') renderCalendar();
+  if(name==='search'){ document.getElementById('searchInput').value=''; renderSearchResults(''); setTimeout(()=>document.getElementById('searchInput').focus(), 200); }
+  if(name==='subscriptions') renderSubscriptions();
+  if(name==='assets') renderAssets();
+  if(name==='health') renderHealth();
+  if(name==='documents') renderDocuments();
+  if(name==='coach') renderCoach();
 }
+document.getElementById('headerSearchBtn').addEventListener('click', ()=> goToScreen('search'));
 document.querySelectorAll('nav.bottom button').forEach(btn=>{
   btn.addEventListener('click', ()=> goToScreen(btn.dataset.screen));
 });
@@ -2176,7 +2741,9 @@ async function syncNow(silent, extra){
   const btn = document.getElementById('syncBtn'), label = document.getElementById('syncBtnLabel');
   if(!url){ if(!silent) alert('Add your Google Apps Script Web App URL in Settings first.'); return; }
   btn.classList.add('syncing'); label.textContent='Syncing…';
-  const payload = { action:'sync', habits:S.habits, transactions:S.transactions, settings:S.settings, routineLogs:S.routineLogs, routineCats:S.routineCats, debts:S.debts, journal:S.journal, diet:S.diet, extra: extra||null, clientTime: new Date().toISOString() };
+  const payload = { action:'sync', habits:S.habits, transactions:S.transactions, settings:S.settings, routineLogs:S.routineLogs, routineCats:S.routineCats, debts:S.debts, journal:S.journal, diet:S.diet,
+    goals:S.goals, subscriptions:S.subscriptions, assets:S.assets, health:S.health, documents:S.documents, budgets:S.budgets,
+    extra: extra||null, clientTime: new Date().toISOString() };
   try{
     const res = await fetch(url, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify(payload) });
     const text = await res.text();
@@ -2219,6 +2786,12 @@ document.getElementById('loadFromSheetBtn').addEventListener('click', async ()=>
       if(Array.isArray(d.debts)) S.debts = d.debts;
       if(d.journal) S.journal = d.journal;
       if(d.diet) S.diet = Object.assign({meals:{},settings:defaultDietSettings()}, d.diet);
+      if(Array.isArray(d.goals)) S.goals = d.goals;
+      if(Array.isArray(d.subscriptions)) S.subscriptions = d.subscriptions;
+      if(Array.isArray(d.assets)) S.assets = d.assets;
+      if(d.health) S.health = Object.assign(defaultHealth(), d.health);
+      if(Array.isArray(d.documents)) S.documents = d.documents;
+      if(Array.isArray(d.budgets)) S.budgets = d.budgets;
       saveState(); loadSettingsForm(); applyTheme(); renderAll();
       showToast('Loaded from Google Sheet ✓', '⬇️');
       debugLog('Load OK — pulled saved snapshot from Sheet.');
@@ -2243,7 +2816,8 @@ document.getElementById('importBackupFile').addEventListener('change', (e)=>{
     try{
       const data = JSON.parse(reader.result);
       if(data.habits && data.settings){
-        S = Object.assign({ habits:[], transactions:[], settings:{}, routineLogs:{}, routineCats:[], debts:[], journal:{}, diet:{meals:{},settings:defaultDietSettings()} }, data);
+        S = Object.assign({ habits:[], transactions:[], settings:{}, routineLogs:{}, routineCats:[], debts:[], journal:{}, diet:{meals:{},settings:defaultDietSettings()},
+          goals:[], subscriptions:[], assets:[], health:defaultHealth(), documents:[], aiCoach:{lastInsights:[],lastRun:''}, budgets:[] }, data);
         saveState(); loadSettingsForm(); applyTheme(); renderAll();
         showToast('Backup restored', '✅');
       } else { alert('That file does not look like a GP Ledger backup.'); }
@@ -2254,7 +2828,8 @@ document.getElementById('importBackupFile').addEventListener('change', (e)=>{
 
 /* ---------- render all / init ---------- */
 function renderAll(){
-  renderQuote(); renderHabits(); renderFinance(); renderTrends(); renderReports(); renderRoutine(); renderDebts(); renderJournal(); renderDiet(); loadSettingsForm(); updateGreeting();
+  renderQuote(); renderHabits(); renderFinance(); renderBudgets(); renderTrends(); renderReports(); renderRoutine(); renderDebts(); renderJournal(); renderDiet();
+  renderDashboard(); loadSettingsForm(); updateGreeting();
 }
 function init(){
   loadState();
@@ -2311,6 +2886,827 @@ function openReminderPopup(h){
     closeModal();
   };
 }
+/* ======================================================================
+   v9 — DASHBOARD, GOALS, CALENDAR, SEARCH, BUDGETS, SUBSCRIPTIONS,
+   NET WORTH, HEALTH, DOCUMENTS, AI COACH
+   ====================================================================== */
+
+/* ---------- small shared helpers ---------- */
+function findHabitByNameLike(re){ return S.habits.find(h=> re.test(h.name)); }
+function sleepHabit(){ return S.habits.find(h=> h.linkedRoutineCat==='Sleep') || findHabitByNameLike(/sleep/i); }
+function waterHabit(){ return findHabitByNameLike(/water/i) || S.habits.find(h=>h.unit==='ml'); }
+function routineMinutesForDate(date){ return (S.routineLogs[date]||[]).reduce((a,b)=>a+blockDuration(b),0); }
+function txForDate(date){ return S.transactions.filter(t=>t.date===date); }
+function clamp01(n){ return Math.max(0, Math.min(1, isFinite(n)?n:0)); }
+
+/* ---------- DASHBOARD ---------- */
+function renderDashboard(){
+  const today = todayStr();
+  const habits = S.habits;
+  const habitPct = habits.length ? habits.reduce((a,h)=>a+habitProgress(h,today),0)/habits.length : 0;
+  const doneCount = habits.filter(h=>habitProgress(h,today)>=1).length;
+
+  const routineMin = routineMinutesForDate(today);
+  const todaysTx = txForDate(today);
+  const spentToday = todaysTx.filter(t=>t.type==='out').reduce((a,t)=>a+Number(t.amount),0);
+
+  const dt = dietTargets();
+  const todaysMeals = (S.diet.meals[today]||[]);
+  const calToday = todaysMeals.reduce((a,m)=>a+Number(m.calories||0),0);
+
+  const wh = waterHabit();
+  const sh = sleepHabit();
+  const overdueDebts = S.debts.filter(debtIsOverdue);
+
+  /* ---- score ---- */
+  const factors = [];
+  factors.push(habitPct*100);
+  factors.push(routineMin>0 ? 100 : 45);
+  factors.push(todaysMeals.length>0 ? 100 : 55);
+  factors.push(overdueDebts.length===0 ? 100 : 35);
+  const score = Math.round(factors.reduce((a,b)=>a+b,0)/factors.length);
+  const circumference = 213.6;
+  document.getElementById('dashRingFill').setAttribute('stroke-dashoffset', String(circumference*(1-score/100)));
+  document.getElementById('dashRingText').textContent = score+'%';
+  const scoreHead = document.getElementById('dashScoreHead');
+  const scoreSub = document.getElementById('dashScoreSub');
+  if(score>=85){ scoreHead.textContent='Crushing it 🔥'; }
+  else if(score>=60){ scoreHead.textContent='Solid day so far'; }
+  else if(score>=35){ scoreHead.textContent='Room to catch up'; }
+  else { scoreHead.textContent='Slow start today'; }
+  scoreSub.textContent = `${doneCount}/${habits.length} habits done · ${todosLeftText(overdueDebts.length, todaysMeals.length, routineMin)}`;
+
+  /* ---- tiles ---- */
+  const grid = document.getElementById('dashGrid');
+  const tiles = [];
+  tiles.push({icon:'✅',label:'Habits today',num:`${doneCount}/${habits.length}`,pct:habitPct*100,color:'#22c55e'});
+  tiles.push({icon:'⏱️',label:'Routine logged',num:`${(routineMin/60).toFixed(1)}h`,pct:Math.min(100,routineMin/1440*100),color:'#6366f1'});
+  tiles.push({icon:'💸',label:'Spent today',num:fmtMoney(spentToday),pct:null,color:'#f59e0b'});
+  if(dt){ tiles.push({icon:'🍎',label:'Calories',num:`${Math.round(calToday)}/${dt.calories}`,pct:Math.min(100,calToday/dt.calories*100),color:'#f43f5e'}); }
+  if(wh){ const v=habitValue(wh,today); tiles.push({icon:'💧',label:'Water',num:`${v}/${wh.target}${wh.unit}`,pct:Math.min(100,v/wh.target*100),color:'#38bdf8'}); }
+  if(sh){ const v=habitValue(sh,today); tiles.push({icon:'😴',label:'Sleep today',num:`${v}${sh.unit}`,pct:Math.min(100,v/sh.target*100),color:'#a78bfa'}); }
+  tiles.push({icon:'🏦',label:'Pending EMI',num:String(overdueDebts.length),pct:null,color: overdueDebts.length? '#ef4444':'#22c55e'});
+  const onTrackGoals = S.goals.filter(g=> goalProgressCalc(g).pct>=0.5).length;
+  if(S.goals.length){ tiles.push({icon:'🎯',label:'Goals on track',num:`${onTrackGoals}/${S.goals.length}`,pct:S.goals.length?onTrackGoals/S.goals.length*100:0,color:'#eab308'}); }
+  grid.innerHTML = tiles.map(t=>`
+    <div class="dash-tile">
+      <div class="dt-top"><span class="dt-icon">${t.icon}</span></div>
+      <div class="dt-num">${t.num}</div>
+      <div class="dt-lbl">${t.label}</div>
+      ${t.pct!==null ? `<div class="dt-track"><div class="dt-fill" style="width:${Math.round(t.pct)}%; background:${t.color}"></div></div>` : ''}
+    </div>`).join('');
+
+  /* ---- priorities ---- */
+  const pr = [];
+  habits.filter(h=>habitProgress(h,today)<1).slice(0,4).forEach(h=> pr.push({text:`${h.icon} ${h.name} — not logged yet`, tag:'Habit', color:h.color}));
+  overdueDebts.forEach(d=> pr.push({text:`💳 ${d.name} EMI is overdue`, tag:'Debt', color:'#ef4444'}));
+  dueSoonSubscriptions().forEach(s=> pr.push({text:`🔁 ${s.name} renews soon (${fmtMoney(s.amount)})`, tag:'Subscription', color:'#f59e0b'}));
+  if(!S.journal[today]) pr.push({text:'📔 No journal entry written today', tag:'Journal', color:'#6366f1'});
+  S.goals.forEach(g=>{ const gp=goalProgressCalc(g); if(gp.behind) pr.push({text:`🎯 "${g.title}" is behind pace`, tag:'Goal', color:'#eab308'}); });
+  const prWrap = document.getElementById('dashPriorities');
+  if(pr.length===0){
+    prWrap.innerHTML = `<div class="empty-state" style="padding:20px;"><div class="em-icon">🎉</div><div class="em-title">Nothing urgent</div>Everything tracked looks on pace.</div>`;
+  } else {
+    prWrap.innerHTML = pr.slice(0,5).map(p=>`<div class="priority-row"><span class="pr-dot" style="background:${p.color}"></span><span class="pr-text">${p.text}</span><span class="pr-tag">${p.tag}</span></div>`).join('');
+  }
+
+  /* ---- quick actions ---- */
+  const qa = document.getElementById('dashQuickActions');
+  qa.innerHTML = `
+    <button class="chip" data-qa="habit">✅ Log habit</button>
+    <button class="chip" data-qa="tx">💰 Add expense</button>
+    <button class="chip" data-qa="meal">🥗 Log meal</button>
+    <button class="chip" data-qa="journal">📔 Write journal</button>
+    <button class="chip" data-qa="routine">⏱️ Log routine</button>
+  `;
+  qa.querySelectorAll('[data-qa]').forEach(btn=>{
+    btn.onclick = ()=>{
+      const a = btn.dataset.qa;
+      if(a==='habit') goToScreen('habits');
+      if(a==='tx') openTxModal(null);
+      if(a==='meal') openMealModal();
+      if(a==='journal') goToScreen('journal');
+      if(a==='routine') goToScreen('routine');
+    };
+  });
+
+  /* ---- insight line (falls back to daily quote if no AI insight cached today) ---- */
+  const qEl = document.getElementById('dashQuoteText');
+  if(S.aiCoach.lastInsights && S.aiCoach.lastInsights.length && (S.aiCoach.lastRun||'').slice(0,10)===today){
+    qEl.textContent = S.aiCoach.lastInsights[0];
+  } else {
+    qEl.textContent = todaysQuote()[0];
+  }
+}
+function todosLeftText(overdueCount, mealsLogged, routineMin){
+  const bits = [];
+  if(overdueCount) bits.push(`${overdueCount} EMI overdue`);
+  if(!mealsLogged) bits.push('no meals logged');
+  if(!routineMin) bits.push('no routine logged');
+  return bits.length ? bits.join(' · ') : 'all caught up';
+}
+
+/* ---------- BUDGETS (lives inside Finance screen) ---------- */
+function monthSpendByCategory(cat, ym){
+  return S.transactions.filter(t=>t.type==='out' && (t.category||'Other')===cat && t.date.slice(0,7)===(ym||currentYM()))
+    .reduce((a,t)=>a+Number(t.amount),0);
+}
+function renderBudgets(){
+  const card = document.getElementById('budgetCard'); if(!card) return;
+  if(S.budgets.length===0){ card.innerHTML = `<div class="hint" style="margin:0;">No budgets set. Add one to track spend caps per category (e.g. Food, Fuel, Shopping).</div>`; return; }
+  card.innerHTML = S.budgets.map(b=>{
+    const spent = monthSpendByCategory(b.category);
+    const pct = b.limit>0 ? Math.min(100, spent/b.limit*100) : 0;
+    const over = spent > b.limit;
+    return `<div style="margin-bottom:14px;" data-bid="${b.id}">
+      <div class="mb-label"><span>${b.category}</span><span style="color:${over?'var(--danger)':'var(--sub)'}">${fmtMoney(spent)} / ${fmtMoney(b.limit)}</span></div>
+      <div class="macro-bar-track"><div class="macro-bar-fill" style="width:${pct}%; background:${over?'var(--danger)':'var(--accent)'}"></div></div>
+    </div>`;
+  }).join('') + `<div class="hint" style="margin-top:2px;">Tap "+ Add" above to add or remove budget categories.</div>`;
+  card.querySelectorAll('[data-bid]').forEach(el=>{
+    el.addEventListener('click', ()=> openBudgetModal(el.dataset.bid));
+  });
+}
+function openBudgetModal(id){
+  const b = id ? S.budgets.find(x=>x.id===id) : null;
+  openModal(`
+    <div class="modal-head"><h3>${b?'Edit':'Add'} budget</h3><button class="modal-close" data-close>✕</button></div>
+    <label class="fl" style="margin-top:0;">Category</label><input type="text" id="budCat" value="${b?b.category:''}" placeholder="e.g. Food">
+    <label class="fl">Monthly limit (₹)</label><input type="number" id="budLimit" value="${b?b.limit:''}" placeholder="5000">
+    <button class="btn primary" id="budSave" style="margin-top:16px;">Save</button>
+    ${b?'<button class="btn danger" id="budDel" style="margin-top:10px;">Delete</button>':''}
+  `);
+  document.getElementById('budSave').onclick = ()=>{
+    const category = document.getElementById('budCat').value.trim();
+    const limit = Number(document.getElementById('budLimit').value);
+    if(!category || !limit){ alert('Enter a category and a limit'); return; }
+    if(b){ b.category=category; b.limit=limit; } else { S.budgets.push({id:uid(), category, limit}); }
+    saveState(); renderBudgets(); closeModal();
+  };
+  if(b) document.getElementById('budDel').onclick = ()=>{ S.budgets = S.budgets.filter(x=>x.id!==b.id); saveState(); renderBudgets(); closeModal(); };
+}
+document.getElementById('addBudgetBtn').addEventListener('click', ()=>openBudgetModal(null));
+
+/* ---------- GOALS ---------- */
+const GOAL_ICONS = { debt:'💳', savings:'💰', weight:'⚖️', habit:'🎯', custom:'⭐' };
+function goalProgressCalc(g){
+  let current=0, target=g.target||1, pct=0, behind=false;
+  if(g.mode==='debt'){
+    const d = S.debts.find(x=>x.id===g.linkedId);
+    const balanceNow = d ? Number(d.balance) : 0;
+    target = Number(g.target)||1; current = Math.max(0, target - balanceNow);
+    pct = clamp01(current/target);
+  } else if(g.mode==='weight'){
+    const dates = Object.keys(S.health.vitals).sort();
+    let latest=null; for(let i=dates.length-1;i>=0;i--){ const v=S.health.vitals[dates[i]]; if(v && v.weight){ latest=Number(v.weight); break; } }
+    const start = Number(g.startValue)||latest||0; const tgt = Number(g.target)||start;
+    current = latest!==null ? latest : start;
+    pct = (tgt-start)!==0 ? clamp01((start-current)/(start-tgt)) : 0;
+    target = tgt;
+  } else if(g.mode==='habit'){
+    const h = S.habits.find(x=>x.id===g.linkedId);
+    const days = Number(g.target)||30;
+    let hit=0;
+    if(h){ for(let i=0;i<days;i++){ const ds=addDays(todayStr(),-i); if(habitProgress(h,ds)>=1) hit++; } }
+    current = hit; target = days; pct = clamp01(hit/days);
+  } else { // manual/savings/custom
+    current = Number(g.current)||0; target = Number(g.target)||1; pct = clamp01(current/target);
+  }
+  if(g.deadline){
+    const totalDays = Math.max(1, (new Date(g.deadline) - new Date(g.createdAt||todayStr()))/86400000);
+    const elapsed = Math.max(0, (new Date() - new Date(g.createdAt||todayStr()))/86400000);
+    const expectedPct = clamp01(elapsed/totalDays);
+    behind = pct < expectedPct - 0.12;
+  }
+  return { current, target, pct, behind };
+}
+function renderGoals(){
+  const list = document.getElementById('goalList');
+  if(S.goals.length===0){ list.innerHTML = `<div class="empty-state"><div class="em-icon">🎯</div><div class="em-title">No goals yet</div>Tap + to set your first goal — debt-free, savings, weight, a habit streak, or anything custom.</div>`; return; }
+  list.innerHTML = S.goals.map(g=>{
+    const gp = goalProgressCalc(g);
+    const unit = g.unit || (g.mode==='debt'||g.mode==='savings' ? '₹' : g.mode==='weight' ? 'kg' : g.mode==='habit' ? 'days' : '');
+    return `<div class="goal-card" data-gid="${g.id}">
+      <div class="goal-top">
+        <div class="goal-icon">${GOAL_ICONS[g.mode]||'⭐'}</div>
+        <div class="goal-title">${g.title}</div>
+        <div class="goal-pct">${Math.round(gp.pct*100)}%</div>
+      </div>
+      <div class="goal-track"><div class="goal-fill" style="width:${Math.round(gp.pct*100)}%"></div></div>
+      <div class="goal-meta"><span>${unit==='₹'?fmtMoney(gp.current):Math.round(gp.current*100)/100+' '+unit} of ${unit==='₹'?fmtMoney(gp.target):Math.round(gp.target*100)/100+' '+unit}</span><span>${g.deadline? (gp.behind?'⚠️ behind pace':'on pace') : ''}</span></div>
+    </div>`;
+  }).join('');
+  list.querySelectorAll('[data-gid]').forEach(el=> el.addEventListener('click', ()=> openGoalModal(el.dataset.gid)));
+}
+function openGoalModal(id){
+  const g = id ? S.goals.find(x=>x.id===id) : null;
+  const debtOpts = S.debts.map(d=>`<option value="${d.id}" ${g&&g.linkedId===d.id?'selected':''}>${d.name}</option>`).join('');
+  const habitOpts = S.habits.map(h=>`<option value="${h.id}" ${g&&g.linkedId===h.id?'selected':''}>${h.icon} ${h.name}</option>`).join('');
+  openModal(`
+    <div class="modal-head"><h3>${g?'Edit':'Add'} goal</h3><button class="modal-close" data-close>✕</button></div>
+    <label class="fl" style="margin-top:0;">Title</label><input type="text" id="goalTitle" value="${g?g.title:''}" placeholder="e.g. Become debt-free">
+    <label class="fl">Type</label>
+    <select id="goalMode">
+      <option value="debt" ${g&&g.mode==='debt'?'selected':''}>Pay off a debt</option>
+      <option value="savings" ${g&&g.mode==='savings'?'selected':''}>Save an amount</option>
+      <option value="weight" ${g&&g.mode==='weight'?'selected':''}>Reach a weight</option>
+      <option value="habit" ${g&&g.mode==='habit'?'selected':''}>Habit streak (days hit in a window)</option>
+      <option value="custom" ${g&&g.mode==='custom'?'selected':''}>Custom (track manually)</option>
+    </select>
+    <div id="goalDebtWrap" style="display:none;"><label class="fl">Which loan</label><select id="goalDebtSel">${debtOpts}</select></div>
+    <div id="goalHabitWrap" style="display:none;"><label class="fl">Which habit</label><select id="goalHabitSel">${habitOpts}</select><label class="fl">Target days (out of last N days)</label><input type="number" id="goalHabitDays" value="${g&&g.mode==='habit'?g.target:30}"></div>
+    <div id="goalWeightWrap" style="display:none;">
+      <label class="fl">Starting weight (kg)</label><input type="number" id="goalWStart" value="${g&&g.mode==='weight'?g.startValue:''}">
+      <label class="fl">Target weight (kg)</label><input type="number" id="goalWTarget" value="${g&&g.mode==='weight'?g.target:''}">
+    </div>
+    <div id="goalManualWrap" style="display:none;">
+      <label class="fl">Target amount</label><input type="number" id="goalMTarget" value="${g&&(g.mode==='savings'||g.mode==='custom')?g.target:''}" placeholder="e.g. 500000">
+      <label class="fl">Current progress</label><input type="number" id="goalMCurrent" value="${g&&(g.mode==='savings'||g.mode==='custom')?g.current:0}">
+      <label class="fl">Unit (leave blank for ₹)</label><input type="text" id="goalMUnit" value="${g?g.unit||'':''}" placeholder="₹, books, steps…">
+    </div>
+    <label class="fl">Deadline (optional)</label><input type="date" id="goalDeadline" value="${g?g.deadline||'':''}">
+    <button class="btn primary" id="goalSave" style="margin-top:16px;">Save</button>
+    ${g?'<button class="btn danger" id="goalDel" style="margin-top:10px;">Delete</button>':''}
+  `);
+  const modeSel = document.getElementById('goalMode');
+  const syncWraps = ()=>{
+    const m = modeSel.value;
+    document.getElementById('goalDebtWrap').style.display = m==='debt'?'block':'none';
+    document.getElementById('goalHabitWrap').style.display = m==='habit'?'block':'none';
+    document.getElementById('goalWeightWrap').style.display = m==='weight'?'block':'none';
+    document.getElementById('goalManualWrap').style.display = (m==='savings'||m==='custom')?'block':'none';
+  };
+  modeSel.onchange = syncWraps; syncWraps();
+  document.getElementById('goalSave').onclick = ()=>{
+    const title = document.getElementById('goalTitle').value.trim(); if(!title){ alert('Enter a title'); return; }
+    const mode = modeSel.value;
+    const rec = { id:g?g.id:uid(), title, mode, createdAt:g?g.createdAt:todayStr(), deadline:document.getElementById('goalDeadline').value||'' };
+    if(mode==='debt'){ const d=S.debts.find(x=>x.id===document.getElementById('goalDebtSel').value); if(!d){alert('Add a debt first in Debts/EMI');return;} rec.linkedId=d.id; rec.target = (g&&g.mode==='debt') ? g.target : Number(d.balance); }
+    else if(mode==='habit'){ const h=S.habits.find(x=>x.id===document.getElementById('goalHabitSel').value); if(!h){alert('Add a habit first');return;} rec.linkedId=h.id; rec.target=Number(document.getElementById('goalHabitDays').value)||30; }
+    else if(mode==='weight'){ rec.startValue=Number(document.getElementById('goalWStart').value)||0; rec.target=Number(document.getElementById('goalWTarget').value)||0; }
+    else { rec.target=Number(document.getElementById('goalMTarget').value)||1; rec.current=Number(document.getElementById('goalMCurrent').value)||0; rec.unit=document.getElementById('goalMUnit').value.trim(); }
+    if(g){ Object.assign(g, rec); } else { S.goals.push(rec); }
+    saveState(); renderGoals(); renderDashboard(); closeModal();
+    showToast('Goal saved', '🎯');
+  };
+  if(g) document.getElementById('goalDel').onclick = ()=>{ S.goals=S.goals.filter(x=>x.id!==g.id); saveState(); renderGoals(); renderDashboard(); closeModal(); };
+}
+document.getElementById('addGoalBtn').addEventListener('click', ()=>openGoalModal(null));
+document.getElementById('fabAddGoal').addEventListener('click', ()=>openGoalModal(null));
+
+/* ---------- CALENDAR ---------- */
+let calView = { y:new Date().getFullYear(), m:new Date().getMonth() };
+function renderCalendar(){
+  document.getElementById('calMonthLabel').textContent = `${monthName(calView.m)} ${calView.y}`;
+  const grid = document.getElementById('calGrid');
+  grid.innerHTML='';
+  DOW.forEach(d=>{ const el=document.createElement('div'); el.className='cal-dow'; el.textContent=d; grid.appendChild(el); });
+  const first = new Date(calView.y, calView.m, 1);
+  const startOffset = (first.getDay()+6)%7;
+  const daysInMonth = new Date(calView.y, calView.m+1, 0).getDate();
+  for(let i=0;i<startOffset;i++){ const el=document.createElement('div'); el.className='cal-cell empty'; grid.appendChild(el); }
+  for(let day=1; day<=daysInMonth; day++){
+    const ds = `${calView.y}-${String(calView.m+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const el = document.createElement('div');
+    el.className = 'cal-cell' + (ds===todayStr()?' today':'');
+    const dots=[];
+    if(S.habits.some(h=>habitProgress(h,ds)>=1)) dots.push('#22c55e');
+    if(txForDate(ds).length) dots.push('#f59e0b');
+    if(S.journal[ds]) dots.push('#6366f1');
+    if((S.diet.meals[ds]||[]).length) dots.push('#f43f5e');
+    el.innerHTML = `<span>${day}</span><span class="cal-dots">${dots.map(c=>`<span style="background:${c}"></span>`).join('')}</span>`;
+    el.onclick = ()=> openDayDetail(ds);
+    grid.appendChild(el);
+  }
+}
+document.getElementById('calPrevBtn').addEventListener('click', ()=>{ calView.m--; if(calView.m<0){calView.m=11;calView.y--;} renderCalendar(); });
+document.getElementById('calNextBtn').addEventListener('click', ()=>{ calView.m++; if(calView.m>11){calView.m=0;calView.y++;} renderCalendar(); });
+function openDayDetail(ds){
+  const habitsDone = S.habits.filter(h=>habitProgress(h,ds)>=1);
+  const habitsLogged = S.habits.filter(h=>habitProgress(h,ds)>0 && habitProgress(h,ds)<1);
+  const tx = txForDate(ds);
+  const net = tx.reduce((a,t)=>a+(t.type==='in'?Number(t.amount):-Number(t.amount)),0);
+  const journal = S.journal[ds];
+  const meals = S.diet.meals[ds]||[];
+  const cal = meals.reduce((a,m)=>a+Number(m.calories||0),0);
+  const routineTotal = routineMinutesForDate(ds);
+  openModal(`
+    <div class="modal-head"><h3>${ds}</h3><button class="modal-close" data-close>✕</button></div>
+    <div style="font-size:12px; color:var(--sub); text-transform:uppercase; letter-spacing:.06em; font-weight:700; margin-bottom:6px;">Habits</div>
+    <div style="font-size:13.5px; margin-bottom:12px;">${habitsDone.length||habitsLogged.length ? [...habitsDone.map(h=>`✅ ${h.icon} ${h.name}`), ...habitsLogged.map(h=>`◐ ${h.icon} ${h.name}`)].join('<br>') : '<span style="color:var(--sub)">Nothing logged</span>'}</div>
+    <div style="font-size:12px; color:var(--sub); text-transform:uppercase; letter-spacing:.06em; font-weight:700; margin-bottom:6px;">Finance</div>
+    <div style="font-size:13.5px; margin-bottom:12px;">${tx.length? `${tx.length} transaction(s), net ${fmtMoney(net)}` : '<span style="color:var(--sub)">No transactions</span>'}</div>
+    <div style="font-size:12px; color:var(--sub); text-transform:uppercase; letter-spacing:.06em; font-weight:700; margin-bottom:6px;">Routine</div>
+    <div style="font-size:13.5px; margin-bottom:12px;">${routineTotal? `${(routineTotal/60).toFixed(1)} hours logged` : '<span style="color:var(--sub)">Nothing logged</span>'}</div>
+    <div style="font-size:12px; color:var(--sub); text-transform:uppercase; letter-spacing:.06em; font-weight:700; margin-bottom:6px;">Diet</div>
+    <div style="font-size:13.5px; margin-bottom:12px;">${meals.length? `${meals.length} meal(s), ${Math.round(cal)} kcal` : '<span style="color:var(--sub)">No meals logged</span>'}</div>
+    <div style="font-size:12px; color:var(--sub); text-transform:uppercase; letter-spacing:.06em; font-weight:700; margin-bottom:6px;">Journal</div>
+    <div style="font-size:13.5px;">${journal&&journal.text ? journal.text.slice(0,180)+(journal.text.length>180?'…':'') : '<span style="color:var(--sub)">No entry</span>'}</div>
+    <button class="btn secondary" data-close style="margin-top:16px;">Close</button>
+  `);
+}
+
+/* ---------- GLOBAL SEARCH ---------- */
+function renderSearchResults(q){
+  const wrap = document.getElementById('searchResults');
+  const query = (q||'').trim().toLowerCase();
+  if(!query){ wrap.innerHTML = `<div class="empty-state"><div class="em-icon">🔍</div><div class="em-title">Search everything</div>Type to search across every module at once.</div>`; return; }
+  const results = [];
+  S.habits.forEach(h=>{ if(h.name.toLowerCase().includes(query)) results.push({icon:h.icon,tag:'Habit',title:h.name,sub:`Target ${h.target}${h.unit}`,go:()=>{closeModal();goToScreen('habits');}}); });
+  S.transactions.forEach(t=>{ if((t.note||'').toLowerCase().includes(query) || (t.category||'').toLowerCase().includes(query)) results.push({icon:t.type==='in'?'↓':'↑',tag:'Finance',title:t.note||t.category,sub:`${fmtMoney(t.amount)} · ${t.date}`,go:()=>{goToScreen('finance');openTxModal(t.id);}}); });
+  Object.keys(S.journal).forEach(ds=>{ const j=S.journal[ds]; if(j.text && j.text.toLowerCase().includes(query)) results.push({icon:'📔',tag:'Journal',title:ds,sub:j.text.slice(0,60),go:()=>{ journalDate=ds; goToScreen('journal'); }}); });
+  Object.keys(S.diet.meals).forEach(ds=>{ (S.diet.meals[ds]||[]).forEach(m=>{ if(m.name.toLowerCase().includes(query)) results.push({icon:'🍽️',tag:'Diet',title:m.name,sub:`${ds} · ${Math.round(m.calories||0)} kcal`,go:()=>goToScreen('diet')}); }); });
+  S.debts.forEach(d=>{ if(d.name.toLowerCase().includes(query)) results.push({icon:'🏦',tag:'Debt',title:d.name,sub:`Balance ${fmtMoney(d.balance)}`,go:()=>{goToScreen('debts');openDebtModal(d.id);}}); });
+  S.goals.forEach(g=>{ if(g.title.toLowerCase().includes(query)) results.push({icon:GOAL_ICONS[g.mode]||'⭐',tag:'Goal',title:g.title,sub:'',go:()=>{goToScreen('goals');openGoalModal(g.id);}}); });
+  S.subscriptions.forEach(s=>{ if(s.name.toLowerCase().includes(query)) results.push({icon:'🔁',tag:'Subscription',title:s.name,sub:fmtMoney(s.amount),go:()=>{goToScreen('subscriptions');openSubModal(s.id);}}); });
+  S.health.meds.forEach(m=>{ if(m.name.toLowerCase().includes(query)) results.push({icon:'💊',tag:'Medicine',title:m.name,sub:m.dose||'',go:()=>goToScreen('health')}); });
+  S.health.appts.forEach(a=>{ if(a.title.toLowerCase().includes(query)) results.push({icon:'🩺',tag:'Appointment',title:a.title,sub:a.date,go:()=>goToScreen('health')}); });
+  S.documents.forEach(d=>{ if(d.title.toLowerCase().includes(query)) results.push({icon:'🗂️',tag:'Document',title:d.title,sub:d.category||'',go:()=>{goToScreen('documents');openDocModal(d.id);}}); });
+  if(results.length===0){ wrap.innerHTML = `<div class="empty-state"><div class="em-icon">🤷</div><div class="em-title">No matches</div>Try a different word.</div>`; return; }
+  wrap.innerHTML = results.slice(0,60).map((r,i)=>`<div class="search-result" data-i="${i}"><div class="sr-icon">${r.icon}</div><div class="sr-mid"><div class="sr-title">${r.title}</div><div class="sr-sub">${r.sub}</div></div><div class="sr-tag">${r.tag}</div></div>`).join('');
+  wrap.querySelectorAll('[data-i]').forEach(el=> el.addEventListener('click', ()=> results[Number(el.dataset.i)].go()));
+}
+document.getElementById('searchInput').addEventListener('input', (e)=> renderSearchResults(e.target.value));
+
+/* ---------- SUBSCRIPTIONS ---------- */
+function subMonthlyAmount(s){ return s.cycle==='yearly' ? Number(s.amount)/12 : Number(s.amount); }
+function subNextRenewDaysAway(s){
+  const today = new Date(todayStr()+'T00:00:00');
+  if(s.cycle==='monthly'){
+    let next = new Date(today.getFullYear(), today.getMonth(), Number(s.renewDay)||1);
+    if(next < today) next = new Date(today.getFullYear(), today.getMonth()+1, Number(s.renewDay)||1);
+    return Math.round((next-today)/86400000);
+  } else {
+    const [mm,dd] = (s.renewDate||'01-01').split('-').map(Number);
+    let next = new Date(today.getFullYear(), mm-1, dd);
+    if(next < today) next = new Date(today.getFullYear()+1, mm-1, dd);
+    return Math.round((next-today)/86400000);
+  }
+}
+function dueSoonSubscriptions(){ return S.subscriptions.filter(s=> subNextRenewDaysAway(s)<=5); }
+function renderSubscriptions(){
+  const monthly = S.subscriptions.reduce((a,s)=>a+subMonthlyAmount(s),0);
+  document.getElementById('subMonthlyTotal').textContent = fmtMoney(monthly);
+  document.getElementById('subYearlyTotal').textContent = fmtMoney(monthly*12);
+  const list = document.getElementById('subList');
+  if(S.subscriptions.length===0){ list.innerHTML = `<div class="empty-state"><div class="em-icon">🔁</div><div class="em-title">No subscriptions yet</div>Add Netflix, Spotify, recharges, insurance — anything recurring.</div>`; return; }
+  const sorted = [...S.subscriptions].sort((a,b)=> subNextRenewDaysAway(a)-subNextRenewDaysAway(b));
+  list.innerHTML = sorted.map(s=>{
+    const daysAway = subNextRenewDaysAway(s);
+    return `<div class="sub-card ${daysAway<=3?'due-soon':''}" data-sid="${s.id}">
+      <div class="sub-icon">🔁</div>
+      <div class="sub-mid"><div class="sub-name">${s.name}</div><div class="sub-meta">${s.category||'Subscription'} · renews in ${daysAway}d</div></div>
+      <div class="sub-amt">${fmtMoney(s.amount)}<div style="font-size:9.5px; color:var(--sub); font-weight:600;">${s.cycle}</div></div>
+    </div>`;
+  }).join('');
+  list.querySelectorAll('[data-sid]').forEach(el=> el.addEventListener('click', ()=> openSubModal(el.dataset.sid)));
+}
+function openSubModal(id){
+  const s = id ? S.subscriptions.find(x=>x.id===id) : null;
+  openModal(`
+    <div class="modal-head"><h3>${s?'Edit':'Add'} subscription</h3><button class="modal-close" data-close>✕</button></div>
+    <label class="fl" style="margin-top:0;">Name</label><input type="text" id="subName" value="${s?s.name:''}" placeholder="e.g. Netflix">
+    <label class="fl">Amount (₹)</label><input type="number" id="subAmt" value="${s?s.amount:''}" placeholder="649">
+    <label class="fl">Billing cycle</label>
+    <select id="subCycle"><option value="monthly" ${s&&s.cycle==='monthly'?'selected':''}>Monthly</option><option value="yearly" ${s&&s.cycle==='yearly'?'selected':''}>Yearly</option></select>
+    <div id="subMonthlyWrap"><label class="fl">Renews on day of month</label><input type="number" id="subDay" min="1" max="31" value="${s&&s.cycle!=='yearly'?s.renewDay:''}" placeholder="15"></div>
+    <div id="subYearlyWrap" style="display:none;"><label class="fl">Renewal date (MM-DD)</label><input type="text" id="subYDate" value="${s&&s.cycle==='yearly'?s.renewDate||'':''}" placeholder="03-21"></div>
+    <label class="fl">Category</label><input type="text" id="subCat" value="${s?s.category||'':''}" placeholder="Entertainment, Utilities…">
+    <button class="btn primary" id="subSave" style="margin-top:16px;">Save</button>
+    ${s?'<button class="btn danger" id="subDel" style="margin-top:10px;">Delete</button>':''}
+  `);
+  const cycleSel = document.getElementById('subCycle');
+  const syncCyc = ()=>{ const y=cycleSel.value==='yearly'; document.getElementById('subMonthlyWrap').style.display=y?'none':'block'; document.getElementById('subYearlyWrap').style.display=y?'block':'none'; };
+  cycleSel.onchange = syncCyc; syncCyc();
+  document.getElementById('subSave').onclick = ()=>{
+    const name = document.getElementById('subName').value.trim(); const amount = Number(document.getElementById('subAmt').value);
+    if(!name || !amount){ alert('Enter a name and amount'); return; }
+    const cycle = cycleSel.value;
+    const rec = { id:s?s.id:uid(), name, amount, cycle, category:document.getElementById('subCat').value.trim(),
+      renewDay: cycle==='monthly'? (Number(document.getElementById('subDay').value)||1) : undefined,
+      renewDate: cycle==='yearly'? (document.getElementById('subYDate').value||'01-01') : undefined };
+    if(s){ Object.assign(s, rec); } else { S.subscriptions.push(rec); }
+    saveState(); renderSubscriptions(); closeModal();
+  };
+  if(s) document.getElementById('subDel').onclick = ()=>{ S.subscriptions=S.subscriptions.filter(x=>x.id!==s.id); saveState(); renderSubscriptions(); closeModal(); };
+}
+document.getElementById('addSubBtn').addEventListener('click', ()=>openSubModal(null));
+document.getElementById('fabAddSub').addEventListener('click', ()=>openSubModal(null));
+
+/* ---------- ASSETS / NET WORTH ---------- */
+const ASSET_ICONS = { bank:'🏦', cash:'💵', investment:'📈', gold:'🪙', property:'🏠', other:'📦' };
+function renderAssets(){
+  const totalAssets = S.assets.reduce((a,x)=>a+Number(x.value),0);
+  const totalDebt = S.debts.reduce((a,x)=>a+Number(x.balance),0);
+  document.getElementById('assetsTotalNum').textContent = fmtMoney(totalAssets);
+  document.getElementById('netWorthNum').textContent = fmtMoney(totalAssets-totalDebt);
+  document.getElementById('netWorthHint').textContent = `${fmtMoney(totalAssets)} assets − ${fmtMoney(totalDebt)} liabilities (from Debts/EMI)`;
+  const list = document.getElementById('assetList');
+  if(S.assets.length===0){ list.innerHTML = `<div class="empty-state"><div class="em-icon">🏛️</div><div class="em-title">No assets added</div>Add bank balances, cash, investments, gold or property.</div>`; return; }
+  list.innerHTML = S.assets.map(a=>`<div class="asset-row" data-aid="${a.id}"><div class="as-icon">${ASSET_ICONS[a.type]||'📦'}</div><div class="as-mid">${a.name}<div class="as-type">${a.type}</div></div><div class="as-val">${fmtMoney(a.value)}</div></div>`).join('');
+  list.querySelectorAll('[data-aid]').forEach(el=> el.addEventListener('click', ()=> openAssetModal(el.dataset.aid)));
+}
+function openAssetModal(id){
+  const a = id ? S.assets.find(x=>x.id===id) : null;
+  openModal(`
+    <div class="modal-head"><h3>${a?'Edit':'Add'} asset</h3><button class="modal-close" data-close>✕</button></div>
+    <label class="fl" style="margin-top:0;">Name</label><input type="text" id="assetName" value="${a?a.name:''}" placeholder="e.g. HDFC Savings">
+    <label class="fl">Type</label>
+    <select id="assetType">
+      <option value="bank" ${a&&a.type==='bank'?'selected':''}>Bank account</option>
+      <option value="cash" ${a&&a.type==='cash'?'selected':''}>Cash</option>
+      <option value="investment" ${a&&a.type==='investment'?'selected':''}>Investment</option>
+      <option value="gold" ${a&&a.type==='gold'?'selected':''}>Gold</option>
+      <option value="property" ${a&&a.type==='property'?'selected':''}>Property</option>
+      <option value="other" ${a&&a.type==='other'?'selected':''}>Other</option>
+    </select>
+    <label class="fl">Current value (₹)</label><input type="number" id="assetVal" value="${a?a.value:''}">
+    <button class="btn primary" id="assetSave" style="margin-top:16px;">Save</button>
+    ${a?'<button class="btn danger" id="assetDel" style="margin-top:10px;">Delete</button>':''}
+  `);
+  document.getElementById('assetSave').onclick = ()=>{
+    const name = document.getElementById('assetName').value.trim(); const value = Number(document.getElementById('assetVal').value);
+    if(!name){ alert('Enter a name'); return; }
+    const rec = { id:a?a.id:uid(), name, type:document.getElementById('assetType').value, value:value||0 };
+    if(a){ Object.assign(a, rec); } else { S.assets.push(rec); }
+    saveState(); renderAssets(); closeModal();
+  };
+  if(a) document.getElementById('assetDel').onclick = ()=>{ S.assets=S.assets.filter(x=>x.id!==a.id); saveState(); renderAssets(); closeModal(); };
+}
+document.getElementById('addAssetBtn').addEventListener('click', ()=>openAssetModal(null));
+document.getElementById('fabAddAsset').addEventListener('click', ()=>openAssetModal(null));
+
+/* ---------- HEALTH ---------- */
+function renderHealth(){
+  const today = todayStr();
+  const v = S.health.vitals[today] || {};
+  document.getElementById('vitalBp').value = v.bp||'';
+  document.getElementById('vitalSugar').value = v.sugar||'';
+  document.getElementById('vitalWeight').value = v.weight||'';
+  const medList = document.getElementById('medList');
+  medList.innerHTML = S.health.meds.length===0 ? `<div class="empty-state" style="padding:18px;"><div class="em-icon">💊</div>No medicines added</div>` :
+    S.health.meds.map(m=>`<div class="med-row" data-mid="${m.id}"><div class="med-icon">💊</div><div class="med-mid"><div class="med-name">${m.name}</div><div class="med-meta">${m.dose||''}${m.times&&m.times.length?' · '+m.times.join(', '):''}</div></div></div>`).join('');
+  medList.querySelectorAll('[data-mid]').forEach(el=> el.addEventListener('click', ()=> openMedModal(el.dataset.mid)));
+  const apptList = document.getElementById('apptList');
+  const sortedAppts = [...S.health.appts].sort((a,b)=> a.date.localeCompare(b.date));
+  apptList.innerHTML = sortedAppts.length===0 ? `<div class="empty-state" style="padding:18px;"><div class="em-icon">🩺</div>No appointments</div>` :
+    sortedAppts.map(a=>`<div class="med-row" data-aid="${a.id}"><div class="med-icon">🩺</div><div class="med-mid"><div class="med-name">${a.title}</div><div class="med-meta">${a.date}${a.notes?' · '+a.notes:''}</div></div></div>`).join('');
+  apptList.querySelectorAll('[data-aid]').forEach(el=> el.addEventListener('click', ()=> openApptModal(el.dataset.aid)));
+}
+document.getElementById('saveVitalsBtn').addEventListener('click', ()=>{
+  const today = todayStr();
+  S.health.vitals[today] = { bp:document.getElementById('vitalBp').value.trim(), sugar:document.getElementById('vitalSugar').value.trim(), weight:document.getElementById('vitalWeight').value.trim(), updated:new Date().toISOString() };
+  saveState(); showToast('Vitals saved', '💊');
+});
+function openMedModal(id){
+  const m = id ? S.health.meds.find(x=>x.id===id) : null;
+  openModal(`
+    <div class="modal-head"><h3>${m?'Edit':'Add'} medicine</h3><button class="modal-close" data-close>✕</button></div>
+    <label class="fl" style="margin-top:0;">Name</label><input type="text" id="medName" value="${m?m.name:''}" placeholder="e.g. Metformin">
+    <label class="fl">Dose</label><input type="text" id="medDose" value="${m?m.dose||'':''}" placeholder="500mg">
+    <label class="fl">Times (comma separated, HH:MM)</label><input type="text" id="medTimes" value="${m&&m.times?m.times.join(', '):''}" placeholder="08:00, 20:00">
+    <label class="fl">Notes</label><input type="text" id="medNotes" value="${m?m.notes||'':''}">
+    <button class="btn primary" id="medSave" style="margin-top:16px;">Save</button>
+    ${m?'<button class="btn danger" id="medDel" style="margin-top:10px;">Delete</button>':''}
+  `);
+  document.getElementById('medSave').onclick = ()=>{
+    const name = document.getElementById('medName').value.trim(); if(!name){ alert('Enter a name'); return; }
+    const times = document.getElementById('medTimes').value.split(',').map(s=>s.trim()).filter(Boolean);
+    const rec = { id:m?m.id:uid(), name, dose:document.getElementById('medDose').value.trim(), times, notes:document.getElementById('medNotes').value.trim() };
+    if(m){ Object.assign(m, rec); } else { S.health.meds.push(rec); }
+    saveState(); renderHealth(); closeModal();
+  };
+  if(m) document.getElementById('medDel').onclick = ()=>{ S.health.meds=S.health.meds.filter(x=>x.id!==m.id); saveState(); renderHealth(); closeModal(); };
+}
+function openApptModal(id){
+  const a = id ? S.health.appts.find(x=>x.id===id) : null;
+  openModal(`
+    <div class="modal-head"><h3>${a?'Edit':'Add'} appointment</h3><button class="modal-close" data-close>✕</button></div>
+    <label class="fl" style="margin-top:0;">Title</label><input type="text" id="apptTitle" value="${a?a.title:''}" placeholder="e.g. Dentist checkup">
+    <label class="fl">Date</label><input type="date" id="apptDate" value="${a?a.date:todayStr()}">
+    <label class="fl">Notes</label><input type="text" id="apptNotes" value="${a?a.notes||'':''}">
+    <button class="btn primary" id="apptSave" style="margin-top:16px;">Save</button>
+    ${a?'<button class="btn danger" id="apptDel" style="margin-top:10px;">Delete</button>':''}
+  `);
+  document.getElementById('apptSave').onclick = ()=>{
+    const title = document.getElementById('apptTitle').value.trim(); if(!title){ alert('Enter a title'); return; }
+    const rec = { id:a?a.id:uid(), title, date:document.getElementById('apptDate').value||todayStr(), notes:document.getElementById('apptNotes').value.trim() };
+    if(a){ Object.assign(a, rec); } else { S.health.appts.push(rec); }
+    saveState(); renderHealth(); closeModal();
+  };
+  if(a) document.getElementById('apptDel').onclick = ()=>{ S.health.appts=S.health.appts.filter(x=>x.id!==a.id); saveState(); renderHealth(); closeModal(); };
+}
+document.getElementById('addMedBtn').addEventListener('click', ()=>openMedModal(null));
+document.getElementById('addApptBtn').addEventListener('click', ()=>openApptModal(null));
+
+/* ---------- DOCUMENTS VAULT ---------- */
+function renderDocuments(){
+  const list = document.getElementById('docList');
+  if(S.documents.length===0){ list.innerHTML = `<div class="empty-state"><div class="em-icon">🗂️</div><div class="em-title">No documents yet</div>Add insurance, vehicle, loan or ID reference details.</div>`; return; }
+  list.innerHTML = S.documents.map(d=>`<div class="doc-card" data-did="${d.id}"><div class="doc-icon">🗂️</div><div class="doc-mid"><div class="doc-title">${d.title}</div><div class="doc-meta">${d.category||'Document'}${d.expiryDate?' · expires '+d.expiryDate:''}</div></div></div>`).join('');
+  list.querySelectorAll('[data-did]').forEach(el=> el.addEventListener('click', ()=> openDocModal(el.dataset.did)));
+}
+function openDocModal(id){
+  const d = id ? S.documents.find(x=>x.id===id) : null;
+  openModal(`
+    <div class="modal-head"><h3>${d?'Edit':'Add'} document</h3><button class="modal-close" data-close>✕</button></div>
+    <label class="fl" style="margin-top:0;">Title</label><input type="text" id="docTitle" value="${d?d.title:''}" placeholder="e.g. Car insurance">
+    <label class="fl">Category</label><input type="text" id="docCat" value="${d?d.category||'':''}" placeholder="Insurance, Vehicle, Loan, ID…">
+    <label class="fl">Reference / number</label><input type="text" id="docRef" value="${d?d.ref||'':''}" placeholder="Policy no. / reg. no. / account no.">
+    <label class="fl">Expiry / renewal date (optional)</label><input type="date" id="docExpiry" value="${d?d.expiryDate||'':''}">
+    <label class="fl">Notes</label><textarea id="docNotes" rows="3">${d?d.notes||'':''}</textarea>
+    <button class="btn primary" id="docSave" style="margin-top:16px;">Save</button>
+    ${d?'<button class="btn danger" id="docDel" style="margin-top:10px;">Delete</button>':''}
+  `);
+  document.getElementById('docSave').onclick = ()=>{
+    const title = document.getElementById('docTitle').value.trim(); if(!title){ alert('Enter a title'); return; }
+    const rec = { id:d?d.id:uid(), title, category:document.getElementById('docCat').value.trim(), ref:document.getElementById('docRef').value.trim(), expiryDate:document.getElementById('docExpiry').value||'', notes:document.getElementById('docNotes').value.trim() };
+    if(d){ Object.assign(d, rec); } else { S.documents.push(rec); }
+    saveState(); renderDocuments(); closeModal();
+  };
+  if(d) document.getElementById('docDel').onclick = ()=>{ S.documents=S.documents.filter(x=>x.id!==d.id); saveState(); renderDocuments(); closeModal(); };
+}
+document.getElementById('addDocBtn').addEventListener('click', ()=>openDocModal(null));
+document.getElementById('fabAddDoc').addEventListener('click', ()=>openDocModal(null));
+
+/* ---------- AI COACH ---------- */
+function buildCoachDigest(){
+  const today = todayStr();
+  const lines = [];
+  S.habits.forEach(h=>{
+    let hit7=0; for(let i=0;i<7;i++){ if(habitProgress(h, addDays(today,-i))>=1) hit7++; }
+    lines.push(`Habit "${h.name}" (target ${h.target}${h.unit}): completed ${hit7}/7 days this week.`);
+  });
+  const cutoff30 = addDays(today,-30), cutoffPrev = addDays(today,-60);
+  const spend30 = S.transactions.filter(t=>t.type==='out'&&t.date>=cutoff30).reduce((a,t)=>a+Number(t.amount),0);
+  const spendPrev30 = S.transactions.filter(t=>t.type==='out'&&t.date>=cutoffPrev&&t.date<cutoff30).reduce((a,t)=>a+Number(t.amount),0);
+  lines.push(`Spending last 30 days: ₹${Math.round(spend30)} vs ₹${Math.round(spendPrev30)} the 30 days before.`);
+  const byCat={}; S.transactions.filter(t=>t.type==='out'&&t.date>=cutoff30).forEach(t=>{ byCat[t.category||'Other']=(byCat[t.category||'Other']||0)+Number(t.amount); });
+  const topCats = Object.entries(byCat).sort((a,b)=>b[1]-a[1]).slice(0,4);
+  if(topCats.length) lines.push('Top spend categories (30d): ' + topCats.map(c=>`${c[0]} ₹${Math.round(c[1])}`).join(', ')+'.');
+  S.budgets.forEach(b=>{ const spent=monthSpendByCategory(b.category); lines.push(`Budget "${b.category}": ₹${Math.round(spent)} spent of ₹${b.limit} this month.`); });
+  S.debts.forEach(d=>{ const monthsLeft = d.emiAmount>0 ? Math.ceil(Number(d.balance)/Number(d.emiAmount)) : '?'; lines.push(`Debt "${d.name}": balance ₹${d.balance}, EMI ₹${d.emiAmount}, ~${monthsLeft} months left, overdue=${debtIsOverdue(d)}.`); });
+  const sh = sleepHabit();
+  if(sh){ let sum=0,n=0; for(let i=0;i<7;i++){ const v=habitValue(sh, addDays(today,-i)); if(v){sum+=v;n++;} } if(n) lines.push(`Average sleep last 7 days: ${(sum/n).toFixed(1)}${sh.unit} over ${n} logged nights.`); }
+  S.goals.forEach(g=>{ const gp=goalProgressCalc(g); lines.push(`Goal "${g.title}": ${Math.round(gp.pct*100)}% complete${gp.behind?' (behind pace)':''}.`); });
+  const journaledDays = Object.keys(S.journal).filter(d=>d>=cutoff30).length;
+  lines.push(`Journal entries in last 30 days: ${journaledDays}.`);
+  return lines.join('\n');
+}
+async function renderCoach(){
+  const out = document.getElementById('coachOutput');
+  if(S.aiCoach.lastInsights && S.aiCoach.lastInsights.length){
+    out.innerHTML = S.aiCoach.lastInsights.map(t=>`<div class="coach-msg"><span class="cm-icon">💡</span><div>${t}</div></div>`).join('') +
+      `<div class="hint">Last generated ${S.aiCoach.lastRun ? new Date(S.aiCoach.lastRun).toLocaleString() : ''}</div>`;
+  } else {
+    out.innerHTML = `<div class="coach-empty">No insights generated yet — tap the button above.</div>`;
+  }
+}
+document.getElementById('runCoachBtn').addEventListener('click', async ()=>{
+  const key = S.diet.settings.geminiKey;
+  const out = document.getElementById('coachOutput');
+  if(!key){ out.innerHTML = `<div class="coach-empty">Add a free Gemini API key in Settings → Diet &amp; body stats first — the same key powers photo nutrition and the AI Coach.</div>`; return; }
+  out.innerHTML = `<div class="coach-empty">Thinking through your last 30 days…</div>`;
+  try{
+    const digest = buildCoachDigest();
+    const prompt = `You are a supportive personal life-coach reading structured data exported from a habit/finance/health tracking app called GP Ledger. Data:\n\n${digest}\n\nWrite 4 to 6 short, specific, plain-English insights or pieces of advice (max 22 words each) a real person would find useful — call out patterns, risks, and wins. Avoid generic advice not backed by the data above. Reply with ONLY a compact JSON array of strings, no markdown, no explanation. Example: ["insight one","insight two"]`;
+    const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ contents:[{ parts:[{ text:prompt }] }] })
+    });
+    const data = await resp.json();
+    const txt = data.candidates[0].content.parts[0].text.replace(/```json|```/g,'').trim();
+    const insights = JSON.parse(txt);
+    S.aiCoach.lastInsights = Array.isArray(insights) ? insights : [String(insights)];
+    S.aiCoach.lastRun = new Date().toISOString();
+    saveState();
+    renderCoach();
+    renderDashboard();
+  }catch(e){
+    out.innerHTML = `<div class="coach-empty">Could not generate insights (${e.message}). Check your Gemini key and connection, then try again.</div>`;
+  }
+});
+
+/* ---------- v9: PER-CATEGORY REPORT EXPORTS (Debts, Journal, Diet, Routine, Goals, Subscriptions, Net Worth, Health) ---------- */
+function pdfHeader(doc, title){
+  doc.setFillColor(34,197,94); doc.rect(0,0,210,22,'F');
+  doc.setTextColor(255,255,255); doc.setFontSize(16); doc.text(title, 12, 14);
+  doc.setFontSize(10); doc.text(`Generated ${todayStr()}`, 12, 19);
+  doc.setTextColor(20,20,20);
+  return 32;
+}
+function exportDebtsExcel(){
+  const ym = currentYM();
+  const rows = [['Loan','Balance','Monthly EMI','Due Day','Debited From','Status','Paid Date','Paid Amount']];
+  S.debts.forEach(d=>{
+    const pm = d.paidMonths && d.paidMonths[ym];
+    const paid = !!pm;
+    rows.push([d.name, d.balance, d.emiAmount, d.dueDay, (paid&&typeof pm==='object'?pm.account:d.debitAccount)||'', paid?'Paid':'Unpaid', paid&&typeof pm==='object'?pm.paidDate:'', paid?(typeof pm==='object'?pm.amount:d.emiAmount):'']);
+  });
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), 'Debts_'+ym);
+  XLSX.writeFile(wb, `GP-Ledger-Debts-${ym}.xlsx`);
+}
+function exportDebtsPdf(){
+  const { jsPDF } = window.jspdf; const doc = new jsPDF();
+  let y = pdfHeader(doc, 'GP Ledger — Debts / EMI Report');
+  const ym = currentYM(); const now = new Date();
+  doc.setFontSize(11); doc.text(`Month: ${monthName(now.getMonth())} ${now.getFullYear()}`, 12, y); y+=9;
+  doc.setFontSize(9); doc.setFont(undefined,'bold');
+  doc.text('Loan', 14, y); doc.text('Balance', 75, y); doc.text('EMI', 105, y); doc.text('Debited from', 130, y); doc.text('Status', 178, y);
+  doc.setFont(undefined,'normal'); y+=4; doc.setDrawColor(200); doc.line(12,y,198,y); y+=6;
+  S.debts.forEach(d=>{
+    const pm = d.paidMonths && d.paidMonths[ym];
+    const paid = !!pm;
+    doc.setFillColor(paid?222:254, paid?247:226, paid?232:226);
+    doc.rect(12, y-4.5, 186, 7.5, 'F');
+    doc.setTextColor(20,20,20);
+    doc.text(String(d.name).slice(0,28), 14, y);
+    doc.text(`Rs.${Number(d.balance).toFixed(0)}`, 75, y);
+    doc.text(`Rs.${Number(d.emiAmount).toFixed(0)}`, 105, y);
+    doc.text(String((paid&&typeof pm==='object'?pm.account:d.debitAccount)||'—').slice(0,17), 130, y);
+    if(paid) doc.setTextColor(21,128,61); else doc.setTextColor(185,28,28);
+    doc.setFont(undefined,'bold'); doc.text(paid?'PAID':'UNPAID', 178, y); doc.setFont(undefined,'normal');
+    doc.setTextColor(20,20,20);
+    y+=8.5;
+    if(y>275){ doc.addPage(); y=20; }
+  });
+  y+=6;
+  const totalEmi = S.debts.reduce((s,d)=>s+Number(d.emiAmount||0),0);
+  const paidTotal = S.debts.reduce((s,d)=>{ const pm=d.paidMonths&&d.paidMonths[ym]; return s+(pm?(typeof pm==='object'?Number(pm.amount):Number(d.emiAmount)):0); },0);
+  doc.setFontSize(10); doc.setFont(undefined,'bold');
+  doc.text(`Total EMI: Rs.${totalEmi.toFixed(0)}   Paid: Rs.${paidTotal.toFixed(0)}   Remaining: Rs.${Math.max(0,totalEmi-paidTotal).toFixed(0)}`, 12, y);
+  doc.save(`GP-Ledger-Debts-${ym}.pdf`);
+}
+function exportJournalReportExcel(a,b){
+  const rows=[['Date','Words','Preview']];
+  Object.keys(S.journal).filter(ds=>ds>=a&&ds<=b).sort().forEach(ds=>{
+    const e = S.journal[ds];
+    rows.push([ds, (e.text||'').split(/\s+/).filter(Boolean).length, (e.text||'').slice(0,150)]);
+  });
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), 'Journal');
+  XLSX.writeFile(wb, `GP-Ledger-Journal-${a}_to_${b}.xlsx`);
+}
+function exportJournalReportPdf(a,b){
+  const { jsPDF } = window.jspdf; const doc = new jsPDF();
+  let y = pdfHeader(doc, 'GP Ledger — Journal Report');
+  doc.setFontSize(10); doc.text(`Period: ${a} to ${b}`, 12, y); y+=9;
+  const entries = Object.keys(S.journal).filter(ds=>ds>=a&&ds<=b).sort();
+  if(!entries.length){ doc.setFontSize(10); doc.text('No journal entries in this period.', 12, y); }
+  entries.forEach(ds=>{
+    const e = S.journal[ds];
+    doc.setFontSize(11); doc.setFont(undefined,'bold'); doc.text(ds, 12, y); doc.setFont(undefined,'normal'); y+=6;
+    doc.setFontSize(9);
+    const lines = doc.splitTextToSize(e.text||'(empty)', 180);
+    lines.slice(0,10).forEach(line=>{ doc.text(line, 12, y); y+=5; if(y>280){doc.addPage(); y=20;} });
+    y+=4;
+    if(y>280){ doc.addPage(); y=20; }
+  });
+  doc.save(`GP-Ledger-Journal-${a}_to_${b}.pdf`);
+}
+function exportDietReportExcel(a,b){
+  const rows=[];
+  Object.keys(S.diet.meals).filter(ds=>ds>=a&&ds<=b).sort().forEach(ds=>{
+    (S.diet.meals[ds]||[]).forEach(m=> rows.push({date:ds, time:m.time, meal:m.name, calories:m.calories, protein:m.protein, carbs:m.carbs, fat:m.fat, fiber:m.fiber}));
+  });
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows.length?rows:[{note:'No meals in this period'}]), 'Diet');
+  XLSX.writeFile(wb, `GP-Ledger-Diet-${a}_to_${b}.xlsx`);
+}
+function exportDietReportPdf(a,b){
+  const { jsPDF } = window.jspdf; const doc = new jsPDF();
+  let y = pdfHeader(doc, 'GP Ledger — Diet Report');
+  doc.setFontSize(10); doc.text(`Period: ${a} to ${b}`, 12, y); y+=9; doc.setFontSize(9);
+  const dsList = Object.keys(S.diet.meals).filter(ds=>ds>=a&&ds<=b).sort();
+  if(!dsList.some(ds=>(S.diet.meals[ds]||[]).length)){ doc.text('No meals logged in this period.', 12, y); }
+  dsList.forEach(ds=>{
+    const meals = S.diet.meals[ds]||[]; if(!meals.length) return;
+    doc.setFont(undefined,'bold'); doc.text(ds, 12, y); doc.setFont(undefined,'normal'); y+=5.5;
+    meals.forEach(m=>{ doc.text(`${m.time||''}  ${m.name}  —  ${Math.round(m.calories||0)} kcal`, 14, y); y+=5; if(y>280){doc.addPage(); y=20;} });
+    y+=3; if(y>280){ doc.addPage(); y=20; }
+  });
+  doc.save(`GP-Ledger-Diet-${a}_to_${b}.pdf`);
+}
+function exportRoutineReportExcel(a,b){
+  const rows=[['Date','Start','End','Category','Note','Minutes']];
+  eachDate(a, b<todayStr()?b:todayStr()).forEach(ds=>{
+    (S.routineLogs[ds]||[]).forEach(blk=> rows.push([ds, blk.start, blk.end, blk.cat, blk.note||'', blockDuration(blk)]));
+  });
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), 'Routine');
+  XLSX.writeFile(wb, `GP-Ledger-Routine-${a}_to_${b}.xlsx`);
+}
+function exportRoutineReportPdf(a,b){
+  const { jsPDF } = window.jspdf; const doc = new jsPDF();
+  let y = pdfHeader(doc, 'GP Ledger — Routine Report');
+  doc.setFontSize(10); doc.text(`Period: ${a} to ${b}`, 12, y); y+=9; doc.setFontSize(9);
+  const dl = eachDate(a, b<todayStr()?b:todayStr());
+  if(!dl.some(ds=>(S.routineLogs[ds]||[]).length)){ doc.text('No routine logged in this period.', 12, y); }
+  dl.forEach(ds=>{
+    const blocks = S.routineLogs[ds]||[]; if(!blocks.length) return;
+    doc.setFont(undefined,'bold'); doc.text(ds, 12, y); doc.setFont(undefined,'normal'); y+=5.5;
+    blocks.forEach(blk=>{ doc.text(`${blk.start}-${blk.end}  ${blk.cat}  (${blockDuration(blk)}m)`, 14, y); y+=5; if(y>280){doc.addPage(); y=20;} });
+    y+=3; if(y>280){ doc.addPage(); y=20; }
+  });
+  doc.save(`GP-Ledger-Routine-${a}_to_${b}.pdf`);
+}
+function exportGoalsExcel(){
+  const rows=[['Goal','Type','Progress %','Current','Target','Deadline']];
+  S.goals.forEach(g=>{ const gp=goalProgressCalc(g); rows.push([g.title, g.mode, Math.round(gp.pct*100), gp.current, gp.target, g.deadline||'']); });
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows.length>1?rows:[...rows,['No goals yet']]), 'Goals');
+  XLSX.writeFile(wb, `GP-Ledger-Goals-${todayStr()}.xlsx`);
+}
+function exportGoalsPdf(){
+  const { jsPDF } = window.jspdf; const doc = new jsPDF();
+  let y = pdfHeader(doc, 'GP Ledger — Goals Report');
+  doc.setFontSize(9);
+  if(!S.goals.length){ doc.text('No goals added yet.', 12, y); }
+  S.goals.forEach(g=>{
+    const gp = goalProgressCalc(g);
+    doc.setFont(undefined,'bold'); doc.text(g.title, 12, y); doc.setFont(undefined,'normal');
+    doc.text(`${Math.round(gp.pct*100)}%`, 180, y);
+    y+=6;
+    doc.setFillColor(230,230,230); doc.rect(12,y-3.5,150,3,'F');
+    doc.setFillColor(99,102,241); doc.rect(12,y-3.5, Math.max(2,150*gp.pct),3,'F');
+    y+=8;
+    if(y>280){ doc.addPage(); y=20; }
+  });
+  doc.save(`GP-Ledger-Goals-${todayStr()}.pdf`);
+}
+function exportSubscriptionsExcel(){
+  const rows=[['Name','Amount','Cycle','Renews','Category']];
+  S.subscriptions.forEach(s=> rows.push([s.name, s.amount, s.cycle, s.cycle==='monthly'?('Day '+s.renewDay):s.renewDate, s.category||'']));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows.length>1?rows:[...rows,['No subscriptions yet']]), 'Subscriptions');
+  XLSX.writeFile(wb, `GP-Ledger-Subscriptions-${todayStr()}.xlsx`);
+}
+function exportSubscriptionsPdf(){
+  const { jsPDF } = window.jspdf; const doc = new jsPDF();
+  let y = pdfHeader(doc, 'GP Ledger — Subscriptions Report');
+  doc.setFontSize(9);
+  if(!S.subscriptions.length){ doc.text('No subscriptions added yet.', 12, y); }
+  S.subscriptions.forEach(s=>{
+    doc.text(`${s.name} — Rs.${s.amount} / ${s.cycle} — ${s.category||''}`, 12, y); y+=6;
+    if(y>280){ doc.addPage(); y=20; }
+  });
+  const monthly = S.subscriptions.reduce((a,s)=>a+subMonthlyAmount(s),0);
+  y+=4; doc.setFontSize(10); doc.setFont(undefined,'bold'); doc.text(`Monthly total: Rs.${monthly.toFixed(0)}   Yearly total: Rs.${(monthly*12).toFixed(0)}`, 12, y);
+  doc.save(`GP-Ledger-Subscriptions-${todayStr()}.pdf`);
+}
+function exportAssetsExcel(){
+  const rows=[['Name','Type','Value']];
+  S.assets.forEach(a=> rows.push([a.name, a.type, a.value]));
+  rows.push(['','','']); rows.push(['Liabilities (Debts/EMI)','','']);
+  S.debts.forEach(d=> rows.push([d.name, 'debt', -Number(d.balance)]));
+  const totalAssets = S.assets.reduce((s,x)=>s+Number(x.value),0);
+  const totalDebt = S.debts.reduce((s,x)=>s+Number(x.balance),0);
+  rows.push(['','','']); rows.push(['Net worth', '', totalAssets-totalDebt]);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), 'NetWorth');
+  XLSX.writeFile(wb, `GP-Ledger-NetWorth-${todayStr()}.xlsx`);
+}
+function exportAssetsPdf(){
+  const { jsPDF } = window.jspdf; const doc = new jsPDF();
+  let y = pdfHeader(doc, 'GP Ledger — Net Worth Statement');
+  doc.setFontSize(11); doc.text('Assets', 12, y); y+=7; doc.setFontSize(9);
+  if(!S.assets.length) doc.text('No assets added yet.', 14, y), y+=6;
+  S.assets.forEach(a=>{ doc.text(`${a.name} (${a.type})`, 14, y); doc.text(`Rs.${Number(a.value).toFixed(0)}`, 170, y); y+=6; if(y>270){doc.addPage();y=20;} });
+  y+=4; doc.setFontSize(11); doc.text('Liabilities', 12, y); y+=7; doc.setFontSize(9);
+  if(!S.debts.length) doc.text('No debts on file.', 14, y), y+=6;
+  S.debts.forEach(d=>{ doc.text(d.name, 14, y); doc.text(`Rs.${Number(d.balance).toFixed(0)}`, 170, y); y+=6; if(y>270){doc.addPage();y=20;} });
+  const totalAssets = S.assets.reduce((s,x)=>s+Number(x.value),0);
+  const totalDebt = S.debts.reduce((s,x)=>s+Number(x.balance),0);
+  y+=8; doc.setFontSize(12); doc.setFont(undefined,'bold'); doc.text(`Net worth: Rs.${(totalAssets-totalDebt).toFixed(0)}`, 12, y);
+  doc.save(`GP-Ledger-NetWorth-${todayStr()}.pdf`);
+}
+function exportHealthExcel(a,b){
+  const rows=[['Date','BP','Sugar','Weight']];
+  Object.keys(S.health.vitals).filter(ds=>ds>=a&&ds<=b).sort().forEach(ds=>{ const v=S.health.vitals[ds]; rows.push([ds, v.bp||'', v.sugar||'', v.weight||'']); });
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), 'Vitals');
+  const medsRows=[['Medicine','Dose','Times']]; S.health.meds.forEach(m=> medsRows.push([m.name, m.dose||'', (m.times||[]).join(', ')]));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(medsRows.length>1?medsRows:[...medsRows,['No medicines added']]), 'Medicines');
+  XLSX.writeFile(wb, `GP-Ledger-Health-${a}_to_${b}.xlsx`);
+}
+function exportHealthPdf(a,b){
+  const { jsPDF } = window.jspdf; const doc = new jsPDF();
+  let y = pdfHeader(doc, 'GP Ledger — Health Report');
+  doc.setFontSize(11); doc.text('Vitals', 12, y); y+=7; doc.setFontSize(9);
+  const vd = Object.keys(S.health.vitals).filter(ds=>ds>=a&&ds<=b).sort();
+  if(!vd.length) doc.text('No vitals logged in this period.', 14, y), y+=6;
+  vd.forEach(ds=>{
+    const v = S.health.vitals[ds];
+    doc.text(`${ds}   BP ${v.bp||'—'}   Sugar ${v.sugar||'—'}   Weight ${v.weight||'—'}`, 12, y); y+=6;
+    if(y>270){doc.addPage();y=20;}
+  });
+  y+=6; doc.setFontSize(11); doc.text('Medicines', 12, y); y+=7; doc.setFontSize(9);
+  if(!S.health.meds.length) doc.text('No medicines added.', 14, y), y+=6;
+  S.health.meds.forEach(m=>{ doc.text(`${m.name} — ${m.dose||''} — ${(m.times||[]).join(', ')}`, 12, y); y+=6; if(y>270){doc.addPage();y=20;} });
+  doc.save(`GP-Ledger-Health-${a}_to_${b}.pdf`);
+}
+
 document.addEventListener('DOMContentLoaded', init);
 </script>
 </body>

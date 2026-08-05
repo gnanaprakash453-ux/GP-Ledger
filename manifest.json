@@ -1,7 +1,7 @@
 {
   "name": "GP Ledger",
   "short_name": "GP Ledger",
-  "description": "Habits, finance and routine, all in one place.",
+  "description": "Habits, goals, finance, health, and life management, all in one place.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

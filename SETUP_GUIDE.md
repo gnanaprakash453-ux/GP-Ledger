@@ -1,4 +1,4 @@
-# GP Ledger — Setup Guide (v8)
+# GP Ledger — Setup Guide (v9)
 
 This covers everything from "I have these files" to "the app is installed on my
 phone, syncing to my own Google Sheet, and pinging me on Telegram."
@@ -110,14 +110,15 @@ You'll get a real home-screen icon and a full-screen app with no browser bar.
 7. Copy the **Web app URL** it gives you (ends in `/exec`).
 8. In GP Ledger → **Settings → Google Sheet database**, paste that URL into **Apps Script Web App URL**.
 9. Tap **Test connection** — you should see a message confirming it's reachable, plus a debug log entry.
-10. Tap **Sync now**. Open your Google Sheet — you should now see tabs: `Data`, `Habits`, `Settings`, `Transactions_<year>`, `Routine`, `Reports`, `Debts`, `Journal`, `Diet`.
+10. Tap **Sync now**. Open your Google Sheet — you should now see tabs: `Data`, `Habits`, `Settings`, `Transactions_<year>`, `Routine`, `Reports`, `Debts`, `Journal`, `Diet`, `Goals`, `Subscriptions`, `Assets`, `Health`, `Documents`, `Budgets`.
 
-> **Already on v7 and just adding v8?** You still need to redo step 3.3 —
+> **Already on v8 and just upgrading to v9?** You still need to redo step 3.3 —
 > paste in the *new* `apps-script.gs` — and step 5's **Deploy → Manage
 > deployments → ✏️ edit → New version → Deploy**. Saving alone does not
 > publish code changes to your live `/exec` URL (see the troubleshooting
-> note below). Without this, the new **Load from Sheet** button and the
-> `Debts`/`Journal`/`Diet` sheet tabs won't work.
+> note below). Without this, the six new sheet tabs (`Goals`, `Subscriptions`,
+> `Assets`, `Health`, `Documents`, `Budgets`) and the updated `Debts` tab
+> (with the new Debited-From/Status columns) won't populate.
 
 ### If sync ever stops updating the sheet correctly
 This was the exact bug fixed in v6. The app now checks that the response
@@ -132,7 +133,8 @@ really came from the sync handler (not a generic/error page), and shows a
 ### Pulling data back down (Load from Sheet)
 Settings → Google Sheet database → **"⬇ Load from Sheet"** fetches the last
 snapshot saved to the `Data` tab and replaces everything currently on this
-device — habits, transactions, routine logs, debts, journal, diet, settings.
+device — habits, transactions, routine logs, debts, journal, diet, goals,
+subscriptions, assets, health, documents, budgets, settings.
 Useful when setting up a new phone, or after reinstalling the app. It asks
 for confirmation first since it's a full replace, not a merge. This needs
 the same redeployed `apps-script.gs` as above (it adds the `action=load`
@@ -174,13 +176,23 @@ to it:
 4. That's a second, separate trigger from `checkReminders` — you'll end up
    with two triggers listed, which is correct.
 
-## 5. Customize the app icon
+## 5. The app icon
 
-The app ships with a default **"G"** icon. To change it:
-1. **Settings → App Icon** — type a new letter/emoji and pick two colors. This updates the **in-app badge** immediately (top-left of the header).
-2. To actually change the **real home-screen icon**, tap **"Download my icon files"** — this generates and downloads `icon-192.png`, `icon-512.png`, `icon-512-maskable.png`, and `apple-touch-icon.png` matching your chosen letter/colors.
-3. Replace those four files in your hosting (re-upload to GitHub/Netlify/etc. with the same filenames).
-4. Remove the app from your home screen and **Add to Home Screen** again — phones only re-read icon files on a fresh install, not a page refresh.
+v9 ships with your **GP logo** baked in as `icon-192.png`, `icon-512.png`,
+`icon-512-maskable.png` and `apple-touch-icon.png` — no in-app setup needed,
+just make sure all four files are uploaded to your host alongside
+`index.html` (same filenames, same folder). If you ever want a different
+logo:
+1. Send me the new logo image in a future chat and I'll re-crop/regenerate
+   all four icon files from it (this is scripted, so it's quick).
+2. Replace those four files in your hosting (re-upload with the same
+   filenames).
+3. Remove the app from your home screen and **Add to Home Screen** again —
+   phones only re-read icon files on a fresh install, not a page refresh.
+
+The **Settings → App Icon** letter/color picker still exists and controls
+only the small in-app header badge (top-left avatar), separate from the
+real home-screen icon files above.
 
 ## 6. Habits: linking to Routine (no double entry)
 
@@ -197,13 +209,104 @@ you can link it to a matching habit so you don't have to log it twice:
 ## 7. Debts / EMI tracking
 
 **More → Debts/EMI → + Add**: enter the loan name, current balance,
-monthly EMI amount, and the due day of the month (1–31). Loans past their
-due day and not yet marked paid that month show an **Overdue** badge.
-Tapping **"Mark this month paid"** reduces the balance by the EMI amount
-and creates a matching Finance transaction (category "EMI/Loan") in one
-step, so Finance and Debts stay in sync without entering the payment twice.
+monthly EMI amount, the due day of the month (1–31), and (optionally) which
+account it's usually debited from. Unpaid loans sort to the top in
+due-date order; loans already paid this month sink to the bottom, dimmed,
+labeled e.g. **"Aug - Paid"**.
 
-## 8. Journal / diary
+- **Mark this month paid** → confirm the amount and pick the debited-from
+  account (choose one of your Assets bank/cash entries, or type one in) →
+  this reduces the loan balance and creates a matching Finance transaction
+  (category "EMI/Loan") in one step.
+- **Made a mistake?** Tap **"↩ Undo payment"** on a paid loan — it restores
+  the balance and deletes the matching Finance transaction. No need to
+  manually fix both places.
+- The top of the screen shows four numbers: total balance owed, total EMI
+  due this month, how much you've paid this month, and how much is still
+  remaining this month.
+
+## 8. Goals
+
+**More → Goals → + Add**. Five types:
+- **Pay off a debt** — pick one of your loans; progress tracks automatically
+  as its balance drops (no separate updating needed).
+- **Save an amount** — set a target and update your current progress
+  manually whenever you like.
+- **Reach a weight** — set a starting and target weight; progress pulls
+  automatically from whatever you log in **Health → today's vitals**.
+- **Habit streak** — pick a habit and a number of days (e.g. "hit Read for
+  20 of the last 30 days"); tracks automatically from that habit's log.
+- **Custom** — anything else (steps, books, whatever) with a manual target
+  and current value you update yourself.
+
+Add an optional deadline and the goal will flag itself **"behind pace"**
+if your actual progress is trailing what the calendar would suggest.
+
+## 9. Calendar & Global Search
+
+**More → Calendar**: a month grid with a small colored dot under any day
+that has a habit ✅, finance 💰, journal 📔 or diet 🍎 entry. Tap a day to
+see everything logged that date in one popup.
+
+**🔍 icon** (top-right of the header, next to Save & Sync, on every
+screen): type anything — a habit name, a transaction note, a word from a
+journal entry, a meal name, a loan name, a goal title, a subscription, a
+medicine, an appointment, a document title — and it searches across every
+module at once. Tap a result to jump straight to it.
+
+## 10. Budgets
+
+Inside the **Finance** tab, above the ledger: **+ Add** a category (e.g.
+"Food") and a monthly ₹ limit. A progress bar shows spend vs. limit for
+the current month and turns red once you go over. This is separate from
+Subscriptions (recurring bills) and Debts (loan EMI) — it's for everyday
+spending caps.
+
+## 11. Subscriptions
+
+**More → Subscriptions → + Add**: name, amount, and whether it renews
+**monthly** (pick a day of month) or **yearly** (pick a MM-DD date). The
+screen totals your monthly and yearly recurring spend, and flags anything
+renewing within 5 days — these also show up on the Dashboard's priority
+list so you don't get surprised by a renewal.
+
+## 12. Assets & Net Worth
+
+**More → Assets & Net Worth → + Add**: bank accounts, cash, investments,
+gold, or property, each with a current value. Net worth is calculated
+automatically as **total assets − total Debts/EMI balances** — you don't
+enter liabilities separately, it reads them straight from your Debts tab
+so the two numbers can never drift apart.
+
+## 13. Health
+
+**More → Health**: log today's blood pressure, blood sugar, and weight at
+the top (one entry per day). Below that, two simple lists — **Medicines**
+(name, dose, times of day) and **Appointments** (title, date, notes). Your
+weight entries here automatically feed any weight-type Goal you've set up.
+
+## 14. Documents Vault
+
+**More → Documents Vault → + Add**: a reference record — title, category
+(Insurance, Vehicle, Loan, ID, etc.), a reference/policy/account number,
+an optional expiry or renewal date, and notes. This is deliberately
+**reference info only** — it does not store file attachments, scanned
+copies, or passwords; it's for "what's my policy number" not "where's my
+policy PDF."
+
+## 15. AI Coach
+
+**More → AI Coach**: needs the same **Gemini API key** you set up for
+photo nutrition (see step 17 below — get a free one at
+[aistudio.google.com](https://aistudio.google.com) if you haven't already).
+Tap **"✨ Get today's insights"** and it reads a summary of your last 30
+days — habit completion, spending trend, budget status, debt payoff pace,
+average sleep, goal progress, journaling frequency — and asks Gemini for
+4–6 short, specific observations, not generic advice. The first insight
+also appears on the Dashboard once generated. Nothing is sent anywhere
+except Google's Gemini API, directly from your device, using your own key.
+
+## 16. Journal / diary
 
 **Journal** tab (bottom nav): write in the text box, pick a font and color
 if you like, then **Save entry** — it saves under whatever date is showing
@@ -215,7 +318,7 @@ order via **Export whole diary**, regardless of what order you wrote them
 in. Print, PDF, and Word (.doc) export work per-entry too. Everything syncs
 to a `Journal` tab in your Google Sheet.
 
-## 9. Diet & nutrition
+## 17. Diet & nutrition
 
 1. **Settings → Diet & body stats**: enter height, weight, age, sex,
    activity level and goal (fat loss / maintain / muscle gain), then
@@ -225,35 +328,49 @@ to a `Journal` tab in your Google Sheet.
    protein/carbs/fat/fiber), or attach/take a photo first.
 3. **Optional — photo-based estimates:** get a free API key at
    [aistudio.google.com](https://aistudio.google.com), paste it into
-   **Settings → Diet & body stats → Gemini API key**. With a key saved,
-   attaching a photo shows an **"✨ Estimate nutrition from photo"**
-   button that fills in the fields for you — review and adjust before
-   saving, since it's an estimate, not a lab measurement. Without a key,
-   just fill the fields in yourself; everything else works the same.
+   **Settings → Diet & body stats → Gemini API key**. This same key also
+   powers the AI Coach (step 15). With a key saved, attaching a photo
+   shows an **"✨ Estimate nutrition from photo"** button. v9's prompt is
+   more rigorous than before — it identifies each food item separately,
+   reasons about portion size against things visible in the photo (plate
+   size, cutlery, hand size), flags likely hidden calories (oil, sauce,
+   sugar) it can't directly see, and shows a confidence level plus its
+   assumptions right under the meal once saved. Review and adjust before
+   saving either way — it's a much better estimate, still not a lab
+   measurement. Without a key, just fill the fields in yourself.
 4. View totals against your targets by Day/Week/Month, and export the log
    to Excel or PDF from the Diet tab. Meals also sync to a `Diet` tab in
    your Google Sheet.
 
-## 10. Everyday use
+## 18. Everyday use
 
 - **Save & Sync** button (top right, always visible) pushes everything to your Google Sheet on demand.
 - **Settings → Auto-sync** toggles automatic syncing after every change (small delay, so it doesn't fire on every keystroke).
 - **Load from Sheet** (Settings) pulls the last synced snapshot back down — see section 3.
 - **Backup** (bottom of Settings) exports/imports a local `.json` file — a second safety net independent of the Sheet.
-- **Habits tab** now shows what's left **to do** at the top, and anything that's hit its target for the day in a **Completed ✅** section below.
+- **Home / Dashboard** (bottom nav, first tab): your daily score, today's
+  numbers across every module, top priorities, and quick-add shortcuts —
+  this is the new starting screen.
+- **Habits tab** shows what's left **to do** at the top, and anything that's hit its target for the day in a **Completed ✅** section below.
 - **Expanding a habit** (tap ⌄): shows a custom-amount box, your quick-add
   preset chips, a **Linked Routine category** picker, and a ▲ button to
   close it again.
 - **Quick-log timer** (Routine tab): tap a category chip to start timing it
   now; tap it again (or a different category) to stop and log it.
-- **More** tab (bottom nav): Trends, Reports, Debts/EMI, Diet, and Settings
-  all live here to keep the main nav bar uncluttered.
-- **About** (bottom of Settings) shows the app version and credit.
+- **More** tab (bottom nav): organized into Plan (Goals, Calendar, AI
+  Coach), Track (Journal, Diet, Health), Money (Debts/EMI, Subscriptions,
+  Assets & Net Worth), Review (Trends, Reports, Documents Vault), and
+  System (Settings). Every screen opened from More has a **"‹ More"**
+  button at the top to get back, all the time.
+- **🔍 Search** (header icon, every screen) — see section 9.
+- **About** (bottom of Settings) shows the app version, the logo, and credit.
 
-## 11. Troubleshooting checklist
+## 19. Troubleshooting checklist
 - **Habits not showing on first open** — the app seeds default habits (Drink Water, Read, Walk, No Junk, Sleep) before the very first render, and re-seeds automatically if local storage ever comes back empty or corrupted.
-- **Can't see text I'm typing** (habit custom amount, or any field) — fixed in v8: inputs now force explicit text color and override phone autofill styling.
+- **Can't see text I'm typing** (habit custom amount, or any field) — inputs force explicit text color and override phone autofill styling.
 - **Reminders don't seem to fire** — you must explicitly set a reminder time on each habit (Habit detail → Reminder times). Also confirm the `checkReminders` trigger exists and Telegram is enabled with a valid token/chat ID.
 - **Sheet not updating, or Load from Sheet fails** — you likely need to redeploy `apps-script.gs`: **Deploy → Manage deployments → ✏️ edit → New version → Deploy**. See section 3.
-- **Diet photo button doesn't appear** — you need to save a Gemini API key first (Settings → Diet & body stats); without one, log meals manually.
-- **Icon won't change** — see section 5; the real fix is downloading fresh files and doing a clean reinstall, not just editing in-app.
+- **New Goals/Subscriptions/Assets/Health/Documents/Budgets tabs not appearing in the Sheet** — same fix as above: redeploy `apps-script.gs`, then Sync now.
+- **Diet photo button or AI Coach won't run** — you need to save a Gemini API key first (Settings → Diet & body stats → Gemini API key); both features share this one key.
+- **Marked an EMI paid by mistake** — open Debts/EMI, tap **"↩ Undo payment"** on that loan; don't edit the Finance transaction directly, it won't adjust the balance back.
+- **Icon looks wrong or didn't update** — make sure all four icon files were re-uploaded with the same filenames, then remove the app from your home screen and **Add to Home Screen** again; phones only re-read icon files on a fresh install, not a page refresh.

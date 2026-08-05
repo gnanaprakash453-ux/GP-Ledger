@@ -949,9 +949,14 @@ label.fl{ display:block; font-size:12px; color:var(--sub); font-weight:700; marg
 
   <!-- ============ ONBOARDING ============ -->
   <div class="onb" id="onboarding" style="display:none;">
-    <div class="badge" style="width:60px;height:60px;font-size:26px;border-radius:18px;margin-bottom:18px;"><img id="onbLogoImg" alt="Ledger"></div>
-    <h1>Welcome to Ledger</h1>
-    <p>Your life, one system — habits, money, health and more. What should we call you?</p>
+    <div style="display:flex; align-items:center; gap:16px; margin-bottom:10px;">
+      <div class="badge" style="width:64px;height:64px;border-radius:19px; flex-shrink:0;"><img id="onbLogoImg" alt="Ledger"></div>
+      <div style="width:1px; height:38px; background:var(--line); flex-shrink:0;"></div>
+      <div style="font-family:var(--font-head); font-weight:800; font-size:30px; letter-spacing:.06em; color:var(--text); line-height:1;">LEDGER</div>
+    </div>
+    <div style="font-size:14px; color:var(--sub); margin-bottom:26px;">Your Life. <span style="color:#22c55e;font-weight:800;">One</span> <span style="color:#6366f1;font-weight:800;">System</span>.</div>
+    <h1>Welcome</h1>
+    <p>Habits, money, health and more — in one place. What should we call you?</p>
     <input type="text" id="onbName" placeholder="Your name" style="margin-bottom:14px;">
     <button class="btn primary" id="onbStart">Let's go</button>
   </div>
@@ -962,6 +967,13 @@ label.fl{ display:block; font-size:12px; color:var(--sub); font-weight:700; marg
    GP LEDGER v9 — single-file app logic
    ====================================================================== */
 'use strict';
+
+/* ---------- v9.2 patch: current Gemini model id, in one place ---------- */
+/* gemini-2.0-flash was retired June 1, 2026 — Google's own migration
+   guidance points to gemini-3.5-flash. If Google retires this one too,
+   change it here only; both the photo estimator and the AI Coach read
+   from this constant. */
+const GEMINI_MODEL = 'gemini-3.5-flash';
 
 /* ---------- v9.1: brand logo, embedded as a data URI so it never depends on
    sibling files loading (works even in isolated previews) ---------- */
@@ -2440,8 +2452,8 @@ async function analyzeMealPhoto(imageData){
 
 Reply with ONLY compact JSON, no markdown, no explanation, in this exact shape:
 {"name":"combined dish name, max 6 words","calories":0,"protein":0,"carbs":0,"fat":0,"fiber":0,"confidence":"low|medium|high","assumptions":"one short sentence, max 30 words, explaining portion reasoning and any hidden-calorie risk"}`;
-    const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`, {
-      method:'POST', headers:{'Content-Type':'application/json'},
+    const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`, {
+      method:'POST', headers:{'Content-Type':'application/json', 'x-goog-api-key': key},
       body: JSON.stringify({
         contents:[{ parts:[
           { text: prompt },
@@ -2450,6 +2462,12 @@ Reply with ONLY compact JSON, no markdown, no explanation, in this exact shape:
       })
     });
     const data = await resp.json();
+    if(!resp.ok || data.error){
+      throw new Error(data.error && data.error.message ? data.error.message : `Gemini API returned ${resp.status}`);
+    }
+    if(!data.candidates || !data.candidates[0]){
+      throw new Error('Gemini returned no result — the photo may have been blocked by a safety filter, try a clearer photo.');
+    }
     const txt = data.candidates[0].content.parts[0].text.replace(/```json|```/g,'').trim();
     const parsed = JSON.parse(txt);
     document.getElementById('mealName').value = parsed.name || '';
@@ -2462,7 +2480,7 @@ Reply with ONLY compact JSON, no markdown, no explanation, in this exact shape:
     hint.textContent = `Estimate filled in (confidence: ${confidence}) — ${parsed.assumptions||''} Adjust anything that looks off before saving.`;
     return `[${confidence} confidence] ${parsed.assumptions||''}`;
   }catch(e){
-    hint.textContent = 'Could not analyze photo — enter the nutrition manually.';
+    hint.textContent = `Could not analyze photo — ${e.message || 'unknown error'}. Enter the nutrition manually, or check your Gemini API key in Settings.`;
     return '';
   }
 }
@@ -3470,11 +3488,17 @@ document.getElementById('runCoachBtn').addEventListener('click', async ()=>{
   try{
     const digest = buildCoachDigest();
     const prompt = `You are a supportive personal life-coach reading structured data exported from a habit/finance/health tracking app called GP Ledger. Data:\n\n${digest}\n\nWrite 4 to 6 short, specific, plain-English insights or pieces of advice (max 22 words each) a real person would find useful — call out patterns, risks, and wins. Avoid generic advice not backed by the data above. Reply with ONLY a compact JSON array of strings, no markdown, no explanation. Example: ["insight one","insight two"]`;
-    const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`, {
-      method:'POST', headers:{'Content-Type':'application/json'},
+    const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`, {
+      method:'POST', headers:{'Content-Type':'application/json', 'x-goog-api-key': key},
       body: JSON.stringify({ contents:[{ parts:[{ text:prompt }] }] })
     });
     const data = await resp.json();
+    if(!resp.ok || data.error){
+      throw new Error(data.error && data.error.message ? data.error.message : `Gemini API returned ${resp.status}`);
+    }
+    if(!data.candidates || !data.candidates[0]){
+      throw new Error('Gemini returned no result — try again in a moment.');
+    }
     const txt = data.candidates[0].content.parts[0].text.replace(/```json|```/g,'').trim();
     const insights = JSON.parse(txt);
     S.aiCoach.lastInsights = Array.isArray(insights) ? insights : [String(insights)];

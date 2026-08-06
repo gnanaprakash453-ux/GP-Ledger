@@ -927,7 +927,7 @@ label.fl{ display:block; font-size:12px; color:var(--sub); font-weight:700; marg
       <div class="settings-group">
         <h3>About</h3>
         <div class="settings-list">
-          <div class="settings-row" id="aboutRow" style="cursor:pointer;"><div class="sr-label">GP Ledger</div><div class="sr-val">v9.4 ›</div></div>
+          <div class="settings-row" id="aboutRow" style="cursor:pointer;"><div class="sr-label">GP Ledger</div><div class="sr-val">v9.4.1 ›</div></div>
         </div>
       </div>
     </section>
@@ -2728,7 +2728,7 @@ function openAboutModal(){
       <img src="${LOGO_DATA_URI}" alt="Ledger" style="width:66px;height:66px;border-radius:19px;box-shadow:0 8px 20px rgba(0,0,0,.28); margin-bottom:10px;">
       <div style="font-family:var(--font-head); font-weight:800; font-size:22px; letter-spacing:.08em; color:var(--text);">LEDGER</div>
       <div style="font-size:12.5px; color:var(--sub); margin-top:4px;">Your Life. <span style="color:#22c55e;font-weight:800;">One</span> <span style="color:#6366f1;font-weight:800;">System</span>.</div>
-      <div class="hint" style="margin-top:6px;">Version 9.4</div>
+      <div class="hint" style="margin-top:6px;">Version 9.4.1</div>
     </div>
     <p style="font-size:13.5px; color:var(--text); line-height:1.65; margin:0 0 10px;">
       Fourteen trackers that usually live in fourteen different apps — habits, routine, sleep, money, debt, diet, journal, goals, health, subscriptions, net worth — collapsed into one screen that actually talks to itself. Log a run in Routine and Sleep fills itself in. Pay an EMI and Finance updates with zero double entry. Ask the AI Coach what's really going on and it reads your actual data, not a guess.
@@ -2946,7 +2946,7 @@ document.getElementById('testTgBtn').addEventListener('click', async ()=>{
 });
 
 /* ---------- Google Sheets sync ---------- */
-const APP_SCRIPT_VERSION = 'v9.4'; // must match SCRIPT_VERSION at the top of apps-script.gs
+const APP_SCRIPT_VERSION = 'v9.4.1'; // must match SCRIPT_VERSION at the top of apps-script.gs
 function debugLog(msg){
   const box = document.getElementById('syncDebug'); box.style.display='block';
   box.textContent = `[${new Date().toLocaleTimeString()}] ${msg}\n` + box.textContent;
@@ -2978,7 +2978,17 @@ async function syncNow(silent, extra){
   const btn = document.getElementById('syncBtn'), label = document.getElementById('syncBtnLabel');
   if(!url){ if(!silent) alert('Add your Google Apps Script Web App URL in Settings first.'); return; }
   btn.classList.add('syncing'); label.textContent='Syncing…';
-  const payload = { action:'sync', habits:S.habits, transactions:S.transactions, settings:S.settings, routineLogs:S.routineLogs, routineCats:S.routineCats, routineTemplates:S.routineTemplates, debts:S.debts, journal:S.journal, diet:S.diet,
+  // v9.4.1 fix: meal photos are stored as full base64 images in S.diet.meals[date][].image
+  // for the in-app preview and the one-time AI estimate — they must NOT be sent to the Sheet.
+  // Google Sheets caps a single cell at 50,000 characters, and the full snapshot goes into
+  // one cell, so even one photo would blow past that and make the whole sync fail. Only the
+  // nutrition numbers (already extracted from the photo) are synced; the photo itself stays
+  // on-device only.
+  const dietForSync = { settings: S.diet.settings, meals: {} };
+  Object.keys(S.diet.meals || {}).forEach(ds=>{
+    dietForSync.meals[ds] = (S.diet.meals[ds]||[]).map(({image, ...rest})=> rest);
+  });
+  const payload = { action:'sync', habits:S.habits, transactions:S.transactions, settings:S.settings, routineLogs:S.routineLogs, routineCats:S.routineCats, routineTemplates:S.routineTemplates, debts:S.debts, journal:S.journal, diet:dietForSync,
     goals:S.goals, subscriptions:S.subscriptions, assets:S.assets, health:S.health, documents:S.documents, budgets:S.budgets,
     extra: extra||null, clientTime: new Date().toISOString() };
   try{

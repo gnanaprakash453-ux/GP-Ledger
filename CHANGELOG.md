@@ -1,4 +1,29 @@
-# Changelog — v8 → v9 (+ v9.4 templates/EMI/sync-diagnostics, v9.3 dashboard/nutrition/nav fix, v9.2 logo/branding fix, v9.1 branding/logo/quotes patch)
+# Changelog — v8 → v9 (+ v9.4.1 sync/meal-photo fix, v9.4 templates/EMI/sync-diagnostics, v9.3 dashboard/nutrition/nav fix, v9.2 logo/branding fix, v9.1 branding/logo/quotes patch)
+
+## v9.4.1 patch — the actual fix for "Sync did not verify" after logging a meal photo
+
+- **Root cause found and fixed.** Meal photos are kept as full base64 images
+  in `S.diet.meals[date][].image` for the in-app preview and the one-time AI
+  estimate. That field was being included in the sync payload sent to your
+  Apps Script — and the full snapshot gets written into a **single Google
+  Sheets cell**, which has a hard **50,000-character limit**. Even one meal
+  photo pushed that snapshot well past the limit, so the write inside
+  `handleSync` threw an error and the whole sync failed — showing up as
+  "Sync did not verify," with no obvious connection to the meal you'd just
+  logged. This had nothing to do with deployment staleness even though the
+  symptom looked identical.
+- **Fix**: the app now strips the photo out before syncing — only the
+  nutrition numbers (already extracted from the photo by Gemini) are sent
+  to the Sheet, never the image itself. Photos still show in the app's
+  Diet tab and history (kept on-device), they just aren't backed up to the
+  Sheet — there was never a Photos tab there to begin with.
+- **Backend hardened too**: the Apps Script side now wraps the full-snapshot
+  write in a try/catch. If a payload is ever too large for one cell for any
+  other reason in the future, it now degrades gracefully (skips just that
+  snapshot with an explanatory note, keeps every other tab working) instead
+  of throwing and taking the entire sync down with it.
+- Requires the same redeploy as any other `apps-script.gs` change —
+  **Deploy → Manage deployments → ✏️ → New version → Deploy**.
 
 ## v9.4 patch — routine templates, EMI import, sync version-check
 
@@ -246,7 +271,11 @@
    Undo payment" button on the Debts screen itself).
 3. Photo-based nutrition estimates need your own free Gemini API key and
    are estimates, not lab-accurate figures, even with the improved
-   prompt — always sanity-check before saving.
+   prompt — always sanity-check before saving. As of v9.4.1, meal photos
+   themselves are kept on-device only and are not backed up to the Google
+   Sheet (only the nutrition numbers are) — reinstalling the app or
+   loading from a fresh device will keep your meal history but not the
+   original photos.
 4. Apps Script still requires a "New version" deployment after any code
    change — v9.4 now detects and tells you when this has been missed (see
    SETUP_GUIDE troubleshooting), but it still has to be done manually.

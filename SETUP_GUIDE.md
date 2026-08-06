@@ -112,6 +112,12 @@ You'll get a real home-screen icon and a full-screen app with no browser bar.
 9. Tap **Test connection** — you should see a message confirming it's reachable, plus a debug log entry.
 10. Tap **Sync now**. Open your Google Sheet — you should now see tabs: `Data`, `Habits`, `Settings`, `Transactions_<year>`, `Routine`, `RoutineTemplates`, `Reports`, `Debts`, `Journal`, `Diet`, `Goals`, `Subscriptions`, `Assets`, `Health`, `Documents`, `Budgets`.
 
+> **Already on v9.4 and just upgrading to v9.4.1?** Same deal — paste in
+> the *new* `apps-script.gs` and redeploy. This one matters even if sync
+> was "working" for you before: v9.4.1 fixes a real bug where logging a
+> meal photo made the *next* sync fail (see the Troubleshooting section
+> below), so it's worth doing even if you haven't touched Templates.
+
 > **Already on v9.3 and just upgrading to v9.4?** Same deal — paste in the
 > *new* `apps-script.gs` and redeploy (**Deploy → Manage deployments →
 > ✏️ edit → New version → Deploy**), or the new `RoutineTemplates` tab
@@ -130,16 +136,24 @@ You'll get a real home-screen icon and a full-screen app with no browser bar.
 This was the exact bug fixed in v6. The app now checks that the response
 really came from the sync handler (not a generic/error page), and shows a
 **debug log** in Settings if it didn't. The most common causes, in order:
-1. **You edited the script but didn't redeploy.** Apps Script's "Save" does *not*
+1. **You logged a meal with a photo, then synced (fixed in v9.4.1).**
+   Meal photos are stored as full images on your device. Before v9.4.1,
+   that image was accidentally included in what got sent to the Sheet —
+   and a single Sheet cell can only hold 50,000 characters, so even one
+   photo broke the sync. If you're on v9.4.1 this can't happen anymore
+   (only the nutrition numbers are synced, never the photo) — if you're
+   still on an older version and this matches what you're seeing, update
+   to the latest files and redeploy.
+2. **You edited the script but didn't redeploy.** Apps Script's "Save" does *not*
    republish the live `/exec` URL. You must go **Deploy → Manage deployments →
    ✏️ edit → New version → Deploy** every time you change `apps-script.gs`.
    As of v9.4, this is the easiest cause to catch: tap **Test connection**
    in Settings — the debug log will explicitly say *"your deployed script
-   reports v9.3 but the app expects v9.4"* (or similar) if this is what's
+   reports v9.3 but the app expects v9.4.1"* (or similar) if this is what's
    wrong, instead of a generic failure. A sync failure alert does the same
    check.
-2. **Wrong URL** — make sure it's the `/exec` URL, not `/dev`.
-3. **Permissions revoked** — re-run step 6 if Google ever asks you to re-authorize.
+3. **Wrong URL** — make sure it's the `/exec` URL, not `/dev`.
+4. **Permissions revoked** — re-run step 6 if Google ever asks you to re-authorize.
 
 ### Pulling data back down (Load from Sheet)
 Settings → Google Sheet database → **"⬇ Load from Sheet"** fetches the last
@@ -394,8 +408,11 @@ to a `Journal` tab in your Google Sheet.
    saving either way — it's a much better estimate, still not a lab
    measurement. Without a key, just fill the fields in yourself.
 4. View totals against your targets by Day/Week/Month, and export the log
-   to Excel or PDF from the Diet tab. Meals also sync to a `Diet` tab in
-   your Google Sheet.
+   to Excel or PDF from the Diet tab. Meal nutrition numbers sync to a
+   `Diet` tab in your Google Sheet — the photo itself stays on this device
+   only and is never uploaded to the Sheet (a single Sheet cell can't hold
+   an image's worth of data; see Troubleshooting if you're on a version
+   older than v9.4.1).
 
 ## 18. Everyday use
 

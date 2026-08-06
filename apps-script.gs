@@ -1,9 +1,23 @@
 /**
- * GP LEDGER — Google Apps Script backend (v9.4)
+ * GP LEDGER — Google Apps Script backend (v9.4.1)
  * ---------------------------------------------------------------
  * Paste this whole file into script.google.com (Extensions > Apps
  * Script, from a Google Sheet), then deploy as a Web App.
  * Full click-by-click steps are in SETUP_GUIDE.md.
+ *
+ * v9.4.1 fix — the real cause of most "Sync did not verify" reports:
+ *  - Meal photos are stored client-side as full base64 images. The app now
+ *    strips that image field out before sending the sync payload — only the
+ *    nutrition numbers (already extracted from the photo) are synced, never
+ *    the photo itself. Previously, logging even one meal photo made the
+ *    full-snapshot JSON blow past Google Sheets' 50,000-character-per-cell
+ *    limit, which threw inside handleSync and made the WHOLE sync look
+ *    broken (not just the photo).
+ *  - Defense in depth on this side too: the Data tab's full-snapshot write
+ *    is now wrapped so that if a payload is ever too large for one cell for
+ *    any other reason, it degrades gracefully (skips just that snapshot,
+ *    leaves a note explaining why) instead of throwing and failing every
+ *    other tab along with it.
  *
  * v9.4 changes from v9.3:
  *  - Added SCRIPT_VERSION, returned from both the ping (doGet) and sync
@@ -35,7 +49,7 @@ const SS = SpreadsheetApp.getActiveSpreadsheet();
 // Bump this every time you paste updated code, so the app's "Test connection"
 // and sync-failure messages can tell you when a deployment is stale (i.e. you
 // edited/pasted new code but forgot Deploy > Manage deployments > New version).
-const SCRIPT_VERSION = 'v9.4';
+const SCRIPT_VERSION = 'v9.4.1';
 
 function doGet(e) {
   const action = (e && e.parameter && e.parameter.action) || 'status';
@@ -81,11 +95,28 @@ function handleSync(body) {
   const rows = {};
 
   // 1) Full JSON snapshot — source of truth / backup
+  // v9.4.1: wrapped in try/catch. A single Google Sheets cell caps out at
+  // 50,000 characters — if a future payload ever exceeds that for any reason
+  // (very large photo, huge history, etc.), this now degrades gracefully
+  // (skips just the snapshot, keeps rows.data=0) instead of throwing and
+  // failing the ENTIRE sync — which is what used to make "Sync did not
+  // verify" show up even though every other tab synced fine.
   const dataSheet = getOrCreateSheet('Data');
   dataSheet.clear();
-  dataSheet.getRange(1, 1).setValue('Full JSON snapshot (do not edit by hand)');
-  dataSheet.getRange(2, 1).setValue(JSON.stringify(body));
-  rows.data = 1;
+  try {
+    const snapshot = JSON.stringify(body);
+    if (snapshot.length > 49000) {
+      dataSheet.getRange(1, 1).setValue('Snapshot too large to store in one cell (' + snapshot.length + ' chars) — every other tab below is still up to date. This usually means a meal photo or similar large field slipped into the sync payload.');
+      rows.data = 0;
+    } else {
+      dataSheet.getRange(1, 1).setValue('Full JSON snapshot (do not edit by hand)');
+      dataSheet.getRange(2, 1).setValue(snapshot);
+      rows.data = 1;
+    }
+  } catch (err) {
+    dataSheet.getRange(1, 1).setValue('Snapshot write failed: ' + String(err));
+    rows.data = 0;
+  }
 
   // 2) Readable Habits tab
   const habitsSheet = getOrCreateSheet('Habits');

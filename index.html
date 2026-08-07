@@ -23,7 +23,7 @@
 <style>
 /* ============ CORE / RESET ============ */
 :root{
-  color-scheme: dark;
+  color-scheme: light dark; /* v10.0.2 — was hardcoded 'dark' (a leftover from the original dark-only app); JS now sets the real value to match the active pack via applyExperiencePack(), this is just a safe pre-JS default */
   --accent:#22c55e; --accent2:#6366f1;
   --bg:#0f1115; --bg2:#161922; --card:#1b1f2a; --card2:#20242f;
   --line:#2a2f3d; --text:#eef1f7; --sub:#9aa3b5; --sub2:#6c7385;
@@ -243,7 +243,7 @@ nav.bottom button.active{ color:var(--text); background:var(--card2); }
 .swatch.sel{ border-color:#fff; }
 input[type=text], input[type=number], input[type=password], input[type=date], input[type=time], select, textarea{
   width:100%; background:var(--card2); border:1px solid var(--line); border-radius:11px; padding:11px 12px; font-size:14px;
-  color:var(--text) !important; caret-color:var(--text);
+  color:var(--text) !important; caret-color:var(--text); -webkit-text-fill-color:var(--text) !important; /* v10.0.2 — belt-and-suspenders alongside the color-scheme fix above */
 }
 input:-webkit-autofill, input:-webkit-autofill:hover, input:-webkit-autofill:focus{
   -webkit-text-fill-color:var(--text) !important; -webkit-box-shadow:0 0 0px 1000px var(--card2) inset !important;
@@ -1111,7 +1111,7 @@ nav.bottom, .fab{ transition:transform .18s ease; }
       <div class="settings-group">
         <h3>About</h3>
         <div class="settings-list">
-          <div class="settings-row" id="aboutRow" style="cursor:pointer;"><div class="sr-label">GP Ledger</div><div class="sr-val">v10.0.1 ›</div></div>
+          <div class="settings-row" id="aboutRow" style="cursor:pointer;"><div class="sr-label">GP Ledger</div><div class="sr-val">v10.0.3 ›</div></div>
         </div>
       </div>
     </section>
@@ -1283,8 +1283,8 @@ const EXPERIENCE_PACKS = [
     fontHead:"'Playfair Display',serif", fontBody:"'Manrope',sans-serif", radius:'6px', tileRadius:'6px', btnRadius:'4px', heroRadius:'10px',
     iconStyle:'minimal', cardStyle:'outline', navStyle:'float', fabStyle:'pill', layout:'magazine', animSpeed:'320ms', wallSeed:'luxury' },
 
-  { id:'glass',        name:'Glassmorphism',  emoji:'🧊', desc:'Frosted panels, soft blur, glowing accents',
-    accent:'#38bdf8', accent2:'#818cf8', bg:'#0a0f1e', bg2:'#0f1730', card:'#152040', card2:'#1c2a52', line:'#233a68', text:'#eaf2ff', sub:'#9fb4dd',
+  { id:'glass',        name:'Glassmorphism',  emoji:'🧊', desc:'Frosted panels, soft blur — Midnight colors',
+    accent:'#22c55e', accent2:'#16a34a', bg:'#0f1115', bg2:'#161922', card:'#1b1f2a', card2:'#20242f', line:'#2a2f3d', text:'#f2f4f8', sub:'#9aa3b5',
     fontHead:"'Sora',sans-serif", fontBody:"'Inter',sans-serif", radius:'24px', tileRadius:'20px', btnRadius:'16px', heroRadius:'30px',
     iconStyle:'duotone', cardStyle:'glass', navStyle:'glass', fabStyle:'circle', layout:'glass', animSpeed:'300ms', wallSeed:'glass' },
 
@@ -1386,6 +1386,7 @@ function applyExperiencePack(id, opts){
   r.setProperty('--icon-stroke', p.iconStyle==='minimal' ? '1.1' : p.iconStyle==='rounded' ? '2.4' : '1.75');
   r.setProperty('--card-blur', (p.cardStyle==='glass') ? '18px' : '0px');
   document.documentElement.setAttribute('data-color-scheme', p.lightBg ? 'light' : 'dark');
+  document.documentElement.style.colorScheme = p.lightBg ? 'light' : 'dark'; /* v10.0.2 — was hardcoded 'dark' in :root; on a light pack that made Safari render native input text assuming a dark background, so typed characters were invisible even though the value/color were correct */
   const b = document.body;
   b.className = b.className.replace(/\bexp-\S+/g,'').trim();
   b.classList.add(`exp-icon-${p.iconStyle}`, `exp-card-${p.cardStyle}`, `exp-nav-${p.navStyle}`, `exp-fab-${p.fabStyle}`, `exp-layout-${p.layout}`, `exp-${p.id}`);
@@ -1522,7 +1523,7 @@ function defaultSettings(){
     sheetUrl:'', sheetId:'', autoSync:false, lastSync:'',
     themeId:'midnight', bgOn:false, bgAuto:false, bgIntervalMin:60, bgQuery:'', bgOpacity:16, bgSeed:0,
     modules: Object.fromEntries(MODULE_DEFS.map(m=>[m.key, true])),
-    experiencePack:'minimal', // v10.0 — see EXPERIENCE_PACKS; drives layout/icons/fonts/cards/nav, separate from themeId (colors only)
+    experiencePack:'glass', // v10.0.3 — default is Glassmorphism structure + Midnight colors (glass pack's own palette IS Midnight, see EXPERIENCE_PACKS)
   };
 }
 const QUOTES = [
@@ -1672,7 +1673,7 @@ function loadState(){
   else { S.settings = Object.assign(defaultSettings(), S.settings); }
   if(!S.settings.modules || typeof S.settings.modules!=='object') S.settings.modules = {};
   MODULE_DEFS.forEach(m=>{ if(S.settings.modules[m.key]===undefined) S.settings.modules[m.key] = true; });
-  if(!EXPERIENCE_PACKS.some(p=>p.id===S.settings.experiencePack)) S.settings.experiencePack = 'minimal';
+  if(!EXPERIENCE_PACKS.some(p=>p.id===S.settings.experiencePack)) S.settings.experiencePack = 'glass';
   if(!Array.isArray(S.transactions)) S.transactions = [];
   if(!S.routineLogs || typeof S.routineLogs!=='object') S.routineLogs = {};
   if(!Array.isArray(S.debts)) S.debts = [];
@@ -3230,7 +3231,7 @@ function openAboutModal(){
       <img src="${LOGO_DATA_URI}" alt="Ledger" style="width:66px;height:66px;border-radius:19px;box-shadow:0 8px 20px rgba(0,0,0,.28); margin-bottom:10px;">
       <div style="font-family:var(--font-head); font-weight:800; font-size:22px; letter-spacing:.08em; color:var(--text);">LEDGER</div>
       <div style="font-size:12.5px; color:var(--sub); margin-top:4px;">Your Life. <span style="color:#22c55e;font-weight:800;">One</span> <span style="color:#6366f1;font-weight:800;">System</span>.</div>
-      <div class="hint" style="margin-top:6px;">Version 10.0.1 — Experience Engine + contrast/keyboard fixes (backend unchanged from v9.4.1 — no redeploy needed)</div>
+      <div class="hint" style="margin-top:6px;">Version 10.0.3 (backend unchanged from v9.4.1 — no redeploy needed)</div>
     </div>
     <p style="font-size:13.5px; color:var(--text); line-height:1.65; margin:0 0 10px;">
       Fourteen trackers that usually live in fourteen different apps — habits, routine, sleep, money, debt, diet, journal, goals, health, subscriptions, net worth — collapsed into one screen that actually talks to itself. Log a run in Routine and Sleep fills itself in. Pay an EMI and Finance updates with zero double entry. Ask the AI Coach what's really going on and it reads your actual data, not a guess.
@@ -3619,7 +3620,7 @@ document.getElementById('loadFromSheetBtn').addEventListener('click', async ()=>
       if(d.health) S.health = Object.assign(defaultHealth(), d.health);
       if(Array.isArray(d.documents)) S.documents = d.documents;
       if(Array.isArray(d.budgets)) S.budgets = d.budgets;
-      saveState(); loadSettingsForm(); applyTheme(); applyExperiencePack(S.settings.experiencePack || 'minimal', {skipBg:true}); renderAll();
+      saveState(); loadSettingsForm(); applyTheme(); applyExperiencePack(S.settings.experiencePack || 'glass', {skipBg:true}); renderAll();
       showToast('Loaded from Google Sheet ✓', '⬇️');
       debugLog('Load OK — pulled saved snapshot from Sheet.');
     } else {
@@ -3645,7 +3646,7 @@ document.getElementById('importBackupFile').addEventListener('change', (e)=>{
       if(data.habits && data.settings){
         S = Object.assign({ habits:[], transactions:[], settings:{}, routineLogs:{}, routineCats:[], routineTemplates:defaultRoutineTemplates(), debts:[], journal:{}, diet:{meals:{},settings:defaultDietSettings()},
           goals:[], subscriptions:[], assets:[], health:defaultHealth(), documents:[], aiCoach:{lastInsights:[],lastRun:''}, budgets:[] }, data);
-        saveState(); loadSettingsForm(); applyTheme(); applyExperiencePack(S.settings.experiencePack || 'minimal', {skipBg:true}); renderAll();
+        saveState(); loadSettingsForm(); applyTheme(); applyExperiencePack(S.settings.experiencePack || 'glass', {skipBg:true}); renderAll();
         showToast('Backup restored', '✅');
       } else { alert('That file does not look like a GP Ledger backup.'); }
     }catch(err){ alert('Could not read that file: '+err.message); }
@@ -3661,7 +3662,7 @@ function renderAll(){
 function init(){
   loadState();
   applyTheme();
-  applyExperiencePack(S.settings.experiencePack || 'minimal', {skipBg:true});
+  applyExperiencePack(S.settings.experiencePack || 'glass', {skipBg:true});
   const needsOnboarding = !S.settings.name;
   if(needsOnboarding){
     document.getElementById('onboarding').style.display='flex';

@@ -14,7 +14,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Manrope:wght@400;500;600;700&family=Fraunces:wght@600;700&family=Nunito:wght@400;600;700&family=Sora:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&family=Space+Mono:wght@500;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Manrope:wght@400;500;600;700&family=Fraunces:wght@600;700&family=Nunito:wght@400;600;700&family=Sora:wght@500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&family=Space+Mono:wght@500;700&family=IBM+Plex+Mono:wght@500;600&family=Playfair+Display:wght@600;700;800&family=Space+Grotesk:wght@500;600;700&family=Quicksand:wght@500;600;700&family=Outfit:wght@500;600;700;800&family=Syne:wght@600;700;800&family=DM+Serif+Display&family=Bricolage+Grotesque:wght@500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -31,6 +31,11 @@
   --font-head:'Poppins',sans-serif; --font-body:'Manrope',sans-serif; --font-mono:'JetBrains Mono',monospace;
   --safe-t:env(safe-area-inset-top,0px); --safe-b:env(safe-area-inset-bottom,0px);
   --radius:18px; --radius-sm:12px;
+  /* ===== Experience Engine tokens (v10.0) — defaults = 'Minimal' pack ===== */
+  --icon-stroke:1.75; --anim-speed:220ms; --anim-ease:cubic-bezier(.4,0,.2,1);
+  --card-blur:0px; --card-bg-a:1; --card-border-a:1;
+  --shadow-sm:0 1px 2px rgba(0,0,0,.2); --shadow-md:0 8px 24px rgba(0,0,0,.28); --shadow-neu-l:6px 6px 14px rgba(0,0,0,.35); --shadow-neu-d:-6px -6px 14px rgba(255,255,255,.03);
+  --hero-radius:26px; --tile-radius:16px; --btn-radius:14px;
 }
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
 html,body{
@@ -253,6 +258,32 @@ label.fl{ display:block; font-size:12px; color:var(--sub); font-weight:700; marg
 .hint{ font-size:11.5px; color:var(--sub2); margin-top:8px; line-height:1.5; }
 .debug-box{ background:var(--card2); border:1px solid var(--line); border-radius:10px; padding:10px; font-family:var(--font-mono); font-size:11px; color:var(--sub); margin-top:10px; white-space:pre-wrap; max-height:120px; overflow-y:auto; }
 
+/* ============ v9.5: BACKGROUND LAYER ============ */
+.bg-layer{
+  position:fixed; inset:0; z-index:0; background-size:cover; background-position:center;
+  opacity:0; filter:saturate(.55) brightness(.55); transition:opacity .6s ease, background-image .8s ease;
+  pointer-events:none;
+}
+.bg-layer.on{ opacity:var(--bg-opacity, .16); }
+#app{ position:relative; z-index:1; background:transparent; }
+body{ background:var(--bg); }
+
+/* ============ v9.5: THEME PICKER ============ */
+.theme-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:10px; padding:14px 16px; }
+.theme-chip{
+  border-radius:14px; padding:10px 6px; text-align:center; cursor:pointer; border:2px solid transparent;
+  font-size:10.5px; font-weight:700; color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.4);
+}
+.theme-chip.sel{ border-color:#fff; }
+.theme-chip .tc-dot{ width:22px; height:22px; border-radius:50%; margin:0 auto 6px; border:1px solid rgba(255,255,255,.4); }
+
+/* ============ v9.5: MODULE TOGGLES ============ */
+.module-row .sr-sub{ margin-top:2px; }
+.module-row.core .sr-label::after{ content:'core'; font-size:9px; font-weight:700; color:var(--sub2); margin-left:6px; text-transform:uppercase; letter-spacing:.05em; }
+
+/* ============ v9.5: mobile input visibility fix ============ */
+.h-inline input{ font-size:16px !important; }
+
 /* ============ MODAL ============ */
 .modal-backdrop{
   position:absolute; inset:0; background:rgba(0,0,0,.55); z-index:50; display:none; align-items:flex-end;
@@ -441,9 +472,123 @@ label.fl{ display:block; font-size:12px; color:var(--sub); font-weight:700; marg
 
 /* ============ v9: header search btn ============ */
 .header-actions .icon-btn.search-open{ color:var(--accent); }
+
+/* =====================================================================
+   ============  v10.0 EXPERIENCE ENGINE  =============================
+   One token layer + a small set of reusable component/layout variants,
+   selected by body classes (exp-icon-*, exp-card-*, exp-nav-*, exp-fab-*,
+   exp-layout-*, exp-chart-*, exp-anim-*). Screens/markup/ids never change
+   — only how these shared classes are painted. See BLUEPRINT.md §9.
+   ===================================================================== */
+
+/* ---- radius / shape now token-driven everywhere ---- */
+.card, .quote-card{ border-radius:var(--radius); }
+.dash-tile{ border-radius:var(--tile-radius); }
+.fab{ box-shadow:var(--shadow-md); }
+nav.bottom{ border-radius:var(--hero-radius); box-shadow:var(--shadow-md); }
+.h-add-btn, .h-min-btn, .h-quick, .h-step, .h-check, .preset-chip{ border-radius:var(--btn-radius); }
+
+/* ---- screen transition + press micro-interaction, speed from pack ---- */
+.screen.active{ animation:screenIn var(--anim-speed) var(--anim-ease); }
+@keyframes screenIn{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+button, .card, .dash-tile, .habit-row{ transition:transform var(--anim-speed) var(--anim-ease), box-shadow var(--anim-speed) var(--anim-ease), background var(--anim-speed) var(--anim-ease); }
+button:active{ transform:scale(.96); }
+.fab:active{ transform:scale(.90) rotate(8deg); }
+.h-check:active, .h-step:active{ transform:scale(.88); }
+
+/* ---- ICON SYSTEM: one geometry set (.gicon svg), style via body class ---- */
+.gicon{ width:1em; height:1em; display:inline-block; vertical-align:-0.15em; overflow:visible; }
+.gicon .g-base{ fill:currentColor; }
+.gicon .g-accent{ fill:currentColor; }
+.gicon path, .gicon circle, .gicon rect{ vector-effect:non-scaling-stroke; }
+/* outline (default) */
+body.exp-icon-outline .gicon .g-base, body.exp-icon-outline .gicon .g-accent{ fill:none; stroke:currentColor; stroke-width:var(--icon-stroke); stroke-linecap:square; stroke-linejoin:miter; }
+/* filled */
+body.exp-icon-filled .gicon .g-base, body.exp-icon-filled .gicon .g-accent{ fill:currentColor; stroke:none; }
+/* rounded (thick, soft caps — Fitness/Kids/Gaming feel) */
+body.exp-icon-rounded .gicon .g-base, body.exp-icon-rounded .gicon .g-accent{ fill:none; stroke:currentColor; stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round; }
+/* duotone (base faint fill, accent path solid) */
+body.exp-icon-duotone .gicon .g-base{ fill:currentColor; opacity:.28; stroke:none; }
+body.exp-icon-duotone .gicon .g-accent{ fill:currentColor; opacity:1; stroke:none; }
+/* minimal (hairline outline) */
+body.exp-icon-minimal .gicon .g-base, body.exp-icon-minimal .gicon .g-accent{ fill:none; stroke:currentColor; stroke-width:1.1; stroke-linecap:butt; }
+/* hand-drawn (wobble filter, Kids pack) */
+body.exp-icon-handdrawn .gicon{ filter:url(#gicon-wobble); }
+body.exp-icon-handdrawn .gicon .g-base, body.exp-icon-handdrawn .gicon .g-accent{ fill:none; stroke:currentColor; stroke-width:2.1; stroke-linecap:round; stroke-linejoin:round; }
+
+/* ---- CARD VARIANTS ---- */
+body.exp-card-flat .card, body.exp-card-flat .dash-tile{ background:var(--card); border:1px solid var(--line); box-shadow:none; }
+body.exp-card-glass .card, body.exp-card-glass .dash-tile, body.exp-card-glass .quote-card, body.exp-card-glass nav.bottom{
+  background:color-mix(in srgb, var(--card) 55%, transparent); backdrop-filter:blur(var(--card-blur)); -webkit-backdrop-filter:blur(var(--card-blur));
+  border:1px solid rgba(255,255,255,.10); box-shadow:0 8px 32px rgba(0,0,0,.28);
+}
+body.exp-card-neu .card, body.exp-card-neu .dash-tile{ background:var(--card); border:none; box-shadow:var(--shadow-neu-l), var(--shadow-neu-d); }
+body.exp-card-outline .card, body.exp-card-outline .dash-tile{ background:transparent; border:1.5px solid var(--line); box-shadow:none; }
+body.exp-card-soft .card, body.exp-card-soft .dash-tile{ background:var(--card); border:1px solid var(--line); box-shadow:var(--shadow-sm); }
+body.exp-card-elevated .card, body.exp-card-elevated .dash-tile{ background:var(--card); border:none; box-shadow:var(--shadow-md); }
+
+/* ---- NAV VARIANTS ---- */
+body.exp-nav-float nav.bottom{ left:12px; right:12px; bottom:calc(10px + var(--safe-b)); }
+body.exp-nav-dock nav.bottom{ left:0; right:0; bottom:0; border-radius:var(--hero-radius) var(--hero-radius) 0 0; border-bottom:none; }
+body.exp-nav-pill nav.bottom{ left:22px; right:22px; border-radius:999px; padding:8px 6px; }
+body.exp-nav-glass nav.bottom{ background:color-mix(in srgb, var(--card) 45%, transparent); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px); }
+
+/* ---- FAB VARIANTS ---- */
+body.exp-fab-circle .fab{ border-radius:50%; }
+body.exp-fab-squircle .fab{ border-radius:20px; width:54px; height:54px; }
+body.exp-fab-pill .fab{ border-radius:999px; width:auto; padding:0 18px; height:50px; }
+
+/* ---- LAYOUT FAMILIES: dashboard hero + grid ---- */
+#dashGrid{ display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+.dash-hero{ position:relative; }
+body.exp-layout-rings .dash-hero{ text-align:center; padding:22px 16px 26px; }
+body.exp-layout-rings .dash-hero .dash-ring{ width:132px; height:132px; }
+body.exp-layout-rings #dashGrid{ grid-template-columns:repeat(3,1fr); }
+body.exp-layout-rings .dash-tile{ text-align:center; border-radius:50%; aspect-ratio:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:8px; }
+body.exp-layout-rings .dash-tile .dt-track{ display:none; }
+
+body.exp-layout-magazine .dash-hero{ border-radius:var(--hero-radius); overflow:hidden; padding:26px 20px; background-size:cover; background-position:center; }
+body.exp-layout-magazine .dash-hero::before{ content:''; position:absolute; inset:0; background:linear-gradient(180deg, rgba(0,0,0,.15), rgba(0,0,0,.65)); }
+body.exp-layout-magazine .dash-hero > *{ position:relative; z-index:1; }
+body.exp-layout-magazine #dashGrid{ grid-template-columns:1fr 1fr; }
+body.exp-layout-magazine .dash-tile{ aspect-ratio:1.3; }
+
+body.exp-layout-minimal .dash-hero{ padding:30px 4px 20px; text-align:left; }
+body.exp-layout-minimal .dash-hero .dash-ring{ display:none; }
+body.exp-layout-minimal #dashGrid{ grid-template-columns:1fr; gap:8px; }
+body.exp-layout-minimal .dash-tile{ display:flex; align-items:center; justify-content:space-between; text-align:left; border-radius:var(--tile-radius); }
+body.exp-layout-minimal .dash-tile .dt-track{ width:70px; }
+
+body.exp-layout-dense #dashGrid{ grid-template-columns:repeat(3,1fr); gap:7px; }
+body.exp-layout-dense .dash-tile{ padding:9px; }
+body.exp-layout-dense .dash-tile .dt-num{ font-size:14px; }
+body.exp-layout-dense .card{ padding:12px; }
+
+body.exp-layout-glass .dash-hero{ padding:24px 18px; }
+body.exp-layout-glass #dashGrid{ grid-template-columns:repeat(2,1fr); }
+body.exp-layout-glass .dash-tile{ position:relative; overflow:hidden; }
+body.exp-layout-glass .dash-tile::after{ content:''; position:absolute; top:-30%; right:-30%; width:70%; height:70%; background:radial-gradient(circle, var(--accent2) 0%, transparent 70%); opacity:.18; pointer-events:none; }
+
+body.exp-layout-gamified .dash-hero{ text-align:center; padding:24px 16px; }
+body.exp-layout-gamified #dashGrid{ grid-template-columns:repeat(2,1fr); }
+body.exp-layout-gamified .dash-tile{ border-width:2px; }
+body.exp-layout-gamified .dash-tile .dt-fill{ background:linear-gradient(90deg, var(--accent), var(--accent2)) !important; }
+
+/* ---- background wallpaper opacity / blur driven by pack ---- */
+#bgLayer.on{ filter:blur(var(--bg-blur,0px)); }
+
+/* ---- Settings: Experience Pack picker ---- */
+.exp-pack-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:8px; }
+.exp-pack-card{ border-radius:16px; padding:12px; border:1.5px solid var(--line); cursor:pointer; position:relative; overflow:hidden; }
+.exp-pack-card.sel{ border-color:var(--accent); box-shadow:0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent); }
+.exp-pack-card .ep-swatch{ height:34px; border-radius:10px; margin-bottom:8px; display:flex; align-items:center; justify-content:center; gap:4px; }
+.exp-pack-card .ep-name{ font-size:12.5px; font-weight:800; }
+.exp-pack-card .ep-desc{ font-size:10px; color:var(--sub); margin-top:2px; line-height:1.3; }
+.exp-pack-card .ep-dot{ width:9px; height:9px; border-radius:50%; }
 </style>
 </head>
 <body>
+<div class="bg-layer" id="bgLayer"></div>
 <div id="app">
 
   <header class="top">
@@ -572,10 +717,11 @@ label.fl{ display:block; font-size:12px; color:var(--sub); font-weight:700; marg
         <div class="chiprow" id="quickLogChips" style="margin-bottom:0;"></div>
         <div class="timer-hint" id="runningTimerHint" style="display:none;"><span class="rec-dot"></span><span id="runningTimerText"></span></div>
       </div>
-      <div style="display:flex; gap:10px; margin-bottom:12px;">
+      <div style="display:flex; gap:10px; margin-bottom:6px;">
         <button class="btn primary" id="quickSleepBtn" style="flex:1; margin-bottom:0;">🌙 Quick-log sleep</button>
         <button class="btn secondary" id="applyTemplateTodayBtn" style="flex:1;">📋 Apply today's plan</button>
       </div>
+      <div class="hint" style="margin:0 0 12px;">Templates apply a whole day's plan at once. To add just one segment (e.g. 5–6am) for today only, without touching the template, tap the <b>+</b> button below — it always logs to today.</div>
       <div class="seg" id="routinePeriod">
         <button data-p="day" class="active">Day</button>
         <button data-p="week">Week</button>
@@ -589,23 +735,9 @@ label.fl{ display:block; font-size:12px; color:var(--sub); font-weight:700; marg
 
     <!-- ===================== MORE (menu) ===================== -->
     <section class="screen" id="screen-more">
-      <div class="section-head" style="margin-top:2px;"><h2>Plan</h2></div>
-      <div class="more-card" data-open="goals"><div class="mc-icon">🎯</div><div class="mc-mid"><div class="mc-title">Goals</div><div class="mc-sub">Debt-free, savings, weight, habits &amp; more</div></div><span class="chev">›</span></div>
-      <div class="more-card" data-open="calendar"><div class="mc-icon">📆</div><div class="mc-mid"><div class="mc-title">Calendar</div><div class="mc-sub">Every day, tap to see everything logged</div></div><span class="chev">›</span></div>
-      <div class="more-card" data-open="coach"><div class="mc-icon">🤖</div><div class="mc-mid"><div class="mc-title">AI Coach</div><div class="mc-sub">Plain-language insights from your data</div></div><span class="chev">›</span></div>
-      <div class="section-head"><h2>Track</h2></div>
-      <div class="more-card" data-open="journal"><div class="mc-icon">📔</div><div class="mc-mid"><div class="mc-title">Journal</div><div class="mc-sub">One entry per day, font &amp; color, export</div></div><span class="chev">›</span></div>
-      <div class="more-card" data-open="health"><div class="mc-icon">💊</div><div class="mc-mid"><div class="mc-title">Health</div><div class="mc-sub">Medicines, appointments, BP &amp; sugar</div></div><span class="chev">›</span></div>
-      <div class="section-head"><h2>Money</h2></div>
-      <div class="more-card" data-open="debts"><div class="mc-icon">🏦</div><div class="mc-mid"><div class="mc-title">Debts / EMI</div><div class="mc-sub">Loans, EMI dates, balances</div></div><span class="chev">›</span></div>
-      <div class="more-card" data-open="subscriptions"><div class="mc-icon">🔁</div><div class="mc-mid"><div class="mc-title">Subscriptions</div><div class="mc-sub">Recurring bills, renewal reminders</div></div><span class="chev">›</span></div>
-      <div class="more-card" data-open="assets"><div class="mc-icon">🏛️</div><div class="mc-mid"><div class="mc-title">Assets &amp; Net Worth</div><div class="mc-sub">Bank, cash, investments, gold, property</div></div><span class="chev">›</span></div>
-      <div class="section-head"><h2>Review</h2></div>
-      <div class="more-card" data-open="trends"><div class="mc-icon">📈</div><div class="mc-mid"><div class="mc-title">Trends</div><div class="mc-sub">Habit &amp; finance charts</div></div><span class="chev">›</span></div>
-      <div class="more-card" data-open="reports"><div class="mc-icon">🧾</div><div class="mc-mid"><div class="mc-title">Reports</div><div class="mc-sub">Filter, export Excel/PDF</div></div><span class="chev">›</span></div>
-      <div class="more-card" data-open="documents"><div class="mc-icon">🗂️</div><div class="mc-mid"><div class="mc-title">Documents Vault</div><div class="mc-sub">Insurance, vehicle, loan &amp; ID references</div></div><span class="chev">›</span></div>
+      <div id="moreModuleCards"></div>
       <div class="section-head"><h2>System</h2></div>
-      <div class="more-card" data-open="settings"><div class="mc-icon">⚙️</div><div class="mc-mid"><div class="mc-title">Settings</div><div class="mc-sub">Sheet, Telegram, theme, backup</div></div><span class="chev">›</span></div>
+      <div class="more-card" data-open="settings"><div class="mc-icon">⚙️</div><div class="mc-mid"><div class="mc-title">Settings</div><div class="mc-sub">Sheet, Telegram, theme, modules, backup</div></div><span class="chev">›</span></div>
     </section>
 
     <!-- ===================== DEBTS / EMI ===================== -->
@@ -835,7 +967,39 @@ label.fl{ display:block; font-size:12px; color:var(--sub); font-weight:700; marg
       </div>
 
       <div class="settings-group">
-        <h3>Theme &amp; Fonts</h3>
+        <h3>Experience Pack</h3>
+        <div class="settings-list">
+          <div class="settings-row"><div class="sr-label">Changes how the whole app looks and feels<div class="sr-sub">Layout, icons, fonts, cards, charts, nav, animation — your data never changes</div></div></div>
+          <div class="exp-pack-grid" id="expPackGrid" style="padding:0 16px 16px;"></div>
+        </div>
+      </div>
+
+      <div class="settings-group">
+        <h3>Theme presets</h3>
+        <div class="settings-list">
+          <div class="settings-row"><div class="sr-label">Light / dark color presets only<div class="sr-sub">Fine-tunes colors within your current Experience Pack</div></div></div>
+          <div class="theme-grid" id="themeGrid"></div>
+        </div>
+      </div>
+
+      <div class="settings-group">
+        <h3>Background</h3>
+        <div class="settings-list">
+          <div class="settings-row"><div class="sr-label">Background image<div class="sr-sub">A subtle rotating photo behind the app</div></div><button class="switch" id="setBgOn"></button></div>
+          <div class="settings-row"><div class="sr-label">Rotate automatically<div class="sr-sub">Pick a new image on a schedule</div></div><button class="switch" id="setBgAuto"></button></div>
+          <div style="padding:0 16px 14px;">
+            <label class="fl">Rotate every</label>
+            <select id="setBgInterval"><option value="0">Every app open</option><option value="15">15 minutes</option><option value="60">1 hour</option><option value="1440">Once a day</option></select>
+            <label class="fl">Background strength</label>
+            <input type="range" id="setBgOpacity" min="5" max="40" value="16">
+            <div class="btn-row" style="margin-top:12px;"><button class="btn secondary" id="shuffleBgBtn">🔀 Shuffle now</button></div>
+            <div class="hint">Random curated photos, a new one each shuffle — kept subtle behind your cards. Skipped automatically when offline.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-group">
+        <h3>Fonts</h3>
         <div class="settings-list">
           <div class="settings-row"><div class="sr-label">Accent color</div></div>
           <div class="swatch-row" id="accentSwatches"></div>
@@ -846,6 +1010,14 @@ label.fl{ display:block; font-size:12px; color:var(--sub); font-weight:700; marg
           <div style="padding:0 16px 14px;"><select id="setFontBody"><option value="Manrope">Manrope</option><option value="Nunito">Nunito</option><option value="Inter">Inter</option></select></div>
           <div class="settings-row"><div class="sr-label">Number / mono font</div></div>
           <div style="padding:0 16px 14px;"><select id="setFontMono"><option value="JetBrains Mono">JetBrains Mono</option><option value="Space Mono">Space Mono</option><option value="IBM Plex Mono">IBM Plex Mono</option></select></div>
+        </div>
+      </div>
+
+      <div class="settings-group">
+        <h3>Modules</h3>
+        <div class="settings-list">
+          <div class="settings-row"><div class="sr-label">Show or hide sections<div class="sr-sub">Off = removed from Home, bottom bar and More. Handy for sharing a lighter version of the app.</div></div></div>
+          <div id="moduleToggleList"></div>
         </div>
       </div>
 
@@ -927,20 +1099,13 @@ label.fl{ display:block; font-size:12px; color:var(--sub); font-weight:700; marg
       <div class="settings-group">
         <h3>About</h3>
         <div class="settings-list">
-          <div class="settings-row" id="aboutRow" style="cursor:pointer;"><div class="sr-label">GP Ledger</div><div class="sr-val">v9.4.1 ›</div></div>
+          <div class="settings-row" id="aboutRow" style="cursor:pointer;"><div class="sr-label">GP Ledger</div><div class="sr-val">v10.0.0 ›</div></div>
         </div>
       </div>
     </section>
   </main>
 
-  <nav class="bottom">
-    <button data-screen="dashboard" class="active"><span class="ic">🏠</span>Home</button>
-    <button data-screen="habits"><span class="ic">✅</span>Habits</button>
-    <button data-screen="finance"><span class="ic">💰</span>Finance</button>
-    <button data-screen="routine"><span class="ic">⏱️</span>Routine</button>
-    <button data-screen="diet"><span class="ic">🥗</span>Diet</button>
-    <button data-screen="more"><span class="ic">⋯</span>More</button>
-  </nav>
+  <nav class="bottom" id="bottomNav"></nav>
 
   <div id="toast-wrap"></div>
 
@@ -976,6 +1141,243 @@ label.fl{ display:block; font-size:12px; color:var(--sub); font-weight:700; marg
    change it here only; both the photo estimator and the AI Coach read
    from this constant. */
 const GEMINI_MODEL = 'gemini-3.5-flash';
+
+/* ---------- v9.5: module registry (drives bottom nav, Home, More, Settings toggles) ---------- */
+/* core:true = one of the 4 primary tabs when enabled; group = header used in the More screen. */
+const MODULE_DEFS = [
+  { key:'habits',        label:'Habits',        icon:'✅',  iconKey:'habits',   screen:'habits',        core:true,  group:'Track',  sub:'Daily habits & streaks' },
+  { key:'finance',       label:'Finance',       icon:'💰',  iconKey:'finance',  screen:'finance',       core:true,  group:'Money',  sub:'Income, expenses, budgets' },
+  { key:'routine',       label:'Routine',       icon:'⏱️',  iconKey:'routine',  screen:'routine',       core:true,  group:'Track',  sub:'Daily timeline & templates' },
+  { key:'diet',          label:'Diet',          icon:'🥗',  iconKey:'diet',     screen:'diet',          core:true,  group:'Track',  sub:'Meals & nutrition' },
+  { key:'goals',         label:'Goals',         icon:'🎯',  iconKey:'goals',    screen:'goals',         core:false, group:'Plan',   sub:'Debt-free, savings, weight, habits & more' },
+  { key:'calendar',      label:'Calendar',      icon:'📆',  iconKey:'calendar', screen:'calendar',      core:false, group:'Plan',   sub:'Every day, tap to see everything logged' },
+  { key:'coach',         label:'AI Coach',      icon:'🤖',  iconKey:'coach',    screen:'coach',         core:false, group:'Plan',   sub:'Plain-language insights from your data' },
+  { key:'journal',       label:'Journal',       icon:'📔',  iconKey:'journal',  screen:'journal',       core:false, group:'Track',  sub:'One entry per day, font & color, export' },
+  { key:'health',        label:'Health',        icon:'💊',  iconKey:'health',   screen:'health',        core:false, group:'Track',  sub:'Medicines, appointments, BP & sugar' },
+  { key:'debts',         label:'Debts / EMI',   icon:'🏦',  iconKey:'debts',    screen:'debts',         core:false, group:'Money',  sub:'Loans, EMI dates, balances' },
+  { key:'subscriptions', label:'Subscriptions', icon:'🔁',  iconKey:'subs',     screen:'subscriptions', core:false, group:'Money',  sub:'Recurring bills, renewal reminders' },
+  { key:'assets',        label:'Assets',        icon:'🏛️',  iconKey:'assets',   screen:'assets',        core:false, group:'Money',  sub:'Bank, cash, investments, gold, property' },
+  { key:'trends',        label:'Trends',        icon:'📈',  iconKey:'trends',   screen:'trends',        core:false, group:'Review', sub:'Habit & finance charts' },
+  { key:'reports',       label:'Reports',       icon:'🧾',  iconKey:'reports',  screen:'reports',       core:false, group:'Review', sub:'Filter, export Excel/PDF' },
+  { key:'documents',     label:'Documents',     icon:'🗂️',  iconKey:'documents',screen:'documents',     core:false, group:'Review', sub:'Insurance, vehicle, loan & ID references' },
+];
+
+/* ---------- v10.0: Icon geometry — ONE path set, painted 6 ways by CSS (see .gicon rules) ---------- */
+const ICONS = {
+  home:      '<path class="g-base" d="M4 11 L12 4 L20 11 V20 H14 V14 H10 V20 H4 Z"/>',
+  habits:    '<path class="g-base" d="M5 12.5 L10 17 L19 6"/>',
+  finance:   '<circle class="g-base" cx="12" cy="12" r="8"/><path class="g-accent" d="M12 7 V17 M9.5 9.5 C9.5 8.3 10.6 7.5 12 7.5 C13.6 7.5 14.5 8.4 14.5 9.4 C14.5 12 9.5 11 9.5 13.6 C9.5 14.9 10.6 15.7 12 15.7 C13.4 15.7 14.5 15 14.5 13.7" fill="none"/>',
+  routine:   '<circle class="g-base" cx="12" cy="13" r="7.5"/><path class="g-accent" d="M12 9 V13 L15 15 M9 3 H15" fill="none"/>',
+  diet:      '<path class="g-base" d="M6 3 V11 C6 13 7.5 14 9 14 V21 M6 3 V8 M8 3 V8 M4 8 H8 M18 3 C15 3 15 8 15 11 C15 12.5 16 13.5 17 13.5 V21 M17 3 V13.5"/>',
+  goals:     '<circle class="g-base" cx="12" cy="12" r="8.5"/><circle class="g-base" cx="12" cy="12" r="5"/><circle class="g-accent" cx="12" cy="12" r="1.6"/>',
+  calendar:  '<rect class="g-base" x="4" y="5.5" width="16" height="14.5" rx="2.5"/><path class="g-accent" d="M4 10 H20 M8 3.5 V7 M16 3.5 V7" fill="none"/>',
+  coach:     '<rect class="g-base" x="4.5" y="6" width="15" height="11" rx="4"/><circle class="g-accent" cx="9" cy="11.5" r="1.3"/><circle class="g-accent" cx="15" cy="11.5" r="1.3"/><path class="g-accent" d="M12 3 V6" fill="none"/>',
+  journal:   '<path class="g-base" d="M6 4 H16 C17 4 18 5 18 6 V20 L14.5 18 L11 20 L7.5 18 L6 20 Z"/><path class="g-accent" d="M9 8 H15 M9 11.5 H15" fill="none"/>',
+  health:    '<path class="g-base" d="M12 20 C6 16 3 12.5 3 8.8 C3 6.1 5.1 4 7.7 4 C9.4 4 10.9 4.9 12 6.3 C13.1 4.9 14.6 4 16.3 4 C18.9 4 21 6.1 21 8.8 C21 12.5 18 16 12 20 Z"/><path class="g-accent" d="M9 10 H11 L12 8 L13.3 12 L14.5 10 H16" fill="none"/>',
+  debts:     '<rect class="g-base" x="3.5" y="8" width="17" height="10.5" rx="2"/><path class="g-accent" d="M3.5 11.5 H20.5 M12 3 L20 8 H4 Z" fill="none"/>',
+  subs:      '<path class="g-base" d="M6 6 A7 7 0 1 1 5.3 12.5" fill="none" stroke-width="2"/><path class="g-accent" d="M6 3 V6.5 H9.5 M18 21 V17.5 H14.5" fill="none"/>',
+  assets:    '<path class="g-base" d="M4 21 H20 M5 21 V10 L12 5 L19 10 V21 M8 21 V13 H11 V21 M13 21 V13 H16 V21"/>',
+  trends:    '<path class="g-base" d="M4 19 L9 12 L13 15 L20 6" fill="none" stroke-width="2.2"/><path class="g-accent" d="M15 6 H20 V11" fill="none" stroke-width="2.2"/>',
+  reports:   '<path class="g-base" d="M6 3.5 H14 L18 7.5 V20.5 H6 Z"/><path class="g-accent" d="M14 3.5 V7.5 H18 M8.5 12 H15.5 M8.5 15.5 H15.5" fill="none"/>',
+  documents: '<rect class="g-base" x="4" y="5" width="16" height="14" rx="2"/><path class="g-accent" d="M4 9 H20 M8 13 H12" fill="none"/>',
+  more:      '<circle class="g-base" cx="5.5" cy="12" r="1.7"/><circle class="g-base" cx="12" cy="12" r="1.7"/><circle class="g-base" cx="18.5" cy="12" r="1.7"/>',
+  add:       '<path class="g-accent" d="M12 5 V19 M5 12 H19" fill="none" stroke-width="2.4"/>',
+  water:     '<path class="g-base" d="M12 3 C8 8.5 5.5 12 5.5 15.2 C5.5 18.9 8.4 21 12 21 C15.6 21 18.5 18.9 18.5 15.2 C18.5 12 16 8.5 12 3 Z"/>',
+  sleep:     '<rect class="g-base" x="2" y="16" width="20" height="4" rx="2"/><circle class="g-base" cx="7" cy="13.3" r="2.3"/><path class="g-base" d="M9 16 C9 13.3 11 11.8 14.5 11.8 C17.5 11.8 19 13.3 19 16 Z"/><path class="g-accent" d="M14.5 3.5 H18.5 L15 7 H18.5 M12.5 7.5 H15 L12.8 9.5 H15" fill="none" stroke-width="1.6"/>',
+  food:      '<path class="g-base" d="M6 3 V11 C6 13 7.5 14 9 14 V21 M6 3 V8 M8 3 V8 M4 8 H8 M18 3 C15 3 15 8 15 11 C15 12.5 16 13.5 17 13.5 V21 M17 3 V13.5"/>',
+  workout:   '<path class="g-base" d="M6.5 9 V15 M17.5 9 V15 M3 10.5 H6.5 M17.5 10.5 H21 M3 13.5 H6.5 M17.5 13.5 H21 M6.5 12 H17.5" fill="none" stroke-width="2.4"/>',
+  mood:      '<circle class="g-base" cx="12" cy="12" r="8.5"/><circle class="g-accent" cx="9" cy="10" r="1"/><circle class="g-accent" cx="15" cy="10" r="1"/><path class="g-accent" d="M8.5 14.5 C9.5 16.3 14.5 16.3 15.5 14.5" fill="none"/>',
+  weight:    '<circle class="g-base" cx="12" cy="12" r="8.5" fill="none" stroke-width="1.6"/><path class="g-accent" d="M12 12 L15.5 8.5" fill="none" stroke-width="1.8"/>',
+  reading:   '<path class="g-base" d="M12 6 C10 4.5 7 4 4 4.5 V17.5 C7 17 10 17.5 12 19 C14 17.5 17 17 20 17.5 V4.5 C17 4 14 4.5 12 6 Z" fill="none" stroke-width="1.5"/><path class="g-accent" d="M12 6 V19" fill="none"/>',
+  search:    '<circle class="g-base" cx="10.5" cy="10.5" r="6.5" fill="none" stroke-width="2"/><path class="g-accent" d="M15.5 15.5 L20 20" fill="none" stroke-width="2.2"/>',
+  settings:  '<circle class="g-base" cx="12" cy="12" r="3.2"/><path class="g-accent" d="M12 3 V5.3 M12 18.7 V21 M21 12 H18.7 M5.3 12 H3 M18.4 5.6 L16.8 7.2 M7.2 16.8 L5.6 18.4 M18.4 18.4 L16.8 16.8 M7.2 7.2 L5.6 5.6" fill="none" stroke-width="1.8"/>',
+  chevron:   '<path class="g-accent" d="M9 5 L16 12 L9 19" fill="none" stroke-width="2.2"/>',
+  bolt:      '<path class="g-base" d="M13 2 L4 14 H11 L10 22 L20 9 H13 Z"/>',
+  award:     '<circle class="g-base" cx="12" cy="9" r="5.5"/><path class="g-accent" d="M9 13.5 L7 21 L12 18.5 L17 21 L15 13.5" fill="none"/>',
+};
+function icon(key, size){ const d=ICONS[key]||ICONS.bolt; return `<svg class="gicon" viewBox="0 0 24 24" ${size?`style="font-size:${size}px"`:''} aria-hidden="true">${d}</svg>`; }
+
+/* ---------- v10.0: hand-drawn wobble filter (used only by exp-icon-handdrawn packs) ---------- */
+document.addEventListener('DOMContentLoaded', ()=>{
+  const svgDefs = document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svgDefs.setAttribute('width','0'); svgDefs.setAttribute('height','0'); svgDefs.style.position='absolute';
+  svgDefs.innerHTML = `<filter id="gicon-wobble"><feTurbulence type="fractalNoise" baseFrequency="0.045" numOctaves="1" seed="4" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="1.6"/></filter>`;
+  document.body.prepend(svgDefs);
+});
+const MAX_NAV_SLOTS = 4; // besides Home; a 5th "More" slot is added only if something doesn't fit
+
+/* ---------- v9.5: theme presets — each sets the full palette + radius live ---------- */
+const THEMES = [
+  { id:'midnight',  name:'Midnight',   bg:'#0f1115', bg2:'#161922', card:'#1b1f2a', card2:'#20242f', text:'#f2f4f8', sub:'#9aa3b5', sub2:'#6b7385', line:'#2a2f3d', accent:'#22c55e', accent2:'#16a34a', radius:'18px' },
+  { id:'ocean',     name:'Ocean',      bg:'#0a1622',  bg2:'#0f2136', card:'#122a44', card2:'#163252', text:'#eaf4ff', sub:'#8fb0cc', sub2:'#5f7f9c', line:'#1e3c5c', accent:'#38bdf8', accent2:'#0ea5e9', radius:'18px' },
+  { id:'forest',    name:'Forest',     bg:'#0d1712',  bg2:'#122019', card:'#16261e', card2:'#1b2e24', text:'#eefaf1', sub:'#9bc0a9', sub2:'#688a76', line:'#213a2c', accent:'#34d399', accent2:'#10b981', radius:'18px' },
+  { id:'plum',      name:'Plum',       bg:'#160f1c',  bg2:'#1e1526', card:'#251a30', card2:'#2c2038', text:'#f5eeff', sub:'#b39fcb', sub2:'#7d6c92', line:'#33253f', accent:'#a855f7', accent2:'#9333ea', radius:'18px' },
+  { id:'sunset',    name:'Sunset',     bg:'#1a1210',  bg2:'#241713',  card:'#2c1c17', card2:'#35221b', text:'#fff3ec', sub:'#d1a08e', sub2:'#966f60', line:'#402a21', accent:'#f97316', accent2:'#ea580c', radius:'18px' },
+  { id:'rose',      name:'Rose',       bg:'#1a0f14',  bg2:'#24141c',  card:'#2c1922', card2:'#351e29', text:'#ffeef3', sub:'#d19bab', sub2:'#966b78', line:'#402531', accent:'#ec4899', accent2:'#db2777', radius:'18px' },
+  { id:'slate',     name:'Slate',      bg:'#0e1114',  bg2:'#15181c',  card:'#1a1e23', card2:'#20242a', text:'#eef1f5', sub:'#98a1ad', sub2:'#666f7a', line:'#282d34', accent:'#6366f1', accent2:'#4f46e5', radius:'14px' },
+  { id:'amber',     name:'Amber',      bg:'#17130a',  bg2:'#211a0d',  card:'#291f10', card2:'#312513', text:'#fff6e6', sub:'#d3b988', sub2:'#98835c', line:'#3d2f18', accent:'#f59e0b', accent2:'#d97706', radius:'18px' },
+  { id:'crimson',   name:'Crimson',    bg:'#170d0d',  bg2:'#211212',  card:'#2a1616', card2:'#331a1a', text:'#ffecec', sub:'#d19c9c', sub2:'#966c6c', line:'#3d1f1f', accent:'#ef4444', accent2:'#dc2626', radius:'18px' },
+  { id:'mono',      name:'Mono',       bg:'#101010',  bg2:'#171717',  card:'#1c1c1c', card2:'#232323', text:'#f2f2f2', sub:'#9a9a9a', sub2:'#6a6a6a', line:'#2a2a2a', accent:'#e5e5e5', accent2:'#a3a3a3', radius:'10px' },
+  { id:'paper',     name:'Paper',      bg:'#f4f1ea',  bg2:'#ece7db',  card:'#ffffff', card2:'#f1ede3', text:'#1c1a16', sub:'#6b6355', sub2:'#948c7c', line:'#e1dacb', accent:'#166534', accent2:'#15803d', radius:'16px' },
+  { id:'skylight',  name:'Skylight',   bg:'#eef4fb',  bg2:'#e3edf9',  card:'#ffffff', card2:'#eef4fb', text:'#101826', sub:'#5b6b82', sub2:'#8a95a6', line:'#d8e3f0', accent:'#2563eb', accent2:'#1d4ed8', radius:'16px' },
+  { id:'blossom',   name:'Blossom',    bg:'#fdf2f6',  bg2:'#fbe7ee',  card:'#ffffff', card2:'#fdf2f6', text:'#241019', sub:'#8a5b6b', sub2:'#b58c98', line:'#f3d7e2', accent:'#db2777', accent2:'#be185d', radius:'20px' },
+  { id:'mint',      name:'Mint',       bg:'#eefbf5',  bg2:'#e2f6ec',  card:'#ffffff', card2:'#eefbf5', text:'#0a2418', sub:'#4f7a67', sub2:'#84a898', line:'#d3ede1', accent:'#059669', accent2:'#047857', radius:'16px' },
+  { id:'graphite',  name:'Graphite',   bg:'#1b1d21',  bg2:'#232529',  card:'#2a2c31', card2:'#313339', text:'#eceef1', sub:'#a3a7ae', sub2:'#71757c', line:'#37393f', accent:'#94a3b8', accent2:'#64748b', radius:'14px' },
+  { id:'neon',      name:'Neon',       bg:'#08090c',  bg2:'#0d1218',  card:'#111820', card2:'#151f29', text:'#e8fbff', sub:'#7fd6e8', sub2:'#4c8b98', line:'#1c2b34', accent:'#22d3ee', accent2:'#06b6d4', radius:'12px' },
+];
+function themeById(id){ return THEMES.find(t=>t.id===id) || THEMES[0]; }
+
+/* =====================================================================
+   v10.0 — EXPERIENCE PACKS. Each is a token set (not a duplicated screen).
+   iconStyle -> body.exp-icon-<x>   cardStyle -> body.exp-card-<x>
+   navStyle  -> body.exp-nav-<x>    fabStyle  -> body.exp-fab-<x>
+   layout    -> body.exp-layout-<x> (dashboard hero/grid structural variant)
+   Colors below are the pack's DARK base; each also carries a lightBg flag
+   so Theme (light/dark/system) still recolors independently on top.
+   ===================================================================== */
+const EXPERIENCE_PACKS = [
+  { id:'minimal',      name:'Minimal',        emoji:'◻️', desc:'Clean, quiet, lots of air',
+    accent:'#111827', accent2:'#4b5563', bg:'#fafafa', bg2:'#f2f2f2', card:'#ffffff', card2:'#f5f5f5', line:'#e6e6e6', text:'#141414', sub:'#6b6b6b',
+    fontHead:"'Inter',sans-serif", fontBody:"'Inter',sans-serif", radius:'14px', tileRadius:'12px', btnRadius:'10px', heroRadius:'18px',
+    iconStyle:'minimal', cardStyle:'flat', navStyle:'float', fabStyle:'circle', layout:'minimal', animSpeed:'160ms', wallSeed:'minimal', lightBg:true },
+
+  { id:'fitness',      name:'Fitness',        emoji:'🏃', desc:'Apple-Fitness-style activity rings',
+    accent:'#22c55e', accent2:'#0ea5e9', bg:'#0a0e0c', bg2:'#0f1512', card:'#141c18', card2:'#1a241f', line:'#22322b', text:'#f2fbf5', sub:'#8fb59f',
+    fontHead:"'Sora',sans-serif", fontBody:"'Inter',sans-serif", radius:'20px', tileRadius:'999px', btnRadius:'14px', heroRadius:'26px',
+    iconStyle:'rounded', cardStyle:'elevated', navStyle:'float', fabStyle:'circle', layout:'rings', animSpeed:'260ms', wallSeed:'fitness' },
+
+  { id:'wellness',     name:'Wellness',       emoji:'🧘', desc:'Calm gradients, slow fades',
+    accent:'#a78bfa', accent2:'#38bdf8', bg:'#12101c', bg2:'#181527', card:'#1e1a30', card2:'#251f3a', line:'#302a48', text:'#f3f0fb', sub:'#b0a6cc',
+    fontHead:"'Fraunces',serif", fontBody:"'Nunito',sans-serif", radius:'24px', tileRadius:'20px', btnRadius:'16px', heroRadius:'28px',
+    iconStyle:'duotone', cardStyle:'glass', navStyle:'glass', fabStyle:'circle', layout:'glass', animSpeed:'420ms', wallSeed:'wellness' },
+
+  { id:'habit',        name:'Habit Builder',  emoji:'✅', desc:'Streaks front and center, gamified bars',
+    accent:'#f59e0b', accent2:'#22c55e', bg:'#12100a', bg2:'#181510', card:'#1f1b13', card2:'#272117', line:'#332c1c', text:'#fbf5e9', sub:'#c9b592',
+    fontHead:"'Poppins',sans-serif", fontBody:"'Manrope',sans-serif", radius:'18px', tileRadius:'16px', btnRadius:'12px', heroRadius:'24px',
+    iconStyle:'filled', cardStyle:'soft', navStyle:'pill', fabStyle:'squircle', layout:'gamified', animSpeed:'240ms', wallSeed:'habit' },
+
+  { id:'productivity', name:'Productivity',   emoji:'📋', desc:'Task-first, dense minimal lists',
+    accent:'#6366f1', accent2:'#22c55e', bg:'#101114', bg2:'#16171b', card:'#1b1c21', card2:'#212228', line:'#2a2c33', text:'#eef0f5', sub:'#9599a6',
+    fontHead:"'Inter',sans-serif", fontBody:"'Inter',sans-serif", radius:'12px', tileRadius:'10px', btnRadius:'8px', heroRadius:'16px',
+    iconStyle:'outline', cardStyle:'flat', navStyle:'dock', fabStyle:'squircle', layout:'minimal', animSpeed:'140ms', wallSeed:'productivity' },
+
+  { id:'finance',      name:'Finance',        emoji:'💹', desc:'Dark, data-dense, numbers up front',
+    accent:'#22c55e', accent2:'#eab308', bg:'#0a0d0a', bg2:'#0f130f', card:'#131a13', card2:'#182018', line:'#20301f', text:'#eafbef', sub:'#89a389',
+    fontHead:"'IBM Plex Mono',monospace", fontBody:"'Inter',sans-serif", radius:'10px', tileRadius:'8px', btnRadius:'8px', heroRadius:'14px',
+    iconStyle:'outline', cardStyle:'flat', navStyle:'dock', fabStyle:'squircle', layout:'dense', animSpeed:'140ms', wallSeed:'finance' },
+
+  { id:'luxury',       name:'Luxury',         emoji:'♠️', desc:'Black & gold, serif headings, marble',
+    accent:'#d4af37', accent2:'#f5e6b8', bg:'#0c0b0a', bg2:'#131110', card:'#1a1714', card2:'#211d18', line:'#2e2820', text:'#f7f2e6', sub:'#c2b294',
+    fontHead:"'Playfair Display',serif", fontBody:"'Manrope',sans-serif", radius:'6px', tileRadius:'6px', btnRadius:'4px', heroRadius:'10px',
+    iconStyle:'minimal', cardStyle:'outline', navStyle:'float', fabStyle:'pill', layout:'magazine', animSpeed:'320ms', wallSeed:'luxury' },
+
+  { id:'glass',        name:'Glassmorphism',  emoji:'🧊', desc:'Frosted panels, soft blur, glowing accents',
+    accent:'#38bdf8', accent2:'#818cf8', bg:'#0a0f1e', bg2:'#0f1730', card:'#152040', card2:'#1c2a52', line:'#233a68', text:'#eaf2ff', sub:'#9fb4dd',
+    fontHead:"'Sora',sans-serif", fontBody:"'Inter',sans-serif", radius:'24px', tileRadius:'20px', btnRadius:'16px', heroRadius:'30px',
+    iconStyle:'duotone', cardStyle:'glass', navStyle:'glass', fabStyle:'circle', layout:'glass', animSpeed:'300ms', wallSeed:'glass' },
+
+  { id:'aifuture',     name:'AI Future',      emoji:'✨', desc:'Morphing gradients, futuristic mono UI',
+    accent:'#a855f7', accent2:'#22d3ee', bg:'#08070c', bg2:'#0d0b14', card:'#151222', card2:'#1c1830', line:'#2a2340', text:'#f3edff', sub:'#b7a8d9',
+    fontHead:"'Space Grotesk',sans-serif", fontBody:"'Space Grotesk',sans-serif", radius:'16px', tileRadius:'14px', btnRadius:'12px', heroRadius:'22px',
+    iconStyle:'duotone', cardStyle:'glass', navStyle:'glass', fabStyle:'circle', layout:'glass', animSpeed:'380ms', wallSeed:'aifuture' },
+
+  { id:'nature',       name:'Nature',         emoji:'🌿', desc:'Earthy greens, organic shapes',
+    accent:'#65a30d', accent2:'#a16207', bg:'#0f130d', bg2:'#151b10', card:'#1b2315', card2:'#222c1a', line:'#2c3822', text:'#f1f7ea', sub:'#a3ba91',
+    fontHead:"'Nunito',sans-serif", fontBody:"'Nunito',sans-serif", radius:'22px', tileRadius:'18px', btnRadius:'14px', heroRadius:'26px',
+    iconStyle:'rounded', cardStyle:'soft', navStyle:'pill', fabStyle:'circle', layout:'magazine', animSpeed:'300ms', wallSeed:'nature' },
+
+  { id:'material',     name:'Material Design',emoji:'🎨', desc:'Google-style elevation & bold color blocks',
+    accent:'#4285F4', accent2:'#34A853', bg:'#101418', bg2:'#161b21', card:'#1c2128', card2:'#232933', line:'#2e3540', text:'#e8eaed', sub:'#9aa0a6',
+    fontHead:"'Roboto',sans-serif", fontBody:"'Roboto',sans-serif", radius:'16px', tileRadius:'12px', btnRadius:'20px', heroRadius:'20px',
+    iconStyle:'filled', cardStyle:'elevated', navStyle:'dock', fabStyle:'circle', layout:'dense', animSpeed:'200ms', wallSeed:'material' },
+
+  { id:'applestyle',   name:'Apple Style',    emoji:'🍎', desc:'SF-like clarity, generous whitespace',
+    accent:'#0a84ff', accent2:'#30d158', bg:'#000000', bg2:'#0a0a0c', card:'#161618', card2:'#1c1c1e', line:'#2c2c2e', text:'#f5f5f7', sub:'#8e8e93',
+    fontHead:"'Inter',sans-serif", fontBody:"'Inter',sans-serif", radius:'20px', tileRadius:'18px', btnRadius:'14px', heroRadius:'24px',
+    iconStyle:'filled', cardStyle:'elevated', navStyle:'glass', fabStyle:'circle', layout:'rings', animSpeed:'220ms', wallSeed:'apple' },
+
+  { id:'samsungstyle', name:'Samsung Style',  emoji:'🔷', desc:'One UI curves, bright cobalt accents',
+    accent:'#1259e6', accent2:'#00c9b7', bg:'#0d1016', bg2:'#12161e', card:'#181d27', card2:'#1f2531', line:'#2a3140', text:'#eef2fa', sub:'#93a0b8',
+    fontHead:"'Outfit',sans-serif", fontBody:"'Outfit',sans-serif", radius:'26px', tileRadius:'22px', btnRadius:'18px', heroRadius:'30px',
+    iconStyle:'rounded', cardStyle:'elevated', navStyle:'pill', fabStyle:'squircle', layout:'magazine', animSpeed:'260ms', wallSeed:'samsung' },
+
+  { id:'cyberpunk',    name:'Cyberpunk',      emoji:'🌆', desc:'Neon magenta/cyan, glitch-sharp edges',
+    accent:'#ff2e88', accent2:'#00f0ff', bg:'#05050a', bg2:'#0a0912', card:'#12101d', card2:'#181428', line:'#2a1f45', text:'#f5eeff', sub:'#a68fd6',
+    fontHead:"'Syne',sans-serif", fontBody:"'Space Grotesk',sans-serif", radius:'2px', tileRadius:'2px', btnRadius:'2px', heroRadius:'4px',
+    iconStyle:'outline', cardStyle:'outline', navStyle:'dock', fabStyle:'squircle', layout:'dense', animSpeed:'120ms', wallSeed:'cyberpunk' },
+
+  { id:'gaming',       name:'Gaming',         emoji:'🎮', desc:'XP bars, badges, energetic motion',
+    accent:'#f97316', accent2:'#a855f7', bg:'#0b0a10', bg2:'#111018', card:'#181622', card2:'#201d2c', line:'#2e2a3d', text:'#f6f1ff', sub:'#a99fc4',
+    fontHead:"'Syne',sans-serif", fontBody:"'Manrope',sans-serif", radius:'10px', tileRadius:'10px', btnRadius:'8px', heroRadius:'14px',
+    iconStyle:'filled', cardStyle:'neu', navStyle:'dock', fabStyle:'squircle', layout:'gamified', animSpeed:'140ms', wallSeed:'gaming' },
+
+  { id:'neumorphism',  name:'Neumorphism',    emoji:'🔘', desc:'Soft embossed panels, monotone surfaces',
+    accent:'#7c8cf8', accent2:'#7c8cf8', bg:'#1c1e26', bg2:'#1c1e26', card:'#1c1e26', card2:'#22242e', line:'#22242e', text:'#e9eaf2', sub:'#9498ab',
+    fontHead:"'Manrope',sans-serif", fontBody:"'Manrope',sans-serif", radius:'20px', tileRadius:'18px', btnRadius:'16px', heroRadius:'24px',
+    iconStyle:'outline', cardStyle:'neu', navStyle:'float', fabStyle:'circle', layout:'minimal', animSpeed:'260ms', wallSeed:'neu' },
+
+  { id:'kids',         name:'Kids',           emoji:'🧸', desc:'Bright, playful, hand-drawn icons',
+    accent:'#fb7185', accent2:'#facc15', bg:'#fff9f0', bg2:'#fff2de', card:'#ffffff', card2:'#fff6e9', line:'#ffe4bf', text:'#3a2a1a', sub:'#8a715a',
+    fontHead:"'Quicksand',sans-serif", fontBody:"'Quicksand',sans-serif", radius:'26px', tileRadius:'22px', btnRadius:'20px', heroRadius:'30px',
+    iconStyle:'handdrawn', cardStyle:'soft', navStyle:'pill', fabStyle:'circle', layout:'gamified', animSpeed:'260ms', wallSeed:'kids', lightBg:true },
+
+  { id:'elder',        name:'Elder Friendly', emoji:'🔎', desc:'Extra-large text, high contrast, simple',
+    accent:'#1d4ed8', accent2:'#166534', bg:'#ffffff', bg2:'#f4f6fa', card:'#ffffff', card2:'#eef1f7', line:'#c7cede', text:'#0a0e1a', sub:'#3d4658',
+    fontHead:"'Inter',sans-serif", fontBody:"'Inter',sans-serif", radius:'14px', tileRadius:'12px', btnRadius:'12px', heroRadius:'16px',
+    iconStyle:'filled', cardStyle:'outline', navStyle:'dock', fabStyle:'pill', layout:'minimal', animSpeed:'160ms', wallSeed:'elder', lightBg:true },
+
+  { id:'business',     name:'Professional Business', emoji:'💼', desc:'Navy & slate, boardroom-serious',
+    accent:'#1e3a8a', accent2:'#0f766e', bg:'#0d1016', bg2:'#12151d', card:'#171b25', card2:'#1e222d', line:'#2a2f3c', text:'#eceff5', sub:'#8f97ab',
+    fontHead:"'Plus Jakarta Sans',sans-serif", fontBody:"'Plus Jakarta Sans',sans-serif", radius:'8px', tileRadius:'8px', btnRadius:'6px', heroRadius:'12px',
+    iconStyle:'outline', cardStyle:'flat', navStyle:'dock', fabStyle:'squircle', layout:'dense', animSpeed:'160ms', wallSeed:'business' },
+
+  { id:'magazine',     name:'Magazine Style', emoji:'📰', desc:'Editorial serif, big imagery, bold pull-quotes',
+    accent:'#111111', accent2:'#b91c1c', bg:'#fbfaf7', bg2:'#f2efe8', card:'#ffffff', card2:'#f6f3ec', line:'#e5e0d3', text:'#161512', sub:'#6b6459',
+    fontHead:"'DM Serif Display',serif", fontBody:"'Bricolage Grotesque',sans-serif", radius:'2px', tileRadius:'2px', btnRadius:'2px', heroRadius:'0px',
+    iconStyle:'minimal', cardStyle:'outline', navStyle:'dock', fabStyle:'pill', layout:'magazine', animSpeed:'220ms', wallSeed:'magazine', lightBg:true },
+];
+function packById(id){ return EXPERIENCE_PACKS.find(p=>p.id===id) || EXPERIENCE_PACKS[0]; }
+function currentPack(){ const p = packById(S.settings && S.settings.experiencePack); if(!p.chartStyle){ const map={rings:'ring',dense:'bars',magazine:'area',minimal:'line',glass:'area',gamified:'bars'}; p.chartStyle = map[p.layout]||'line'; } return p; }
+function cssVar(name, fallback){ try{ const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim(); return v || fallback; }catch(e){ return fallback; } }
+function hexA(hex, a){ try{ hex=hex.replace('#',''); if(hex.length===3) hex=hex.split('').map(c=>c+c).join(''); const r=parseInt(hex.slice(0,2),16), g=parseInt(hex.slice(2,4),16), b=parseInt(hex.slice(4,6),16); return `rgba(${r},${g},${b},${a})`; }catch(e){ return `rgba(34,197,94,${a})`; } }
+
+function applyExperiencePack(id, opts){
+  const p = packById(id);
+  S.settings.experiencePack = p.id;
+  const r = document.documentElement.style;
+  r.setProperty('--accent', S.settings.customAccent || p.accent);
+  r.setProperty('--accent2', p.accent2);
+  r.setProperty('--bg', p.bg); r.setProperty('--bg2', p.bg2);
+  r.setProperty('--card', p.card); r.setProperty('--card2', p.card2);
+  r.setProperty('--line', p.line); r.setProperty('--text', p.text); r.setProperty('--sub', p.sub);
+  r.setProperty('--sub2', p.sub2 || p.sub);
+  r.setProperty('--font-head', p.fontHead); r.setProperty('--font-body', p.fontBody);
+  r.setProperty('--radius', p.radius); r.setProperty('--radius-sm', p.tileRadius);
+  r.setProperty('--tile-radius', p.tileRadius); r.setProperty('--btn-radius', p.btnRadius); r.setProperty('--hero-radius', p.heroRadius);
+  r.setProperty('--anim-speed', p.animSpeed);
+  r.setProperty('--icon-stroke', p.iconStyle==='minimal' ? '1.1' : p.iconStyle==='rounded' ? '2.4' : '1.75');
+  r.setProperty('--card-blur', (p.cardStyle==='glass') ? '18px' : '0px');
+  document.documentElement.setAttribute('data-color-scheme', p.lightBg ? 'light' : 'dark');
+  const b = document.body;
+  b.className = b.className.replace(/\bexp-\S+/g,'').trim();
+  b.classList.add(`exp-icon-${p.iconStyle}`, `exp-card-${p.cardStyle}`, `exp-nav-${p.navStyle}`, `exp-fab-${p.fabStyle}`, `exp-layout-${p.layout}`, `exp-${p.id}`);
+  if(!opts || !opts.skipBg){ if(typeof shuffleBackground==='function') { try{ S.settings.bgSeed = p.wallSeed; applyBackground(); }catch(e){} } }
+  if(typeof drawExperienceGrid==='function') drawExperienceGrid();
+}
+function drawExperienceGrid(){
+  const wrap = document.getElementById('expPackGrid'); if(!wrap) return;
+  wrap.innerHTML = EXPERIENCE_PACKS.map(p=>`
+    <div class="exp-pack-card ${S.settings.experiencePack===p.id?'sel':''}" data-pack="${p.id}">
+      <div class="ep-swatch" style="background:linear-gradient(135deg, ${p.accent}, ${p.accent2});">
+        <span class="ep-dot" style="background:${p.bg};"></span><span class="ep-dot" style="background:${p.card};"></span>
+      </div>
+      <div class="ep-name">${p.emoji} ${p.name}</div>
+      <div class="ep-desc">${p.desc}</div>
+    </div>`).join('');
+  wrap.querySelectorAll('.exp-pack-card').forEach(el=>{
+    el.addEventListener('click', ()=>{ applyExperiencePack(el.dataset.pack); saveState(); renderAll(); toast(`${packById(el.dataset.pack).name} applied`); });
+  });
+}
 
 /* ---------- v9.1: brand logo, embedded as a data URI so it never depends on
    sibling files loading (works even in isolated previews) ---------- */
@@ -1090,6 +1492,9 @@ function defaultSettings(){
     tgEnabled:false, tgToken:'', tgChatId:'', quoteToTg:false,
     autoCollapseHabits:true, showUndo:true,
     sheetUrl:'', sheetId:'', autoSync:false, lastSync:'',
+    themeId:'midnight', bgOn:false, bgAuto:false, bgIntervalMin:60, bgQuery:'', bgOpacity:16, bgSeed:0,
+    modules: Object.fromEntries(MODULE_DEFS.map(m=>[m.key, true])),
+    experiencePack:'minimal', // v10.0 — see EXPERIENCE_PACKS; drives layout/icons/fonts/cards/nav, separate from themeId (colors only)
   };
 }
 const QUOTES = [
@@ -1237,6 +1642,9 @@ function loadState(){
   if(!Array.isArray(S.debts) || S.debts.length===0){ S.debts = defaultDebts(); }
   if(!S.settings || typeof S.settings!=='object'){ S.settings = defaultSettings(); }
   else { S.settings = Object.assign(defaultSettings(), S.settings); }
+  if(!S.settings.modules || typeof S.settings.modules!=='object') S.settings.modules = {};
+  MODULE_DEFS.forEach(m=>{ if(S.settings.modules[m.key]===undefined) S.settings.modules[m.key] = true; });
+  if(!EXPERIENCE_PACKS.some(p=>p.id===S.settings.experiencePack)) S.settings.experiencePack = 'minimal';
   if(!Array.isArray(S.transactions)) S.transactions = [];
   if(!S.routineLogs || typeof S.routineLogs!=='object') S.routineLogs = {};
   if(!Array.isArray(S.debts)) S.debts = [];
@@ -1285,15 +1693,63 @@ function scheduleAutoSync(){
   autoSyncTimer = setTimeout(()=>{ syncNow(true); }, 1500);
 }
 
-/* ---------- theming ---------- */
+/* ---------- theming ----------
+   v10.0: Theme presets are now a COLOR-ONLY layer that fine-tunes whatever
+   Experience Pack is active (per the pack/theme split — see BLUEPRINT.md §9).
+   Font, radius, icon style, layout, nav/fab shape and animation speed are
+   owned exclusively by applyExperiencePack() and are left untouched here,
+   so switching a theme preset never undoes the selected Experience Pack. */
 function applyTheme(){
   const st = S.settings;
-  const accent = st.customAccent || st.accent || '#22c55e';
-  document.documentElement.style.setProperty('--accent', accent);
-  document.documentElement.style.setProperty('--font-head', `'${st.fontHead}', sans-serif`);
-  document.documentElement.style.setProperty('--font-body', `'${st.fontBody}', sans-serif`);
-  document.documentElement.style.setProperty('--font-mono', `'${st.fontMono}', monospace`);
+  const theme = themeById(st.themeId);
+  const root = document.documentElement.style;
+  root.setProperty('--bg', theme.bg); root.setProperty('--bg2', theme.bg2);
+  root.setProperty('--card', theme.card); root.setProperty('--card2', theme.card2);
+  root.setProperty('--text', theme.text); root.setProperty('--sub', theme.sub);
+  root.setProperty('--sub2', theme.sub2); root.setProperty('--line', theme.line);
+  const accent = st.customAccent || st.accent || theme.accent;
+  root.setProperty('--accent', accent);
+  root.setProperty('--accent2', st.customAccent ? accent : theme.accent2);
+  root.setProperty('--font-mono', `'${st.fontMono}', monospace`);
+  const metaTheme = document.querySelector('meta[name="theme-color"]'); if(metaTheme) metaTheme.setAttribute('content', theme.bg);
+  applyBackground();
   renderBadge();
+}
+function drawThemeGrid(){
+  const wrap = document.getElementById('themeGrid'); if(!wrap) return;
+  wrap.innerHTML = THEMES.map(t=>`
+    <div class="theme-chip${S.settings.themeId===t.id?' sel':''}" data-theme="${t.id}" style="background:${t.bg2}">
+      <div class="tc-dot" style="background:${t.accent};"></div>${t.name}
+    </div>`).join('');
+  wrap.querySelectorAll('[data-theme]').forEach(el=>{
+    el.addEventListener('click', ()=>{ S.settings.themeId = el.dataset.theme; saveState(); applyTheme(); drawThemeGrid(); });
+  });
+}
+/* ---------- v9.5: background image layer ---------- */
+function applyBackground(){
+  const bg = document.getElementById('bgLayer'); if(!bg) return;
+  const st = S.settings;
+  bg.style.setProperty('--bg-opacity', (Number(st.bgOpacity)||16)/100);
+  if(!st.bgOn){ bg.classList.remove('on'); return; }
+  if(!navigator.onLine){ bg.classList.remove('on'); return; }
+  const seed = st.bgSeed || 1;
+  const url = `https://picsum.photos/seed/gpledger${seed}/800/1600`;
+  const img = new Image();
+  img.onload = ()=>{ bg.style.backgroundImage = `url('${url}')`; bg.classList.add('on'); };
+  img.onerror = ()=>{ bg.classList.remove('on'); };
+  img.src = url;
+}
+function shuffleBackground(){
+  S.settings.bgSeed = Math.floor(Math.random()*100000);
+  saveState(); applyBackground();
+}
+let __bgTimer = null;
+function scheduleBackgroundRotation(){
+  if(__bgTimer) clearInterval(__bgTimer);
+  const mins = Number(S.settings.bgIntervalMin)||0;
+  if(S.settings.bgOn && S.settings.bgAuto && mins>0){
+    __bgTimer = setInterval(shuffleBackground, mins*60000);
+  }
 }
 function renderBadge(){
   // v9: the header badge is now the fixed GP Ledger brand mark (see index.html),
@@ -1689,8 +2145,9 @@ function renderTrends(){
   });
   const ctx = document.getElementById('habitTrendChart');
   if(habitTrendChart2) habitTrendChart2.destroy();
-  habitTrendChart2 = new Chart(ctx, { type:'line', data:{ labels:days.map(d=>d.slice(5)), datasets:[{ data:rates, borderColor:'#22c55e', backgroundColor:'rgba(34,197,94,.15)', fill:true, tension:.35 }]},
-    options:{ plugins:{legend:{display:false}}, scales:{ x:{ ticks:{color:'#9aa3b5', font:{size:9}}, grid:{display:false}}, y:{ ticks:{color:'#9aa3b5'}, grid:{color:'#2a2f3d'}, min:0, max:100 } } } });
+  const _acc = cssVar('--accent','#22c55e'), _sub = cssVar('--sub','#9aa3b5'), _line = cssVar('--line','#2a2f3d');
+  habitTrendChart2 = new Chart(ctx, { type: currentPack().chartStyle==='bars' ? 'bar' : 'line', data:{ labels:days.map(d=>d.slice(5)), datasets:[{ data:rates, borderColor:_acc, backgroundColor: hexA(_acc,.18), fill:true, tension:.35, borderRadius: currentPack().chartStyle==='bars'?6:0 }]},
+    options:{ plugins:{legend:{display:false}}, scales:{ x:{ ticks:{color:_sub, font:{size:9}}, grid:{display:false}}, y:{ ticks:{color:_sub}, grid:{color:_line}, min:0, max:100 } } } });
 
   const board = document.getElementById('streakBoard');
   const withStreak = S.habits.map(h=>{ let s=0, d=todayStr(); while(habitProgress(h,d)>=1){s++; d=addDays(d,-1);} return {h,s}; }).sort((a,b)=>b.s-a.s);
@@ -1701,8 +2158,9 @@ function renderTrends(){
   const out = weeks.map(ws=> S.transactions.filter(t=>t.date>=ws && t.date<addDays(ws,7) && t.type==='out').reduce((a,t)=>a+Number(t.amount),0));
   const ctx2 = document.getElementById('ieChart');
   if(ieChart2) ieChart2.destroy();
-  ieChart2 = new Chart(ctx2, { type:'bar', data:{ labels:weeks.map(w=>w.slice(5)), datasets:[{label:'Income',data:inc,backgroundColor:'#22c55e'},{label:'Expense',data:out,backgroundColor:'#ef4444'}]},
-    options:{ plugins:{legend:{labels:{color:'#9aa3b5'}}}, scales:{ x:{ticks:{color:'#9aa3b5',font:{size:9}},grid:{display:false}}, y:{ticks:{color:'#9aa3b5'},grid:{color:'#2a2f3d'}} } } });
+  const _acc2 = cssVar('--accent','#22c55e'), _sub2 = cssVar('--sub','#9aa3b5'), _line2 = cssVar('--line','#2a2f3d');
+  ieChart2 = new Chart(ctx2, { type:'bar', data:{ labels:weeks.map(w=>w.slice(5)), datasets:[{label:'Income',data:inc,backgroundColor:_acc2},{label:'Expense',data:out,backgroundColor:'#ef4444'}]},
+    options:{ plugins:{legend:{labels:{color:_sub2}}}, scales:{ x:{ticks:{color:_sub2,font:{size:9}},grid:{display:false}}, y:{ticks:{color:_sub2},grid:{color:_line2}} } } });
 
   const months=[]; for(let i=5;i>=0;i--){ const d=new Date(); d.setMonth(d.getMonth()-i); months.push(d); }
   const netVals = months.map(d=>{
@@ -1712,8 +2170,9 @@ function renderTrends(){
   });
   const ctx3 = document.getElementById('netChart');
   if(netChart2) netChart2.destroy();
-  netChart2 = new Chart(ctx3, { type:'bar', data:{ labels:months.map(d=>d.toLocaleString('default',{month:'short'})), datasets:[{ data:netVals, backgroundColor:netVals.map(v=>v>=0?'#22c55e':'#ef4444') }]},
-    options:{ plugins:{legend:{display:false}}, scales:{ x:{ticks:{color:'#9aa3b5'},grid:{display:false}}, y:{ticks:{color:'#9aa3b5'},grid:{color:'#2a2f3d'}} } } });
+  const _acc3 = cssVar('--accent','#22c55e'), _sub3 = cssVar('--sub','#9aa3b5'), _line3 = cssVar('--line','#2a2f3d');
+  netChart2 = new Chart(ctx3, { type:'bar', data:{ labels:months.map(d=>d.toLocaleString('default',{month:'short'})), datasets:[{ data:netVals, backgroundColor:netVals.map(v=>v>=0?_acc3:'#ef4444') }]},
+    options:{ plugins:{legend:{display:false}}, scales:{ x:{ticks:{color:_sub3},grid:{display:false}}, y:{ticks:{color:_sub3},grid:{color:_line3}} } } });
 }
 
 /* ---------- reports ---------- */
@@ -2565,6 +3024,11 @@ function openMealModal(){
     <img id="mealPreview" style="display:none; width:100%; border-radius:12px; margin-top:8px; max-height:180px; object-fit:cover;">
     <button class="btn secondary" id="mealAnalyzeBtn" style="margin-top:8px; display:none;">✨ Estimate nutrition from photo</button>
     <div class="hint" id="mealAnalyzeHint" style="display:none;"></div>
+    <div id="mealCorrectWrap" style="display:none; margin-top:8px;">
+      <label class="fl">Not quite right? Tell it what this actually is</label>
+      <input type="text" id="mealCorrectText" placeholder="e.g. it's actually 2 chapatis with dal, not rice">
+      <button class="btn secondary" id="mealReanalyzeBtn" style="margin-top:8px;">🔁 Re-evaluate with this correction</button>
+    </div>
     <label class="fl">Meal name</label><input type="text" id="mealName" placeholder="e.g. Chicken rice bowl">
     <div style="display:flex; gap:8px;">
       <div style="flex:1;"><label class="fl">Calories</label><input type="number" id="mealCal"></div>
@@ -2590,7 +3054,14 @@ function openMealModal(){
     };
     reader.readAsDataURL(f);
   });
-  document.getElementById('mealAnalyzeBtn').addEventListener('click', async ()=>{ estimateNote = await analyzeMealPhoto(imageData); });
+  document.getElementById('mealAnalyzeBtn').addEventListener('click', async ()=>{
+    estimateNote = await analyzeMealPhoto(imageData, '');
+    if(estimateNote) document.getElementById('mealCorrectWrap').style.display='block';
+  });
+  document.getElementById('mealReanalyzeBtn').addEventListener('click', async ()=>{
+    const correction = document.getElementById('mealCorrectText').value.trim();
+    estimateNote = await analyzeMealPhoto(imageData, correction);
+  });
   document.getElementById('mealSave').onclick = ()=>{
     const name = document.getElementById('mealName').value.trim(); if(!name){ alert('Please enter a meal name'); return; }
     const rec = {
@@ -2621,12 +3092,12 @@ function openMealModal(){
  * but it is still an AI estimate from a 2D photo, not a lab measurement —
  * it cannot see oil/butter/sugar mixed in, or weigh anything.
  */
-async function analyzeMealPhoto(imageData){
+async function analyzeMealPhoto(imageData, correctionHint){
   const key = S.diet.settings.geminiKey;
   const hint = document.getElementById('mealAnalyzeHint');
   if(!key){ hint.style.display='block'; hint.textContent='Add a Gemini API key in Settings → Diet & body stats to enable photo analysis.'; return ''; }
   if(!imageData){ hint.style.display='block'; hint.textContent='Choose a photo first, then tap "Estimate nutrition from photo".'; return ''; }
-  hint.style.display='block'; hint.textContent='Analyzing photo — identifying items and estimating portions…';
+  hint.style.display='block'; hint.textContent = correctionHint ? 'Re-evaluating with your correction…' : 'Analyzing photo — identifying items and estimating portions…';
   try{
     if(imageData.indexOf(',')===-1 || imageData.indexOf(';')===-1){
       throw new Error('Photo could not be read — the file may be corrupted or in an unsupported format. Try a JPEG or PNG.');
@@ -2643,7 +3114,9 @@ async function analyzeMealPhoto(imageData){
 6. State overall confidence: "high" only if reference objects were visible and the food is simple and clearly identifiable; "medium" for typical cases; "low" if the photo is unclear, portion is ambiguous, or the dish likely has hidden ingredients you couldn't account for.
 
 Reply with ONLY compact JSON, no markdown, no explanation, in this exact shape:
-{"name":"combined dish name, max 6 words","calories":0,"protein":0,"carbs":0,"fat":0,"fiber":0,"confidence":"low|medium|high","assumptions":"one short sentence, max 30 words, explaining portion reasoning and any hidden-calorie risk"}`;
+{"name":"combined dish name, max 6 words","calories":0,"protein":0,"carbs":0,"fat":0,"fiber":0,"confidence":"low|medium|high","assumptions":"one short sentence, max 30 words, explaining portion reasoning and any hidden-calorie risk"}${correctionHint ? `
+
+IMPORTANT CORRECTION FROM THE USER — the automatic identification was wrong. The user says: "${correctionHint}". Trust this correction over what you visually guessed for identity/ingredients, re-estimate portions from the photo as before, and reflect the corrected food in "name" and the totals.` : ''}`;
     let resp;
     try{
       resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`, {
@@ -2728,7 +3201,7 @@ function openAboutModal(){
       <img src="${LOGO_DATA_URI}" alt="Ledger" style="width:66px;height:66px;border-radius:19px;box-shadow:0 8px 20px rgba(0,0,0,.28); margin-bottom:10px;">
       <div style="font-family:var(--font-head); font-weight:800; font-size:22px; letter-spacing:.08em; color:var(--text);">LEDGER</div>
       <div style="font-size:12.5px; color:var(--sub); margin-top:4px;">Your Life. <span style="color:#22c55e;font-weight:800;">One</span> <span style="color:#6366f1;font-weight:800;">System</span>.</div>
-      <div class="hint" style="margin-top:6px;">Version 9.4.1</div>
+      <div class="hint" style="margin-top:6px;">Version 10.0.0 — Experience Engine (backend unchanged from v9.4.1 — no redeploy needed)</div>
     </div>
     <p style="font-size:13.5px; color:var(--text); line-height:1.65; margin:0 0 10px;">
       Fourteen trackers that usually live in fourteen different apps — habits, routine, sleep, money, debt, diet, journal, goals, health, subscriptions, net worth — collapsed into one screen that actually talks to itself. Log a run in Routine and Sleep fills itself in. Pay an EMI and Finance updates with zero double entry. Ask the AI Coach what's really going on and it reads your actual data, not a guess.
@@ -2756,11 +3229,44 @@ function closeModal(){ document.getElementById('modalBackdrop').classList.remove
 document.getElementById('modalBackdrop').addEventListener('click', (e)=>{ if(e.target.id==='modalBackdrop') closeModal(); });
 
 /* ---------- navigation ---------- */
-const DIRECT_NAV_SCREENS = ['dashboard','habits','finance','routine','diet'];
+function enabledModules(){ return MODULE_DEFS.filter(m => S.settings.modules[m.key]!==false); }
+function navModuleList(){
+  // core modules (habits/finance/routine/diet) come first if enabled, then any others
+  // fill remaining nav slots — this is what "promotes" e.g. Debts/EMI onto the home bar
+  // when you only have a couple of core modules switched on.
+  const en = enabledModules();
+  const core = en.filter(m=>m.core);
+  const rest = en.filter(m=>!m.core);
+  return [...core, ...rest].slice(0, MAX_NAV_SLOTS);
+}
+function DIRECT_NAV_SCREENS(){ return ['dashboard', ...navModuleList().map(m=>m.screen)]; }
+function renderBottomNav(){
+  const nav = document.getElementById('bottomNav'); if(!nav) return;
+  const shown = navModuleList();
+  const en = enabledModules();
+  const hasHidden = en.length > shown.length;
+  let html = `<button data-screen="dashboard"><span class="ic">${icon('home')}</span>Home</button>`;
+  shown.forEach(m=> html += `<button data-screen="${m.screen}"><span class="ic">${icon(m.iconKey)}</span>${m.label}</button>`);
+  html += `<button data-screen="more"><span class="ic">${icon('more')}</span>${hasHidden?'More':'⚙'}</button>`;
+  nav.innerHTML = html;
+  const active = document.querySelector('.screen.active')?.id.replace('screen-','') || 'dashboard';
+  nav.querySelectorAll('button').forEach(b=> b.classList.toggle('active', b.dataset.screen===active || (!DIRECT_NAV_SCREENS().includes(active) && b.dataset.screen==='more')));
+}
+function renderMoreCards(){
+  const wrap = document.getElementById('moreModuleCards'); if(!wrap) return;
+  const shownScreens = navModuleList().map(m=>m.screen);
+  const hidden = enabledModules().filter(m=> !shownScreens.includes(m.screen));
+  const groups = {};
+  hidden.forEach(m=>{ (groups[m.group]=groups[m.group]||[]).push(m); });
+  wrap.innerHTML = Object.keys(groups).map(g=>`
+    <div class="section-head" style="margin-top:2px;"><h2>${g}</h2></div>
+    ${groups[g].map(m=>`<div class="more-card" data-open="${m.screen}"><div class="mc-icon">${icon(m.iconKey,18)}</div><div class="mc-mid"><div class="mc-title">${m.label}</div><div class="mc-sub">${m.sub}</div></div><span class="chev">${icon('chevron',14)}</span></div>`).join('')}
+  `).join('') || `<div class="hint" style="padding:0 4px 12px;">Everything's already on your Home bar. Turn more sections on in Settings → Modules.</div>`;
+}
 function goToScreen(name){
-  document.querySelectorAll('nav.bottom button').forEach(b=>b.classList.toggle('active', b.dataset.screen===name || (!DIRECT_NAV_SCREENS.includes(name) && b.dataset.screen==='more')));
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById('screen-'+name).classList.add('active');
+  renderBottomNav();
   if(name==='dashboard') renderDashboard();
   if(name==='finance'){ renderFinance(); renderBudgets(); }
   if(name==='trends') renderTrends();
@@ -2779,11 +3285,11 @@ function goToScreen(name){
   if(name==='coach') renderCoach();
 }
 document.getElementById('headerSearchBtn').addEventListener('click', ()=> goToScreen('search'));
-document.querySelectorAll('nav.bottom button').forEach(btn=>{
-  btn.addEventListener('click', ()=> goToScreen(btn.dataset.screen));
+document.getElementById('bottomNav').addEventListener('click', (e)=>{
+  const btn = e.target.closest('button[data-screen]'); if(btn) goToScreen(btn.dataset.screen);
 });
-document.querySelectorAll('.more-card').forEach(c=>{
-  c.addEventListener('click', ()=> goToScreen(c.dataset.open));
+document.getElementById('screen-more').addEventListener('click', (e)=>{
+  const card = e.target.closest('.more-card'); if(card) goToScreen(card.dataset.open);
 });
 document.querySelectorAll('[data-back]').forEach(b=>{
   b.addEventListener('click', ()=> goToScreen(b.dataset.back));
@@ -2842,6 +3348,33 @@ function loadSettingsForm(){
   document.getElementById('setGoal').value = ds.goal||'maintain';
   document.getElementById('setGeminiKey').value = ds.geminiKey||'';
   drawAccentSwatches();
+  drawThemeGrid();
+  document.getElementById('setBgOn').classList.toggle('on', !!st.bgOn);
+  document.getElementById('setBgAuto').classList.toggle('on', !!st.bgAuto);
+  document.getElementById('setBgInterval').value = st.bgIntervalMin || 60;
+  document.getElementById('setBgOpacity').value = st.bgOpacity || 16;
+  drawModuleToggleList();
+}
+function drawModuleToggleList(){
+  const wrap = document.getElementById('moduleToggleList'); if(!wrap) return;
+  wrap.innerHTML = MODULE_DEFS.map(m=>`
+    <div class="settings-row module-row${m.core?' core':''}">
+      <div class="sr-label">${m.icon} ${m.label}<div class="sr-sub">${m.sub}</div></div>
+      <button class="switch${S.settings.modules[m.key]!==false?' on':''}" data-mod="${m.key}"></button>
+    </div>`).join('');
+  wrap.querySelectorAll('[data-mod]').forEach(btn=>{
+    btn.addEventListener('click', function(){
+      const key = this.dataset.mod;
+      S.settings.modules[key] = S.settings.modules[key]===false ? true : false;
+      this.classList.toggle('on', S.settings.modules[key]!==false);
+      saveState();
+      renderBottomNav(); renderMoreCards();
+      if(document.getElementById('screen-'+MODULE_DEFS.find(m=>m.key===key).screen)?.classList.contains('active')){
+        goToScreen('dashboard');
+      }
+      renderDashboard();
+    });
+  });
 }
 function drawAccentSwatches(){
   const colors = ['#22c55e','#6366f1','#f59e0b','#ef4444','#38bdf8','#ec4899'];
@@ -2893,6 +3426,19 @@ document.getElementById('setShowUndo').addEventListener('click', function(){
 document.getElementById('setAutoSync').addEventListener('click', function(){
   S.settings.autoSync = !S.settings.autoSync; this.classList.toggle('on', S.settings.autoSync); saveState();
 });
+document.getElementById('setBgOn').addEventListener('click', function(){
+  S.settings.bgOn = !S.settings.bgOn; this.classList.toggle('on', S.settings.bgOn); saveState(); applyBackground(); scheduleBackgroundRotation();
+});
+document.getElementById('setBgAuto').addEventListener('click', function(){
+  S.settings.bgAuto = !S.settings.bgAuto; this.classList.toggle('on', S.settings.bgAuto); saveState(); scheduleBackgroundRotation();
+});
+document.getElementById('setBgInterval').addEventListener('change', (e)=>{
+  S.settings.bgIntervalMin = Number(e.target.value); saveState(); scheduleBackgroundRotation();
+});
+document.getElementById('setBgOpacity').addEventListener('input', (e)=>{
+  S.settings.bgOpacity = Number(e.target.value); saveState(); applyBackground();
+});
+document.getElementById('shuffleBgBtn').addEventListener('click', shuffleBackground);
 function updateGreeting(){
   document.getElementById('greetName').textContent = S.settings.name ? `Hey ${S.settings.name}` : 'Hey there';
   const hr = new Date().getHours();
@@ -3044,7 +3590,7 @@ document.getElementById('loadFromSheetBtn').addEventListener('click', async ()=>
       if(d.health) S.health = Object.assign(defaultHealth(), d.health);
       if(Array.isArray(d.documents)) S.documents = d.documents;
       if(Array.isArray(d.budgets)) S.budgets = d.budgets;
-      saveState(); loadSettingsForm(); applyTheme(); renderAll();
+      saveState(); loadSettingsForm(); applyTheme(); applyExperiencePack(S.settings.experiencePack || 'minimal', {skipBg:true}); renderAll();
       showToast('Loaded from Google Sheet ✓', '⬇️');
       debugLog('Load OK — pulled saved snapshot from Sheet.');
     } else {
@@ -3070,7 +3616,7 @@ document.getElementById('importBackupFile').addEventListener('change', (e)=>{
       if(data.habits && data.settings){
         S = Object.assign({ habits:[], transactions:[], settings:{}, routineLogs:{}, routineCats:[], routineTemplates:defaultRoutineTemplates(), debts:[], journal:{}, diet:{meals:{},settings:defaultDietSettings()},
           goals:[], subscriptions:[], assets:[], health:defaultHealth(), documents:[], aiCoach:{lastInsights:[],lastRun:''}, budgets:[] }, data);
-        saveState(); loadSettingsForm(); applyTheme(); renderAll();
+        saveState(); loadSettingsForm(); applyTheme(); applyExperiencePack(S.settings.experiencePack || 'minimal', {skipBg:true}); renderAll();
         showToast('Backup restored', '✅');
       } else { alert('That file does not look like a GP Ledger backup.'); }
     }catch(err){ alert('Could not read that file: '+err.message); }
@@ -3081,11 +3627,12 @@ document.getElementById('importBackupFile').addEventListener('change', (e)=>{
 /* ---------- render all / init ---------- */
 function renderAll(){
   renderQuote(); renderHabits(); renderFinance(); renderBudgets(); renderTrends(); renderReports(); renderRoutine(); renderDebts(); renderJournal(); renderDiet();
-  renderDashboard(); loadSettingsForm(); updateGreeting();
+  renderDashboard(); loadSettingsForm(); updateGreeting(); renderBottomNav(); renderMoreCards();
 }
 function init(){
   loadState();
   applyTheme();
+  applyExperiencePack(S.settings.experiencePack || 'minimal', {skipBg:true});
   const needsOnboarding = !S.settings.name;
   if(needsOnboarding){
     document.getElementById('onboarding').style.display='flex';
@@ -3095,12 +3642,33 @@ function init(){
     };
   }
   renderAll();
+  scheduleBackgroundRotation();
   if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(()=>{}); }
   if('Notification' in window && Notification.permission==='default'){ Notification.requestPermission().catch(()=>{}); }
   // in-app 15s reminder check — pops a modal + browser notification while the app is open.
   // Background delivery when the app is closed happens server-side via Apps Script + Telegram.
   setInterval(checkLocalReminders, 15000);
+  /* v9.5: keep the daily quote (and anything else date-keyed) correct if the
+     app is simply left open across midnight, instead of only refreshing on
+     next launch. */
+  setInterval(()=>{
+    const d = todayStr();
+    if(d !== __lastKnownDate){
+      __lastKnownDate = d;
+      renderQuote(); renderDateStrip(); renderDashboard();
+    }
+  }, 30000);
+  /* v9.5: mobile keyboard covers inline inputs (e.g. habit custom-amount) —
+     scroll the focused field into view once the keyboard has room to animate in.
+     This was the root cause of "can't see what I'm typing on mobile". */
+  document.addEventListener('focusin', (e)=>{
+    const t = e.target;
+    if(t && (t.tagName==='INPUT' || t.tagName==='TEXTAREA' || t.tagName==='SELECT')){
+      setTimeout(()=>{ try{ t.scrollIntoView({ block:'center', behavior:'smooth' }); }catch(err){} }, 320);
+    }
+  });
 }
+let __lastKnownDate = todayStr();
 function checkLocalReminders(){
   const now = new Date();
   const hhmm = String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
@@ -3197,18 +3765,18 @@ function renderDashboard(){
   /* ---- tiles ---- */
   const grid = document.getElementById('dashGrid');
   const tiles = [];
-  tiles.push({icon:'✅',label:'Habits today',num:`${doneCount}/${habits.length}`,pct:habitPct*100,color:'#22c55e'});
-  tiles.push({icon:'⏱️',label:'Routine logged',num:`${(routineMin/60).toFixed(1)}h`,pct:Math.min(100,routineMin/1440*100),color:'#6366f1'});
-  tiles.push({icon:'💸',label:'Spent today',num:fmtMoney(spentToday),pct:null,color:'#f59e0b'});
-  if(dt){ tiles.push({icon:'🍎',label:'Calories',num:`${Math.round(calToday)}/${dt.calories}`,pct:Math.min(100,calToday/dt.calories*100),color:'#f43f5e'}); }
-  if(wh){ const v=habitValue(wh,today); tiles.push({icon:'💧',label:'Water',num:`${v}/${wh.target}${wh.unit}`,pct:Math.min(100,v/wh.target*100),color:'#38bdf8'}); }
-  if(sh){ const v=habitValue(sh,today); tiles.push({icon:'😴',label:'Sleep today',num:`${v}${sh.unit}`,pct:Math.min(100,v/sh.target*100),color:'#a78bfa'}); }
-  tiles.push({icon:'🏦',label:'Pending EMI',num:String(overdueDebts.length),pct:null,color: overdueDebts.length? '#ef4444':'#22c55e'});
+  tiles.push({iconKey:'habits',label:'Habits today',num:`${doneCount}/${habits.length}`,pct:habitPct*100,color:'#22c55e'});
+  tiles.push({iconKey:'routine',label:'Routine logged',num:`${(routineMin/60).toFixed(1)}h`,pct:Math.min(100,routineMin/1440*100),color:'#6366f1'});
+  tiles.push({iconKey:'finance',label:'Spent today',num:fmtMoney(spentToday),pct:null,color:'#f59e0b'});
+  if(dt){ tiles.push({iconKey:'food',label:'Calories',num:`${Math.round(calToday)}/${dt.calories}`,pct:Math.min(100,calToday/dt.calories*100),color:'#f43f5e'}); }
+  if(wh){ const v=habitValue(wh,today); tiles.push({iconKey:'water',label:'Water',num:`${v}/${wh.target}${wh.unit}`,pct:Math.min(100,v/wh.target*100),color:'#38bdf8'}); }
+  if(sh){ const v=habitValue(sh,today); tiles.push({iconKey:'sleep',label:'Sleep today',num:`${v}${sh.unit}`,pct:Math.min(100,v/sh.target*100),color:'#a78bfa'}); }
+  tiles.push({iconKey:'debts',label:'Pending EMI',num:String(overdueDebts.length),pct:null,color: overdueDebts.length? '#ef4444':'#22c55e'});
   const onTrackGoals = S.goals.filter(g=> goalProgressCalc(g).pct>=0.5).length;
-  if(S.goals.length){ tiles.push({icon:'🎯',label:'Goals on track',num:`${onTrackGoals}/${S.goals.length}`,pct:S.goals.length?onTrackGoals/S.goals.length*100:0,color:'#eab308'}); }
+  if(S.goals.length){ tiles.push({iconKey:'goals',label:'Goals on track',num:`${onTrackGoals}/${S.goals.length}`,pct:S.goals.length?onTrackGoals/S.goals.length*100:0,color:'#eab308'}); }
   grid.innerHTML = tiles.map(t=>`
     <div class="dash-tile">
-      <div class="dt-top"><span class="dt-icon">${t.icon}</span></div>
+      <div class="dt-top"><span class="dt-icon">${icon(t.iconKey,16)}</span></div>
       <div class="dt-num">${t.num}</div>
       <div class="dt-lbl">${t.label}</div>
       ${t.pct!==null ? `<div class="dt-track"><div class="dt-fill" style="width:${Math.round(t.pct)}%; background:${t.color}"></div></div>` : ''}

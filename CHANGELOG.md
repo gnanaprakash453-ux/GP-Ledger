@@ -1,4 +1,111 @@
-# Changelog — v8 → v9 (+ v9.4.1 sync/meal-photo fix, v9.4 templates/EMI/sync-diagnostics, v9.3 dashboard/nutrition/nav fix, v9.2 logo/branding fix, v9.1 branding/logo/quotes patch)
+# Changelog — v10.0.0 (Experience Engine) → v9.5.0 and earlier history below
+
+## v10.0.0 — Experience Engine (20 Experience Packs)
+
+Phase 1 of the "make GP Ledger feel like a different app per pack"
+rebuild. See `BLUEPRINT.md` §9 for the full architecture. Summary:
+
+- **20 Experience Packs** (Settings → Experience Pack, new section above
+  Theme presets): Minimal, Fitness, Wellness, Habit Builder, Productivity,
+  Finance, Luxury, Glassmorphism, AI Future, Nature, Material Design,
+  Apple Style, Samsung Style, Cyberpunk, Gaming, Neumorphism, Kids, Elder
+  Friendly, Professional Business, Magazine Style. Each is a full token
+  set — colors, fonts, corner radius, icon style, card style, nav style,
+  FAB shape, dashboard layout family, animation speed, background photo
+  seed — applied live with `applyExperiencePack()`, no reload.
+- **Theme presets narrowed to color-only.** Per the original ask ("Theme
+  only controls light/dark/system, nothing else"), `applyTheme()` no
+  longer touches font/radius — it's now a fine-tune layer that sits
+  underneath whichever Experience Pack is active, instead of overwriting
+  it. The existing 12 named palettes (Midnight, Ocean, Forest, etc.) still
+  work exactly as before, just scoped to colors.
+- **New shared icon system.** One SVG geometry set (`ICONS`, 24 app-chrome
+  icons: nav, module tiles, dashboard tiles) rendered in 6 different
+  visual styles — outline, filled, duotone, rounded, minimal, hand-drawn —
+  purely via CSS class toggling on `<body>`, so no per-pack icon assets
+  were needed. Includes a redesigned "person sleeping in bed" sleep icon
+  (previously a crescent moon) per the reference screenshots. **Habit
+  emoji icons are untouched** — those stay as free-text/emoji, since
+  they're your data, not app chrome.
+- **6 dashboard layout families** (rings / magazine / minimal / dense /
+  glass / gamified), each pack assigned one. Restructures the dashboard
+  hero and `#dashGrid` (grid columns, tile shape, hero size, imagery use)
+  via CSS grid/shape rules — same `renderDashboard()` JS and element ids
+  throughout, per the "no duplicate editor" rule.
+- **6 card styles** (flat/glass/neumorphic/outline/soft/elevated), **4 nav
+  bar styles** (floating/dock/pill/glass), **3 FAB shapes**
+  (circle/squircle/pill) — all CSS-variant-driven off the same markup.
+- **Chart color tinting.** The three Chart.js instances (habit trend,
+  income/expense, net worth) now pull their primary color from the active
+  pack's accent instead of a hardcoded hex; chart *type* per pack is not
+  yet implemented (see Blueprint §9 deferred list).
+- **New Google Fonts loaded:** Playfair Display, Space Grotesk, Quicksand,
+  Outfit, Syne, DM Serif Display, Bricolage Grotesque, Plus Jakarta Sans —
+  on top of the existing set, so every pack's `fontHead`/`fontBody` has a
+  real family behind it.
+- Deferred to a follow-up session (flagged in Blueprint §9, not silently
+  dropped): guided multi-step habit-creation wizard, curated per-pack
+  wallpaper imagery (currently reused picsum seeds), modular/reorderable
+  dashboard widgets, quote-card visual redesign, full chart-type-per-pack.
+- **`sw.js` `CACHE_NAME` bumped** to `gp-ledger-v10-0-0` — required, or
+  installed phones keep serving the pre-Experience-Engine cached copy.
+- Verified before shipping: full JS syntax check, `getElementById`/`id=`
+  cross-reference (0 mismatches), structural validation of all 20 pack
+  objects (required fields + valid variant-enum values), and a headless
+  Playwright pass rendering the dashboard + Settings pack picker across 6
+  packs with zero console errors (aside from expected sandbox network
+  blocks for fonts/images, irrelevant on a real deploy).
+
+## v9.5.0 — customizable/shareable edition
+
+- **Modules on/off (Settings → Modules).** All 15 sections (Habits, Finance,
+  Routine, Diet, Goals, Calendar, AI Coach, Journal, Health, Debts/EMI,
+  Subscriptions, Assets, Trends, Reports, Documents) can now be switched off
+  individually. Turned-off modules disappear from the bottom bar, the Home
+  bar, and the More screen. This is what makes it practical to hand a copy
+  of the app to someone who only wants habits + diet, for example, without
+  them seeing your finance/EMI/journal data structures at all.
+- **Smart bottom bar.** The 4 non-Home slots on the bottom bar now fill
+  dynamically from whatever's switched on — habits/finance/routine/diet
+  first if enabled, then other enabled modules fill any remaining slots.
+  So if you only keep Habits and Diet on and then enable Debts/EMI, EMI is
+  promoted straight onto the bottom bar instead of hiding inside More.
+  A "More" button only appears if something didn't fit.
+- **Theme presets (15, one tap, fully live).** Settings → Theme presets —
+  Midnight, Ocean, Forest, Plum, Sunset, Rose, Slate, Amber, Crimson, Mono,
+  Paper, Skylight, Blossom, Mint, Graphite, Neon. Tapping one repaints
+  every color, card surface and corner radius instantly, no reload — this
+  is on top of (not instead of) the existing custom accent-color/font
+  controls.
+- **Random background photos (Settings → Background).** Optional, off by
+  default. A subtle photo layer behind the app, toggle on/off, "Shuffle now"
+  button, optional auto-rotate on a timer (15 min / hourly / daily), and a
+  strength slider so it stays a background, not a distraction. Falls back
+  to no image automatically when offline.
+- **Daily quote now refreshes at midnight even if the app is left open** —
+  previously it only updated on next app launch/refresh; now a background
+  check flips it (and the date strip / dashboard) the moment the calendar
+  date changes, without needing to close and reopen the app.
+- **Mobile custom-amount input visibility — root cause fixed.** On phones,
+  typing into a habit's custom-amount field (e.g. changing a Water default
+  from 300 ml to 100) was invisible while typing because the on-screen
+  keyboard covered the field — the value was always saving correctly, you
+  just couldn't see it happen. The app now scrolls the focused field above
+  the keyboard automatically; this didn't reproduce on desktop because
+  there's no on-screen keyboard to cover it.
+- **Meal photo re-evaluation.** If Gemini identifies a meal wrong (e.g.
+  calls rice what's actually chapati), a new "Not quite right? Tell it
+  what this actually is" field appears after the first estimate — type a
+  correction and tap "Re-evaluate with this correction" to get fresh
+  nutrition numbers based on the corrected food, from the same photo.
+- **Routine per-segment logging clarified**, not new: the existing "+" on
+  the Routine tab already lets you add one custom time segment (e.g.
+  5–6am) to just today without touching your weekday/weekend template —
+  a hint now explains this directly on the Routine screen since it wasn't
+  obvious that templates and one-off segments are separate things.
+- Backend (`apps-script.gs`) is **unchanged** in this release — no redeploy
+  needed, only replace the app files (index.html, sw.js).
+
 
 ## v9.4.1 patch — the actual fix for "Sync did not verify" after logging a meal photo
 

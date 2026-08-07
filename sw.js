@@ -1,7 +1,7 @@
-// GP Ledger service worker — v9.4.1
+// GP Ledger service worker — v10.0.0
 // Bumping CACHE_NAME forces old caches to be dropped on next install,
-// so a re-deploy (e.g. after changing the icon files) actually reaches phones.
-const CACHE_NAME = 'gp-ledger-v9-4-1';
+// so a re-deploy (e.g. after this update) actually reaches phones.
+const CACHE_NAME = 'gp-ledger-v10-0-0';
 const CORE_ASSETS = [
   './index.html',
   './manifest.json',

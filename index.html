@@ -1463,7 +1463,7 @@ nav.bottom, .fab{ transition:transform .18s ease; }
    change it here only; both the photo estimator and the AI Coach read
    from this constant. */
 const GEMINI_MODEL = 'gemini-3.5-flash';
-const APP_VERSION = 'v12.5.0'; // single source of truth for About screen & Settings row
+const APP_VERSION = 'v12.5.1'; // single source of truth for About screen & Settings row
 
 /* ---------- v9.5: module registry (drives bottom nav, Home, More, Settings toggles) ---------- */
 /* core:true = one of the 4 primary tabs when enabled; group = header used in the More screen. */
@@ -4397,9 +4397,21 @@ document.querySelectorAll('#dietPeriod button').forEach(b=> b.onclick=()=>{
 function openMealModal(){
   openModal(`
     <div class="modal-head"><h3>Log a meal</h3><button class="modal-close" data-close>✕</button></div>
-    <label class="fl">Photo (optional — upload or capture)</label>
-    <input type="file" id="mealImg" accept="image/*" capture="environment">
+    <label class="fl">Photo (optional)</label>
+    <div style="display:flex; gap:8px;">
+      <button type="button" class="btn secondary" id="mealCameraBtn" style="flex:1;">📷 Take photo</button>
+      <button type="button" class="btn secondary" id="mealGalleryBtn" style="flex:1;">🖼️ Choose from gallery</button>
+    </div>
+    <!-- v12.5.1 — two separate inputs instead of one with capture="environment".
+         That attribute is a hint to mobile browsers to skip straight to the
+         camera app, which on many phones means the gallery/file picker is
+         never even offered. Splitting into two explicit buttons/inputs (one
+         with capture, one without) restores the choice: snap a fresh photo,
+         or reuse/select an existing one from the gallery. -->
+    <input type="file" id="mealImgCamera" accept="image/*" capture="environment" style="display:none;">
+    <input type="file" id="mealImgGallery" accept="image/*" style="display:none;">
     <img id="mealPreview" style="display:none; width:100%; border-radius:12px; margin-top:8px; max-height:180px; object-fit:cover;">
+    <button class="link-btn" id="mealRemovePhotoBtn" style="display:none; margin-top:6px; font-size:12.5px;">✕ Remove photo</button>
     <button class="btn secondary" id="mealAnalyzeBtn" style="margin-top:8px; display:none;">✨ Estimate nutrition from photo</button>
     <div class="hint" id="mealAnalyzeHint" style="display:none;"></div>
     <div id="mealCorrectWrap" style="display:none; margin-top:8px;">
@@ -4422,15 +4434,28 @@ function openMealModal(){
   `);
   let imageData = null;
   let estimateNote = '';
-  document.getElementById('mealImg').addEventListener('change', (e)=>{
+  document.getElementById('mealCameraBtn').addEventListener('click', ()=> document.getElementById('mealImgCamera').click());
+  document.getElementById('mealGalleryBtn').addEventListener('click', ()=> document.getElementById('mealImgGallery').click());
+  function handleMealPhotoFile(e){
     const f = e.target.files[0]; if(!f) return;
     const reader = new FileReader();
     reader.onload = ()=>{
       imageData = reader.result;
       const prev = document.getElementById('mealPreview'); prev.src = imageData; prev.style.display='block';
+      document.getElementById('mealRemovePhotoBtn').style.display='inline-block';
       if(S.diet.settings.geminiKey) document.getElementById('mealAnalyzeBtn').style.display='block';
     };
     reader.readAsDataURL(f);
+  }
+  document.getElementById('mealImgCamera').addEventListener('change', handleMealPhotoFile);
+  document.getElementById('mealImgGallery').addEventListener('change', handleMealPhotoFile);
+  document.getElementById('mealRemovePhotoBtn').addEventListener('click', ()=>{
+    imageData = null;
+    document.getElementById('mealImgCamera').value = '';
+    document.getElementById('mealImgGallery').value = '';
+    const prev = document.getElementById('mealPreview'); prev.src=''; prev.style.display='none';
+    document.getElementById('mealRemovePhotoBtn').style.display='none';
+    document.getElementById('mealAnalyzeBtn').style.display='none';
   });
   document.getElementById('mealAnalyzeBtn').addEventListener('click', async ()=>{
     estimateNote = await analyzeMealPhoto(imageData, '');
@@ -4678,7 +4703,9 @@ function updateBackFab(){
     fab.onclick = ()=> history.back();
   } else if(backLink){
     fab.style.display='flex';
-    fab.onclick = ()=> goToScreen(backLink.dataset.back);
+    // v12.5.1 — go through real history here too, same reasoning as the
+    // data-back links above (keeps push/pop 1:1 so Back stays reliable).
+    fab.onclick = ()=> history.back();
   } else {
     fab.style.display='none';
   }
@@ -4743,8 +4770,20 @@ document.getElementById('bottomNav').addEventListener('click', (e)=>{
 document.getElementById('screen-more').addEventListener('click', (e)=>{
   const card = e.target.closest('.more-card'); if(card) goToScreen(card.dataset.open);
 });
+// v12.5.1 fix — real cause of the occasional black/stuck screen when
+// backing out of Settings (and any other "‹ More"-style link) the first
+// time. Every forward navigation (goToScreen) pushes one history entry,
+// but these "‹ Back" links were calling goToScreen(target) directly
+// instead of history.back() — that PUSHES yet another new entry instead
+// of popping the one that's already there. That silently doubles up the
+// history stack on the very first use, so the browser/hardware Back
+// button (popstate) no longer lines up with what's on screen — usually
+// invisible, but the mismatch is exactly what produces a blank render on
+// the next real Back press. settingsCatBack already did this correctly
+// (see its own click handler below); this makes every data-back link
+// consistent with it, so pushes and pops stay 1:1.
 document.querySelectorAll('[data-back]').forEach(b=>{
-  b.addEventListener('click', ()=> goToScreen(b.dataset.back));
+  b.addEventListener('click', ()=> history.back());
 });
 window.addEventListener('popstate', (e)=>{
   const state = e.state || {};
@@ -5143,7 +5182,17 @@ async function syncNow(silent, extra){
       saveState();
       document.getElementById('lastSyncHint').textContent = `Last synced: ${new Date(S.settings.lastSync).toLocaleString()} — rows: ${JSON.stringify(data.rows)}`;
       debugLog('Sync OK: '+text.slice(0,300));
-      if(!silent) showToast('Synced to Google Sheet ✓', '☁️');
+      // v12.5.1 — every readable tab (Habits, Diet, Finance, etc.) writes
+      // independently of the single-cell full JSON backup on the Data tab,
+      // so rows.data===0 does NOT mean the sync failed — it means only the
+      // "Load from Sheet" backup snapshot was skipped for being too big for
+      // one cell (see handleSync in apps-script.gs). Surface that distinctly
+      // instead of staying silent, since it's the one thing that wouldn't
+      // otherwise be visible from "Synced ✓".
+      if(data.rows.data===0){
+        debugLog('Note: everything above synced, but the full backup snapshot (Data tab, used by "Load from Sheet") was skipped — payload was too large for one Sheets cell. This is very rarely meal-photo related anymore (photos are never sent, since v9.4.1) — more likely a lot of history has built up. Nothing was lost on-device.');
+        if(!silent) showToast('Synced ✓ (backup snapshot skipped — see debug log)', '⚠️');
+      } else if(!silent) showToast('Synced to Google Sheet ✓', '☁️');
     } else {
       let hint = '';
       if(data && data.version && data.version !== APP_SCRIPT_VERSION){

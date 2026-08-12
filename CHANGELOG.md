@@ -1,3 +1,49 @@
+# Changelog — v12.5.1 (meal photo gallery picker, Back-navigation fix, sync backup visibility) → history below
+
+## v12.5.1
+
+**Diet — meal photo can now be picked from the gallery, not just the
+camera.** The file input previously had `capture="environment"` on it
+unconditionally, which on many phones is treated as "open the camera
+app directly" and never offers the gallery/file picker at all — so
+there was no way to reuse an existing photo, only take a brand-new one
+on the spot. "Log a meal" now shows two explicit buttons — **📷 Take
+photo** and **🖼️ Choose from gallery** — wired to two separate file
+inputs (one with `capture`, one without), plus a **✕ Remove photo**
+link once one's attached. Nothing about how photos are stored or
+synced changed — see the note below, they're still on-device only.
+
+**Navigation — real fix for the Settings Back button occasionally
+landing on a blank screen (first time only).** Root cause: the
+in-screen "‹ Back" links (`data-back`, e.g. Settings' "‹ More") and the
+floating back arrow were calling `goToScreen(target)` directly instead
+of `history.back()`. Every *forward* navigation already pushes one
+history entry, so a Back **link** that also pushes a fresh entry
+(instead of popping the one already there) silently doubles up the
+history stack the first time it's used — invisible in the moment, but
+it's exactly what leaves the browser/hardware Back button (which reads
+that stack via `popstate`) out of sync with what's actually on screen,
+which is what showed up as a blank render on the *next* Back press.
+`settingsCatBack` ("‹ All settings") was already doing this correctly;
+every other Back control now matches it, so every forward push has
+exactly one matching pop and Back stays reliable everywhere, not just
+in Settings.
+
+**Sync — the one-in-a-while "backup snapshot skipped" case is now
+visible instead of silent.** `handleSync` already wrote every readable
+tab (Habits, Diet, Finance, etc.) independently of the single combined
+JSON backup on the Data tab, and already degraded gracefully if that
+one cell went over Sheets' 50,000-character limit — but the app never
+told you when that happened, so a sync could say "Synced ✓" while
+quietly skipping the "Load from Sheet" backup. Now surfaced as a
+distinct toast + debug-log note when it happens. To be clear on the
+underlying cause: as of v9.4.1, meal photos are **never** included in
+the sync payload at all (stripped client-side before the request is
+even built) — if a sync ever fails outright, the far more likely cause
+is a stale Apps Script deployment (Deploy → Manage deployments → ✏️ →
+New version → Deploy); Test Connection's debug log will call this out
+by version number when that's the case.
+
 # Changelog — v12.5.0 (quote/photo-card rotation no longer tied to the wallpaper toggle) → history below
 
 ## v12.5.0

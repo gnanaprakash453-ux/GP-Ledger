@@ -1,3 +1,110 @@
+# Changelog — v12.5.0 (quote/photo-card rotation no longer tied to the wallpaper toggle) → history below
+
+## v12.5.0
+
+**Real bug fix: quote/photo card rotation silently depended on the
+wallpaper toggle.** `scheduleBackgroundRotation()` required
+`S.settings.bgOn` (the app-wide wallpaper on/off switch) to be true
+before scheduling ANY automatic photo rotation — but the Today's Focus
+card, the habit quote card, and every module's motivation card (Finance,
+Routine, Diet, Goals, Debts, Subscriptions, Assets, Documents) display
+their photo regardless of that wallpaper setting, and nothing in Settings
+suggested the two were linked. Net effect: anyone with the wallpaper
+turned off got zero automatic rotation on any of those quote/photo cards
+either, no matter what interval they picked. Fixed — rotation now runs
+off `S.settings.bgAuto` alone; the wallpaper toggle only controls the
+wallpaper.
+
+**Settings reorganized to make the split explicit.** What was one
+"Background & photos" group is now two: **"Quote & photo cards"** (the
+always-on-by-default images behind every quote/motivation card —
+rotation toggle, interval, Change now) and **"Wallpaper"** (the separate,
+much fainter app-wide backdrop — on/off + strength only, no duplicate
+rotation controls, with a note that it follows the same schedule/button
+above). Same settings, same IDs, same underlying image set — just grouped
+so it's clear "Rotate every 30 minutes" and "Change now" affect the quote
+cards whether or not the wallpaper is on.
+
+# Changelog — v12.4.0 (real flash-on-open fix, habit rename, Diet back-button fix, app-wide photo rotation) → history below
+
+## v12.4.0
+
+**Navigation — the actual cause of the "random screen" flash, found.**
+The v12.3.0 fix only hid nav/FAB during onboarding; it didn't touch the
+real bug people kept seeing on every launch. Root cause: the static HTML
+always paints Dashboard first (it's the only screen marked active in the
+markup, so it's on screen the instant the page renders, before any JS
+runs) — `init()` would then restore whatever screen you were last on a
+beat later, and that swap (Dashboard → Documents/Coach/wherever) is what
+looked like a random flash. Fixed by hiding `<main>` itself (not just
+nav/FAB) until `#app` is `.ready`, and reordering `init()` so the restore
+screen is resolved and switched to *before* `.ready` is set — the first
+thing you ever see is now the correct screen, full stop.
+
+**Navigation — Back could exit straight to a blank screen.** Restoring
+the last-used screen on launch used `history.replaceState`, which leaves
+only one history entry. Pressing Back immediately after opening a
+restored (non-Dashboard) screen had nothing in-app to fall back to, so it
+fell through to whatever was in the tab's history before the app (or
+closed the PWA outright) — this is what showed up as an empty screen on
+Back "in several areas." Now uses `pushState`, so Dashboard sits one
+Back-press behind the restored screen, same as normal in-app navigation.
+
+**Navigation — Diet screen was missing its back button entirely.** Every
+other module screen reached from "More" has a "‹ More" link at the top
+(which is also what makes the floating back arrow — the same one Settings
+uses — appear). Diet never had one, so from Diet there was no way back
+except the bottom nav's Home tab. Added, matching its siblings exactly.
+
+**Habits — you can now rename (or delete) an existing habit.** "Manage"
+previously opened the same "add new habit" form as the `+` button — there
+was no way to edit one you'd already created. It now opens a real list of
+your habits with an **Edit** button per habit (name, icon, type,
+target/unit, linked routine category — everything the add form has) plus
+delete, with a confirm prompt before deleting (it explains this removes
+that habit's logged history too). Adding a new habit is still one tap
+away from the same screen.
+
+**Photos — "Change now" and auto-rotation now actually change everything
+on screen, immediately.** The infrastructure (background toggle,
+auto-rotate, interval, a shuffle button) already existed, but it only
+ever swapped the faint app-wide wallpaper layer and pre-warmed new image
+URLs for *next time* — whatever hero/quote/motivation photo was already
+visible kept showing its old picture until you navigated away and back.
+That's what made it look like only the empty-state photos were
+controllable. Fixed: both "Change now" and every scheduled rotation now
+also re-apply the photo on whatever's currently on screen (Dashboard's
+hero card, the Habits quote card, and the active module's motivation
+card) — instantly, with everything else on screen left untouched.
+- **Rotate every** now includes 30 minutes and 3 hours, plus a **Custom…**
+  option with a plain minutes field — so "change 15 to 30 or something"
+  (or any other value) no longer needs a code change.
+- Renamed "🔀 Shuffle now" → "🔀 Change now" to match, and reworded the
+  section intro to make clear it's one photo set covering the wallpaper
+  *and* every hero/quote/motivation card app-wide — not a separate,
+  empty-state-only control.
+
+# Changelog — v9.5.0 apps-script (batched sync writes — was the real cause of slow syncs) → history below
+
+## v9.5.0 (apps-script.gs)
+
+**Sync speed.** Root cause of "sync takes too long": every one of the 15
+readable tabs was written with `appendRow()` called once per header row
+and once per data row — each `appendRow()` is its own network round-trip
+to the Sheets service. With real amounts of habits/transactions/routine
+blocks/journal entries/etc, that was easily 100–300+ separate API calls
+on a single sync. Rewrote every tab writer to build a plain 2D array in
+memory first (fast, no API calls involved) and write it in one
+`clearContent()` + one `setValues()` call via a new `writeSheet()`
+helper — each tab now costs ~2 calls total no matter how many rows it
+has. No tab names, columns, or the `rows` counts returned to the app
+changed — this is a drop-in replacement (paste + redeploy, no client
+changes needed, though `index.html`'s `APP_SCRIPT_VERSION` was bumped to
+match so the version-mismatch check still works). The Reports tab is
+deliberately untouched (still a plain `appendRow`) since it's meant to
+accumulate one row per sync, not reflect current state — it was already
+a single call, never part of the slowdown.
+
 # Changelog — v12.3.0 (nav-state fixes, font/heading redesign, 3 new themes, icon pack cleanup) → history below
 
 ## v12.3.0

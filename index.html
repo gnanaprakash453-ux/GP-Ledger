@@ -474,6 +474,18 @@ body{ background:var(--bg-gradient); }
    buttons behind the name-entry screen on first launch, before JS ran).
    #app only gets .ready once init() has resolved that state — see init(). */
 #app:not(.ready) nav.bottom, #app:not(.ready) .fab, #app:not(.ready) .back-fab{ visibility:hidden; pointer-events:none; }
+/* v12.4 — the onboarding-flash fix above only hid nav/FAB; it didn't stop
+   the actual "random screen" flash people kept seeing, which was a
+   different bug: the static HTML always paints Dashboard first (that's
+   the only screen with class="active" in the markup, so it's visible the
+   instant the page renders, before any JS runs), and then init() would
+   swap to whatever screen you were last on. That swap — Dashboard, then a
+   flicker to Documents/Coach/wherever — is what looked like a random
+   flash. Hiding <main> too (not just nav/FAB) until .ready means the
+   correct final screen is already active underneath by the time anything
+   is shown — see init(), which now resolves the restore screen BEFORE
+   adding .ready, not after. */
+#app:not(.ready) main{ visibility:hidden; }
 .onb h1{ font-size:26px; margin-bottom:8px; }
 .onb p{ color:var(--sub); font-size:14px; line-height:1.5; margin-bottom:20px; }
 
@@ -1040,6 +1052,7 @@ nav.bottom, .fab{ transition:transform .18s ease; }
 
     <!-- ===================== DIET / NUTRITION ===================== -->
     <section class="screen" id="screen-diet">
+      <button class="link-btn" data-back="more" style="margin-bottom:8px;">‹ More</button>
       <div id="dietMotivationCard"></div>
       <div class="card" id="dietTargetsCard"></div>
       <button class="btn secondary" id="openDietPlanBtn" style="margin-bottom:12px;">🩺 View my diet plan</button>
@@ -1257,17 +1270,29 @@ nav.bottom, .fab{ transition:transform .18s ease; }
       </div>
 
       <div class="settings-group" data-cat="appearance">
-        <h3>Background</h3>
+        <h3>Quote &amp; photo cards</h3>
         <div class="settings-list">
-          <div class="settings-row"><div class="sr-label">Background image<div class="sr-sub">A subtle rotating photo behind the app</div></div><button class="switch" id="setBgOn"></button></div>
-          <div class="settings-row"><div class="sr-label">Rotate automatically<div class="sr-sub">Pick a new image on a schedule</div></div><button class="switch" id="setBgAuto"></button></div>
+          <div class="hint" style="padding:14px 16px 0;">The photo behind Today's Focus, the habit quote card, and every module's motivation card (Finance, Routine, Diet, Goals, etc). These always show, on every screen, by default — this section controls how often the picture behind them changes.</div>
+          <div class="settings-row"><div class="sr-label">Rotate automatically<div class="sr-sub">Change every quote/photo card on a schedule, even while you're looking at one</div></div><button class="switch" id="setBgAuto"></button></div>
           <div style="padding:0 16px 14px;">
             <label class="fl">Rotate every</label>
-            <select id="setBgInterval"><option value="0">Every app open</option><option value="15">15 minutes</option><option value="60">1 hour</option><option value="1440">Once a day</option></select>
-            <label class="fl">Background strength</label>
+            <select id="setBgInterval"><option value="0">Every app open</option><option value="15">15 minutes</option><option value="30">30 minutes</option><option value="60">1 hour</option><option value="180">3 hours</option><option value="1440">Once a day</option><option value="custom">Custom…</option></select>
+            <input type="number" id="setBgIntervalCustom" min="1" max="10080" placeholder="Minutes (e.g. 45)" style="display:none; margin-top:8px;">
+            <div class="btn-row" style="margin-top:12px;"><button class="btn secondary" id="shuffleBgBtn">🔀 Change now</button></div>
+            <div class="hint">"Change now" instantly swaps every quote/photo card currently on screen — not just the wallpaper below, and not just next time you open a screen. Random curated photos each time. Skipped automatically when offline.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-group" data-cat="appearance">
+        <h3>Wallpaper</h3>
+        <div class="settings-list">
+          <div class="hint" style="padding:14px 16px 0;">A separate, much fainter photo behind the whole app (behind your cards, not inside them). Off by default for most people — the quote/photo cards above are unaffected either way.</div>
+          <div class="settings-row"><div class="sr-label">Background wallpaper<div class="sr-sub">A subtle photo behind the entire app</div></div><button class="switch" id="setBgOn"></button></div>
+          <div style="padding:0 16px 14px;">
+            <label class="fl">Wallpaper strength</label>
             <input type="range" id="setBgOpacity" min="5" max="40" value="16">
-            <div class="btn-row" style="margin-top:12px;"><button class="btn secondary" id="shuffleBgBtn">🔀 Shuffle now</button></div>
-            <div class="hint">Random curated photos, a new one each shuffle — kept subtle behind your cards. Skipped automatically when offline.</div>
+            <div class="hint">Follows the same rotation schedule and "Change now" button above — it's the same photo set, just shown much fainter and behind everything instead of inside a card.</div>
           </div>
         </div>
       </div>
@@ -1438,7 +1463,7 @@ nav.bottom, .fab{ transition:transform .18s ease; }
    change it here only; both the photo estimator and the AI Coach read
    from this constant. */
 const GEMINI_MODEL = 'gemini-3.5-flash';
-const APP_VERSION = 'v12.3.0'; // single source of truth for About screen & Settings row
+const APP_VERSION = 'v12.5.0'; // single source of truth for About screen & Settings row
 
 /* ---------- v9.5: module registry (drives bottom nav, Home, More, Settings toggles) ---------- */
 /* core:true = one of the 4 primary tabs when enabled; group = header used in the More screen. */
@@ -2486,12 +2511,56 @@ function shuffleBackground(){
   // too (they're all derived from bgSeed); re-warm them right away instead
   // of waiting for whichever screen happens to be opened next.
   preloadTodaysImages();
+  // v12.4 — prefetching alone wasn't enough: whatever hero/quote/motivation
+  // photo was already ON SCREEN kept showing its old image until you
+  // navigated away and back — nothing was telling those specific elements
+  // to re-apply their (now-changed) URL. This is what made "Change now"
+  // and auto-rotation feel like they only affected the faint app-wide
+  // wallpaper layer and not "all the images", which was the actual bug.
+  refreshVisiblePhotos();
+}
+/* v12.4 — re-applies the photo on every hero/quote/motivation card that's
+   part of the CURRENTLY VISIBLE screen, using the current bgSeed. Deliberately
+   narrow (only touches known photo-card elements, never a form field or
+   text input) so it's always safe to call — including from the background
+   rotation timer while the person might be mid-edit somewhere else in the
+   app. Dashboard's hero card and the Habits quote card are refreshed
+   unconditionally since one of them is visible any time those tabs are
+   active; every other module's motivation card only repaints if that
+   screen is the one currently on screen (no point repainting off-screen
+   cards — they'll pick up the new seed next time they're opened anyway,
+   same as always). */
+function refreshVisiblePhotos(){
+  renderQuote();
+  const activeId = document.querySelector('.screen.active')?.id || '';
+  if(activeId==='screen-dashboard') renderDashboard();
+  const MOTIVATION_TARGETS = {
+    'screen-finance':'finance','screen-routine':'routine','screen-debts':'debts','screen-diet':'diet',
+    'screen-goals':'goals','screen-subscriptions':'subscriptions','screen-assets':'assets','screen-documents':'documents',
+  };
+  const moduleKey = MOTIVATION_TARGETS[activeId];
+  if(moduleKey){
+    const elId = { finance:'financeMotivationCard', routine:'routineMotivationCard', debts:'debtsMotivationCard',
+      diet:'dietMotivationCard', goals:'goalsMotivationCard', subscriptions:'subscriptionsMotivationCard',
+      assets:'assetsMotivationCard', documents:'documentsMotivationCard' }[moduleKey];
+    renderTopMotivation(moduleKey, elId);
+  }
 }
 let __bgTimer = null;
 function scheduleBackgroundRotation(){
   if(__bgTimer) clearInterval(__bgTimer);
   const mins = Number(S.settings.bgIntervalMin)||0;
-  if(S.settings.bgOn && S.settings.bgAuto && mins>0){
+  // v12.5 — real bug: this used to also require S.settings.bgOn (the
+  // wallpaper toggle) before scheduling ANY rotation — but the quote/
+  // motivation photo cards (Today's Focus, habit quote, Finance/Routine/
+  // Diet/etc motivation cards) show by default regardless of the
+  // wallpaper setting. Anyone with the wallpaper off (most people, it
+  // defaults on but is easy to turn off and forget about) got zero
+  // automatic rotation on any of those photos either, even though nothing
+  // in Settings suggested the two were linked. Wallpaper on/off now only
+  // affects the wallpaper itself (see applyBackground()); rotation of
+  // everything runs off S.settings.bgAuto alone.
+  if(S.settings.bgAuto && mins>0){
     __bgTimer = setInterval(shuffleBackground, mins*60000);
   }
 }
@@ -2836,6 +2905,91 @@ function openHabitDetail(id){
     h.times = times;
     h.linkedRoutineCat = document.getElementById('detLinkedCat').value;
     saveState(); renderHabits(); closeModal();
+  };
+}
+/* ---------- v12.4: Manage habits — rename/edit or delete an existing
+   habit. Previously "Manage" (and the + FAB) both only opened the ADD
+   form — there was no way to rename a habit once created. ---------- */
+function openManageHabitsModal(){
+  openModal(`
+    <div class="modal-head"><h3>Manage habits</h3><button class="modal-close" data-close>✕</button></div>
+    <div id="manageHabitsList"></div>
+    <button class="btn primary" id="manageAddHabitBtn" style="margin-top:12px;">+ Add new habit</button>
+  `);
+  function draw(){
+    const wrap = document.getElementById('manageHabitsList');
+    if(!S.habits.length){ wrap.innerHTML = `<div class="hint">No habits yet — add your first one below.</div>`; return; }
+    wrap.innerHTML = S.habits.map(h=>`
+      <div class="tx-row">
+        <div class="tx-icon" style="background:${h.color}22; color:${h.color}">${habitIcon(h,18)}</div>
+        <div class="tx-mid"><div class="tx-note">${h.name}</div><div class="tx-cat">${h.kind==='quantity' ? `${h.target} ${h.unit||''}/day` : 'Check-off'}</div></div>
+        <button class="link-btn" data-edit="${h.id}">Edit</button>
+      </div>`).join('');
+    wrap.querySelectorAll('[data-edit]').forEach(btn=> btn.onclick = ()=> openEditHabitModal(btn.dataset.edit));
+  }
+  draw();
+  document.getElementById('manageAddHabitBtn').onclick = openAddHabitModal;
+}
+function openEditHabitModal(habitId){
+  const h = S.habits.find(x=>x.id===habitId); if(!h) return;
+  openModal(`
+    <div class="modal-head"><h3>Edit habit</h3><button class="modal-close" data-close>✕</button></div>
+    <label class="fl">Name</label><input type="text" id="ehName" value="${(h.name||'').replace(/"/g,'&quot;')}">
+    <label class="fl">Icon</label>
+    <div class="icon-picker-grid" id="ehIconGrid"></div>
+    <div class="hint" style="margin-top:6px;">Not seeing it? <button class="link-btn" id="ehIconCustomToggle" type="button">Use a custom emoji instead</button></div>
+    <input type="text" id="ehIconCustom" value="${h.iconKey ? '' : (h.icon||'')}" placeholder="🧘" maxlength="4" style="display:${h.iconKey ? 'none':'block'}; margin-top:8px;">
+    <label class="fl">Type</label>
+    <select id="ehKind"><option value="check" ${h.kind==='check'?'selected':''}>Check-off (yes/no)</option><option value="quantity" ${h.kind==='quantity'?'selected':''}>Quantity (track amount)</option></select>
+    <div id="ehQtyFields" style="display:${h.kind==='quantity'?'block':'none'};">
+      <label class="fl">Daily target</label><input type="number" id="ehTarget" value="${h.target||1}">
+      <label class="fl">Unit</label><input type="text" id="ehUnit" value="${h.unit||''}" placeholder="ml, min, steps...">
+    </div>
+    <label class="fl">Linked Routine category (optional)</label>
+    <select id="ehLinkedCat"><option value="">— None —</option>${S.routineCats.map(c=>`<option value="${c.name}" ${h.linkedRoutineCat===c.name?'selected':''}>${c.name}</option>`).join('')}</select>
+    <button class="btn primary" id="ehSave" style="margin-top:16px;">Save changes</button>
+    <button class="btn secondary" id="ehDelete" style="margin-top:8px; color:var(--danger);">Delete habit</button>
+  `);
+  let selectedIconKey = h.iconKey || null;
+  const grid = document.getElementById('ehIconGrid');
+  grid.innerHTML = HABIT_ICON_KEYS.map(([key,label])=>
+    `<button type="button" class="icon-pick${key===selectedIconKey?' sel':''}" data-key="${key}" title="${label}">${icon(key,20)}</button>`).join('');
+  function selectIcon(key){
+    selectedIconKey = key;
+    grid.querySelectorAll('.icon-pick').forEach(b=> b.classList.toggle('sel', b.dataset.key===key));
+    document.getElementById('ehIconCustom').style.display = 'none';
+    document.getElementById('ehIconCustom').value = '';
+  }
+  grid.querySelectorAll('.icon-pick').forEach(b=> b.onclick=()=> selectIcon(b.dataset.key));
+  document.getElementById('ehIconCustomToggle').onclick = ()=>{
+    selectedIconKey = null;
+    grid.querySelectorAll('.icon-pick').forEach(b=>b.classList.remove('sel'));
+    const cf = document.getElementById('ehIconCustom'); cf.style.display='block'; cf.focus();
+  };
+  document.getElementById('ehKind').onchange = (e)=>{
+    document.getElementById('ehQtyFields').style.display = e.target.value==='quantity' ? 'block':'none';
+  };
+  document.getElementById('ehSave').onclick = ()=>{
+    const name = document.getElementById('ehName').value.trim();
+    if(!name){ alert('Please enter a name'); return; }
+    const kind = document.getElementById('ehKind').value;
+    const target = kind==='quantity' ? (Number(document.getElementById('ehTarget').value)||1) : 1;
+    const unit = kind==='quantity' ? document.getElementById('ehUnit').value.trim() : '';
+    const customEmoji = document.getElementById('ehIconCustom').value.trim();
+    h.name = name; h.kind = kind; h.target = target; h.unit = unit;
+    h.icon = customEmoji || (selectedIconKey ? '' : (h.icon||'⭐'));
+    h.iconKey = selectedIconKey || '';
+    h.linkedRoutineCat = document.getElementById('ehLinkedCat').value;
+    saveState(); renderHabits(); renderDashboard();
+    openManageHabitsModal(); // back to the list, showing the updated name
+    showToast(`${name} updated`, '✅');
+  };
+  document.getElementById('ehDelete').onclick = ()=>{
+    if(!confirm(`Delete "${h.name}"? This removes all of its logged history too.`)) return;
+    S.habits = S.habits.filter(x=>x.id!==habitId);
+    saveState(); renderHabits(); renderDashboard();
+    openManageHabitsModal();
+    showToast(`${h.name} deleted`, '🗑️');
   };
 }
 function openAddHabitModal(){
@@ -4571,7 +4725,7 @@ function goToScreen(name, opts){
   if(name==='routine') renderRoutine();
   if(name==='debts') renderDebts();
   if(name==='journal') renderJournal();
-  if(name==='diet') renderDiet();
+  if(name==='diet') renderDiet(); // v12.4 — was missing; Diet relied entirely on renderAll()'s initial render and never refreshed when navigated back to
   if(name==='goals') renderGoals();
   if(name==='calendar') renderCalendar();
   if(name==='search'){ document.getElementById('searchInput').value=''; renderSearchResults(''); setTimeout(()=>document.getElementById('searchInput').focus(), 200); }
@@ -4650,7 +4804,7 @@ document.getElementById('fabUniversal').addEventListener('click', ()=>{
   else openCreateSheet();
 });
 
-document.getElementById('manageHabitsBtn').addEventListener('click', openAddHabitModal);
+document.getElementById('manageHabitsBtn').addEventListener('click', openManageHabitsModal);
 document.getElementById('trendPeriodSeg').addEventListener('click', (e)=>{
   const btn = e.target.closest('button[data-p]'); if(!btn) return;
   trendPeriod = btn.dataset.p;
@@ -4747,7 +4901,16 @@ function loadSettingsForm(){
   document.getElementById('aboutRowVersion').textContent = APP_VERSION;
   document.getElementById('setBgOn').classList.toggle('on', !!st.bgOn);
   document.getElementById('setBgAuto').classList.toggle('on', !!st.bgAuto);
-  document.getElementById('setBgInterval').value = st.bgIntervalMin || 60;
+  const STOCK_INTERVALS = ['0','15','30','60','180','1440'];
+  const savedInterval = String(st.bgIntervalMin || 60);
+  if(STOCK_INTERVALS.includes(savedInterval)){
+    document.getElementById('setBgInterval').value = savedInterval;
+    document.getElementById('setBgIntervalCustom').style.display = 'none';
+  } else {
+    document.getElementById('setBgInterval').value = 'custom';
+    document.getElementById('setBgIntervalCustom').style.display = 'block';
+    document.getElementById('setBgIntervalCustom').value = savedInterval;
+  }
   document.getElementById('setBgOpacity').value = st.bgOpacity || 16;
   drawModuleToggleList();
   drawMotivationModuleList();
@@ -4885,7 +5048,19 @@ document.getElementById('setBgAuto').addEventListener('click', function(){
   S.settings.bgAuto = !S.settings.bgAuto; this.classList.toggle('on', S.settings.bgAuto); saveState(); scheduleBackgroundRotation();
 });
 document.getElementById('setBgInterval').addEventListener('change', (e)=>{
+  const customField = document.getElementById('setBgIntervalCustom');
+  if(e.target.value==='custom'){
+    customField.style.display = 'block'; customField.focus();
+    // don't save yet — wait for an actual number in setBgIntervalCustom below
+    return;
+  }
+  customField.style.display = 'none';
   S.settings.bgIntervalMin = Number(e.target.value); saveState(); scheduleBackgroundRotation();
+});
+document.getElementById('setBgIntervalCustom').addEventListener('input', (e)=>{
+  const mins = Number(e.target.value);
+  if(!mins || mins<1) return; // v12.4 — don't schedule against 0/blank/negative while they're still typing
+  S.settings.bgIntervalMin = mins; saveState(); scheduleBackgroundRotation();
 });
 document.getElementById('setBgOpacity').addEventListener('input', (e)=>{
   S.settings.bgOpacity = Number(e.target.value); saveState(); applyBackground();
@@ -4912,7 +5087,7 @@ document.getElementById('testTgBtn').addEventListener('click', async ()=>{
 });
 
 /* ---------- Google Sheets sync ---------- */
-const APP_SCRIPT_VERSION = 'v9.4.1'; // must match SCRIPT_VERSION at the top of apps-script.gs
+const APP_SCRIPT_VERSION = 'v9.5.0'; // must match SCRIPT_VERSION at the top of apps-script.gs
 function debugLog(msg){
   const box = document.getElementById('syncDebug'); box.style.display='block';
   box.textContent = `[${new Date().toLocaleTimeString()}] ${msg}\n` + box.textContent;
@@ -5061,31 +5236,36 @@ function init(){
   // possible head start on being warm by the time each screen is opened.
   preloadTodaysImages();
   const needsOnboarding = !S.settings.name;
-  if(needsOnboarding){
-    document.getElementById('onboarding').style.display='flex';
-    document.getElementById('onbStart').onclick = ()=>{
-      S.settings.name = document.getElementById('onbName').value.trim() || 'there';
-      saveState(); document.getElementById('onboarding').style.display='none';
-      document.getElementById('app').classList.add('ready'); // v12.3 — nav/FAB only appear once onboarding is actually done
-      renderAll();
-    };
-  } else {
-    document.getElementById('app').classList.add('ready'); // v12.3 — no onboarding needed, app is ready immediately
-  }
-  // v12.3 — restore the screen the person was last on instead of always
-  // forcing Dashboard. Previously nothing persisted this, so a killed/
-  // relaunched app (or one resumed from a stale hash some phones restore
-  // on their own) could land anywhere with no consistent logic — this
-  // makes "last screen wins" the one deterministic rule. Settings never
-  // restores mid-category (see goToScreen) — it always reopens on the hub.
+  // v12.4 — resolve which screen to land on BEFORE the app is revealed
+  // (main is hidden via #app:not(.ready) main until then — see the CSS
+  // comment above), instead of showing Dashboard and then swapping to the
+  // restored screen a beat later. That swap was the actual "random screen"
+  // flash — this makes the correct screen the very first thing shown.
   let restoreScreen = 'dashboard';
   try{
     const saved = localStorage.getItem('gpl_lastScreen');
     if(saved && document.getElementById('screen-'+saved) && saved!=='settings') restoreScreen = saved;
   }catch(e){}
   if(!needsOnboarding && restoreScreen!=='dashboard'){
-    try{ history.replaceState({ screen:restoreScreen }, '', '#'+restoreScreen); }catch(e){}
+    // v12.4 — push (not replace) so Dashboard stays one Back-press behind
+    // the restored screen. Using replaceState here (as before) left only a
+    // single history entry — pressing Back on a freshly-opened, restored
+    // screen had nothing in-app to go back TO, so it fell through to
+    // whatever was in the tab's history before the app (or exited the PWA
+    // outright), which is what showed up as an empty screen on Back.
+    try{ history.pushState({ screen:restoreScreen }, '', '#'+restoreScreen); }catch(e){}
     goToScreen(restoreScreen, { fromPopstate:true });
+  }
+  if(needsOnboarding){
+    document.getElementById('onboarding').style.display='flex';
+    document.getElementById('onbStart').onclick = ()=>{
+      S.settings.name = document.getElementById('onbName').value.trim() || 'there';
+      saveState(); document.getElementById('onboarding').style.display='none';
+      document.getElementById('app').classList.add('ready'); // v12.3 — nav/FAB/main only appear once onboarding is actually done
+      renderAll();
+    };
+  } else {
+    document.getElementById('app').classList.add('ready'); // v12.3 — no onboarding needed, app is ready immediately
   }
   renderAll();
   scheduleBackgroundRotation();

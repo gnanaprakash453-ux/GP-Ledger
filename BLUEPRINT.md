@@ -580,3 +580,147 @@ heading truncates/wraps instead of pushing the button off-strip), and
 overscroll-behavior-x:contain`, matching the pattern the main `.screen`
 scroll container already used for the Y axis (see §"SCREENS" in the CSS,
 v12.1.1). Any future horizontal-scroll strip should copy this pair.
+
+## 15. apps-script.gs v9.5.0 — sync performance
+
+**The problem:** `handleSync()` wrote every tab with `sheet.appendRow(...)`
+inside a loop — one appendRow per header, one per data row. Each
+`appendRow()` is a full round-trip to the Sheets service. With 15 tabs
+and real data volume (habits, all transactions, routine logs, journal
+entries, diet meals, etc.) this was easily 100–300+ individual API calls
+per sync, which is the entire reason syncs felt slow — it scaled
+linearly with total row count across every tab, not with payload size.
+
+**The fix — `writeSheet(sheet, rows2d)`:** every writer now builds its
+tab as a plain rectangular 2D JS array (headers as `rows2d[0]`, one
+`.push()` per data row — pure in-memory work, zero API calls), then
+calls `writeSheet()` once, which does `sheet.clearContent()` +
+`sheet.getRange(1,1,rows2d.length,rows2d[0].length).setValues(rows2d)`.
+That's 2 Sheets API calls per tab regardless of row count, replacing
+what used to be `1 + rowCount` calls.
+
+**Rules for extending this file:**
+- **Any new tab writer must follow this same shape** — build the array,
+  then one `writeSheet()` call. Do not add a new `appendRow()`-in-a-loop
+  writer; that reintroduces the exact bug just fixed.
+- **`rows2d` must be rectangular** — every row array the same length as
+  the header row. Pad missing trailing values with `''`, the way the
+  Assets/Health multi-block tabs already do (blank spacer row + a second
+  header for medicines, still one array, one `writeSheet()` call).
+- **The Reports tab is the deliberate exception** — it's meant to
+  accumulate one row per sync (history), not reflect current state like
+  every other tab, so it correctly stays a single plain `appendRow()`
+  call (not a loop — never was part of the slowdown, don't "fix" it).
+- **`SCRIPT_VERSION` and `index.html`'s `APP_SCRIPT_VERSION` must be
+  bumped together** — this pairing is how the app's version-mismatch
+  warning works (see `syncNow()`/the ping handler); it doesn't matter
+  which changed, both strings need to match.
+- If a sync ever *still* feels slow after this, the next thing to check
+  is total JSON payload size (the client already strips meal-photo
+  base64 before sending — see the v9.4.1 note above), not the write
+  pattern — that part is now O(1) API calls per tab.
+
+## 16. v12.4.0 additions
+
+**Flash-on-open, root-caused.** The static `<section class="screen
+active" id="screen-dashboard">` in the HTML means Dashboard is what the
+browser paints first, always, before any JS executes — that part is
+unavoidable in a single-file app with no server-side routing. What was
+fixable: `#app:not(.ready) main{ visibility:hidden; }` now hides that
+first paint, and `init()` resolves `restoreScreen` and calls
+`goToScreen()` for it BEFORE adding `.ready` (previously `.ready` was
+added first, so the restored screen briefly overwrote a visible
+Dashboard). **Any future code path that can make screen content visible
+before onboarding/restore is resolved needs to happen after `.ready` is
+added, not before** — same rule as the nav/FAB gate from v12.3, just
+extended to cover `<main>` itself.
+
+**Back-history now two-deep on restore.** `init()`'s restore step uses
+`history.pushState` (not `replaceState`) for the restored screen, so the
+stack is always at least `[dashboard, restoreScreen]` on a fresh launch.
+**If you ever add another "land here at boot" path, push (don't
+replace)** or Back from it will fall out of the app instead of going to
+Dashboard.
+
+**Screen checklist for new module screens.** Diet was missing the
+standard `<button class="link-btn" data-back="more">‹ More</button>`
+that every other More-hub screen has — nothing enforced its presence, it
+was just skipped when the screen was built. **Any new screen reached via
+the More hub must include this element** (or the equivalent for a
+different back target, like Search's `data-back="dashboard"`) — it's
+what both the sticky top-of-screen back link AND the floating
+`.back-fab` key off (`updateBackFab()` looks for `activeScreen.querySelector('[data-back]')`).
+There's no automatic check for this — a screen without it will render
+fine and simply have no way back except the bottom nav.
+
+**Habit editing.** `openManageHabitsModal()` lists `S.habits` with an
+Edit button per row → `openEditHabitModal(habitId)`, which is the same
+field set as `openAddHabitModal()` but mutates the existing habit object
+in place (`h.name = ...` etc.) instead of pushing a new one, then
+re-opens the manage list. Delete is a `confirm()` + `S.habits =
+S.habits.filter(...)`. **If `openAddHabitModal()`'s field set ever
+changes** (a new field added to the add form), **`openEditHabitModal()`
+needs the same field added** — they're two separate functions that
+happen to mirror each other, not one shared form; there's no shared
+template between them by design (add starts from defaults, edit starts
+from an existing object with its own icon-selection state machine).
+
+**Photo rotation is now push, not just prefetch.** `preloadTodaysImages()`
+still exists and still warms the HTTP/service-worker cache for *not-yet-
+opened* screens — that's unchanged and still worth doing. What's new is
+`refreshVisiblePhotos()`, called at the end of `shuffleBackground()`
+(which itself fires from the manual "Change now" button AND every
+`scheduleBackgroundRotation()` timer tick — same function, one code
+path). It deliberately only touches known photo-card elements
+(`renderQuote()`, `renderDashboard()` if Dashboard is active, and
+`renderTopMotivation(moduleKey, elId)` for the currently active module
+via a small `MOTIVATION_TARGETS` id map) — **never** a blanket
+`renderAll()`, because that would also re-run screens with live text
+inputs (Journal's entry textarea, etc.) and could stomp on something the
+person is mid-typing elsewhere in the app while a rotation timer happens
+to fire. **If a new module gets its own motivation card, add its
+screen-id → moduleKey/elId pair to `MOTIVATION_TARGETS` in
+`refreshVisiblePhotos()`** or its photo will silently only refresh on
+next navigation instead of instantly, same as before this fix.
+
+**Custom rotation interval.** `#setBgInterval` gained a `Custom…` option;
+picking it reveals `#setBgIntervalCustom` (a plain minutes `<input
+type="number">`). `loadSettingsForm()` decides which state to show by
+checking whether the saved `bgIntervalMin` is one of the stock dropdown
+values (`0/15/30/60/180/1440`) — if not, it's necessarily a custom value
+someone typed in, so the dropdown shows "Custom…" and the number field is
+populated and shown. **If the stock dropdown options ever change, update
+the `STOCK_INTERVALS` array in `loadSettingsForm()` to match**, or a
+saved value equal to a newly-added stock option will incorrectly show as
+"Custom" (harmless — it'll still schedule correctly — just a slightly
+wrong-looking form state).
+
+## 17. v12.5.0 — quote/photo-card rotation decoupled from wallpaper
+
+**The bug:** `scheduleBackgroundRotation()`'s guard was
+`if(S.settings.bgOn && S.settings.bgAuto && mins>0)`. `bgOn` is the
+wallpaper-layer toggle (`#bgLayer`, see `applyBackground()`) — it has no
+relationship to whether the quote/motivation cards show their photo (they
+always do, unconditionally, via `setPhotoCardBg()`/`renderTopMotivation()`,
+independent of `bgOn`). So the rotation *timer* was accidentally scoped
+to a setting that only ever controlled a completely different visual
+element. Fixed by dropping `bgOn` from that condition — rotation now
+depends only on `bgAuto`+`bgIntervalMin`.
+
+**Rule for future settings in this area:** `bgOn`/`bgOpacity` = wallpaper
+layer only. `bgAuto`/`bgIntervalMin`/`bgSeed`/`shuffleBackground()`/
+`refreshVisiblePhotos()` = the shared photo set used by wallpaper *and*
+every quote/motivation card — these two concerns share one seed
+(`S.settings.bgSeed`) but must never share a gating condition again, or
+this exact bug comes back. If a future setting is meant to affect only
+one of the two, gate it on the specific rendering function (`applyBackground()`
+for wallpaper-only, `refreshVisiblePhotos()`/the individual `render*()`
+calls for card-only) — never on `bgOn` for anything outside
+`applyBackground()` itself.
+
+**Settings markup:** the old single "Background & photos" group is now
+two `settings-group` blocks — "Quote & photo cards" (`setBgAuto`,
+`setBgInterval`, `setBgIntervalCustom`, `shuffleBgBtn`) and "Wallpaper"
+(`setBgOn`, `setBgOpacity`). No id changed, so `loadSettingsForm()` and
+every event listener are untouched — this was purely a markup/copy
+reorganization plus the one JS condition fix above.

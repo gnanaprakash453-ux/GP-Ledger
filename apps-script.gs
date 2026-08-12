@@ -1,9 +1,28 @@
 /**
- * GP LEDGER — Google Apps Script backend (v9.4.1)
+ * GP LEDGER — Google Apps Script backend (v9.5.0)
  * ---------------------------------------------------------------
  * Paste this whole file into script.google.com (Extensions > Apps
  * Script, from a Google Sheet), then deploy as a Web App.
  * Full click-by-click steps are in SETUP_GUIDE.md.
+ *
+ * v9.5.0 fix — sync speed. Every tab was written with the sheet's own
+ *  appendRow() called once per header row + once per data row. Each
+ *  appendRow() is a separate round-trip to the Sheets service (it reads
+ *  the current last row, then writes) — across 15 tabs and however many
+ *  combined habits/transactions/routine blocks/journal entries/etc a
+ *  real account accumulates, that easily added up to 100–300+ individual
+ *  API calls on every single sync, which is what made it feel slow
+ *  (typically several seconds to tens of seconds depending on data size).
+ *  Every writer below now builds its sheet as one plain 2D array in
+ *  memory (fast — pure JS, no API calls) and writes it in ONE
+ *  clearContent()+setValues() pair via the new writeSheet() helper —
+ *  so each tab costs ~2 calls total regardless of row count. The Reports
+ *  tab is the one deliberate exception (see its comment) since it's
+ *  meant to accumulate across syncs, not reflect current state, and was
+ *  already a single appendRow per sync, not a loop.
+ *  No column layout, tab names, or the rows{} shape returned to the app
+ *  changed — this is purely how the same data gets written, so it's a
+ *  drop-in replacement: paste, Deploy → Manage deployments → New version.
  *
  * v9.4.1 fix — the real cause of most "Sync did not verify" reports:
  *  - Meal photos are stored client-side as full base64 images. The app now
@@ -49,7 +68,7 @@ const SS = SpreadsheetApp.getActiveSpreadsheet();
 // Bump this every time you paste updated code, so the app's "Test connection"
 // and sync-failure messages can tell you when a deployment is stale (i.e. you
 // edited/pasted new code but forgot Deploy > Manage deployments > New version).
-const SCRIPT_VERSION = 'v9.4.1';
+const SCRIPT_VERSION = 'v9.5.0';
 
 function doGet(e) {
   const action = (e && e.parameter && e.parameter.action) || 'status';
@@ -90,6 +109,26 @@ function jsonOut(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
 }
 
+/** Writes a full rectangular block in ONE call instead of row-by-row.
+ * v9.5.0 — this is the fix for slow syncs: the old code called
+ * sheet.appendRow() once per header + once per data row, and every
+ * appendRow() is its own round-trip to the Sheets service (reads the
+ * current last row, then writes) — with 15 tabs and hundreds of combined
+ * rows across habits/transactions/routine/journal/etc, that was easily
+ * 100–300+ separate API calls per sync, which is what made it feel slow.
+ * Building the same data as a plain 2D array in memory (fast, all
+ * client-side JS) and writing it with one clearContent() + one
+ * setValues() call per sheet cuts that down to ~2 calls per tab
+ * regardless of row count — a sync with hundreds of rows now costs the
+ * same handful of calls as one with a dozen.
+ * `rows2d` must be rectangular (every row the same length) — pad shorter
+ * rows with '' before calling this, same as the writers below already do. */
+function writeSheet(sheet, rows2d) {
+  sheet.clearContent();
+  if (!rows2d.length) return;
+  sheet.getRange(1, 1, rows2d.length, rows2d[0].length).setValues(rows2d);
+}
+
 /** Core sync handler — writes every part of the payload and reports row counts back. */
 function handleSync(body) {
   const rows = {};
@@ -102,15 +141,17 @@ function handleSync(body) {
   // failing the ENTIRE sync — which is what used to make "Sync did not
   // verify" show up even though every other tab synced fine.
   const dataSheet = getOrCreateSheet('Data');
-  dataSheet.clear();
+  dataSheet.clearContent();
   try {
     const snapshot = JSON.stringify(body);
     if (snapshot.length > 49000) {
       dataSheet.getRange(1, 1).setValue('Snapshot too large to store in one cell (' + snapshot.length + ' chars) — every other tab below is still up to date. This usually means a meal photo or similar large field slipped into the sync payload.');
       rows.data = 0;
     } else {
-      dataSheet.getRange(1, 1).setValue('Full JSON snapshot (do not edit by hand)');
-      dataSheet.getRange(2, 1).setValue(snapshot);
+      dataSheet.getRange(1, 1, 2, 1).setValues([
+        ['Full JSON snapshot (do not edit by hand)'],
+        [snapshot]
+      ]);
       rows.data = 1;
     }
   } catch (err) {
@@ -120,21 +161,21 @@ function handleSync(body) {
 
   // 2) Readable Habits tab
   const habitsSheet = getOrCreateSheet('Habits');
-  habitsSheet.clear();
-  habitsSheet.appendRow(['Name', 'Kind', 'Target', 'Unit', 'Current Streak Info (see Data tab for full history)']);
+  const habitRows = [['Name', 'Kind', 'Target', 'Unit', 'Current Streak Info (see Data tab for full history)']];
   (body.habits || []).forEach(h => {
-    habitsSheet.appendRow([h.name, h.kind, h.target, h.unit, '']);
+    habitRows.push([h.name, h.kind, h.target, h.unit, '']);
   });
+  writeSheet(habitsSheet, habitRows);
   rows.habits = (body.habits || []).length;
 
   // 3) Settings tab
   const settingsSheet = getOrCreateSheet('Settings');
-  settingsSheet.clear();
-  settingsSheet.appendRow(['Key', 'Value']);
+  const settingsRows = [['Key', 'Value']];
   Object.keys(body.settings || {}).forEach(k => {
     const v = body.settings[k];
-    settingsSheet.appendRow([k, typeof v === 'object' ? JSON.stringify(v) : v]);
+    settingsRows.push([k, typeof v === 'object' ? JSON.stringify(v) : v]);
   });
+  writeSheet(settingsSheet, settingsRows);
   rows.settings = Object.keys(body.settings || {}).length;
 
   // 4) Year-wise Transactions tabs
@@ -147,31 +188,34 @@ function handleSync(body) {
   let txTotal = 0;
   Object.keys(txByYear).forEach(year => {
     const sheet = getOrCreateSheet('Transactions_' + year);
-    sheet.clear();
-    sheet.appendRow(['Date', 'Type', 'Amount', 'Category', 'Note']);
+    const txRows = [['Date', 'Type', 'Amount', 'Category', 'Note']];
     txByYear[year].forEach(t => {
-      sheet.appendRow([t.date, t.type, t.amount, t.category, t.note]);
+      txRows.push([t.date, t.type, t.amount, t.category, t.note]);
       txTotal++;
     });
+    writeSheet(sheet, txRows);
   });
   rows.transactions = txTotal;
 
   // 5) Routine tab — always created even if empty, fixes v5 skip bug
   const routineSheet = getOrCreateSheet('Routine');
-  routineSheet.clear();
-  routineSheet.appendRow(['Date', 'Start', 'End', 'Category', 'Note', 'Minutes']);
+  const routineRows = [['Date', 'Start', 'End', 'Category', 'Note', 'Minutes']];
   let routineTotal = 0;
   const routineLogs = body.routineLogs || {};
   Object.keys(routineLogs).forEach(date => {
     (routineLogs[date] || []).forEach(b => {
       const mins = durationMinutes(b.start, b.end);
-      routineSheet.appendRow([date, b.start, b.end, b.cat, b.note || '', mins]);
+      routineRows.push([date, b.start, b.end, b.cat, b.note || '', mins]);
       routineTotal++;
     });
   });
+  writeSheet(routineSheet, routineRows);
   rows.routine = routineTotal;
 
-  // 6) Reports tab — appends a snapshot row if the client sent a "report" extra
+  // 6) Reports tab — appends a snapshot row if the client sent a "report" extra.
+  // Kept as a true append (not writeSheet) since this tab is meant to accumulate
+  // history across syncs, unlike every other tab which reflects current state —
+  // it's a single appendRow, not a loop, so it was never part of the slowdown.
   const reportsSheet = getOrCreateSheet('Reports');
   if (reportsSheet.getLastRow() === 0) {
     reportsSheet.appendRow(['Saved At', 'Week Start', 'Habit Completion %', 'Net Finance']);
@@ -183,113 +227,112 @@ function handleSync(body) {
 
   // 7) Debts / EMI tab — now shows per-month paid/unpaid status + debited-from account
   const debtsSheet = getOrCreateSheet('Debts');
-  debtsSheet.clear();
-  debtsSheet.appendRow(['Name', 'Balance', 'Monthly EMI', 'Due Day', 'Debited From', 'Status (this sync month)', 'Last Paid Date', 'Notes']);
+  const debtRows = [['Name', 'Balance', 'Monthly EMI', 'Due Day', 'Debited From', 'Status (this sync month)', 'Last Paid Date', 'Notes']];
   const nowYm = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM');
   (body.debts || []).forEach(d => {
     const pm = d.paidMonths && d.paidMonths[nowYm];
     const paid = !!pm;
     const account = (paid && typeof pm === 'object') ? pm.account : (d.debitAccount || '');
     const paidDate = (paid && typeof pm === 'object') ? pm.paidDate : '';
-    debtsSheet.appendRow([d.name, d.balance, d.emiAmount, d.dueDay, account, paid ? 'Paid' : 'Unpaid', paidDate, d.notes || '']);
+    debtRows.push([d.name, d.balance, d.emiAmount, d.dueDay, account, paid ? 'Paid' : 'Unpaid', paidDate, d.notes || '']);
   });
+  writeSheet(debtsSheet, debtRows);
   rows.debts = (body.debts || []).length;
 
   // 8) Journal tab — one row per calendar date, written in chronological order
   const journalSheet = getOrCreateSheet('Journal');
-  journalSheet.clear();
-  journalSheet.appendRow(['Date', 'Entry', 'Font', 'Color', 'Last Updated']);
+  const journalRows = [['Date', 'Entry', 'Font', 'Color', 'Last Updated']];
   const journal = body.journal || {};
   const journalDates = Object.keys(journal).sort(); // ISO date keys sort chronologically
   journalDates.forEach(ds => {
     const entry = journal[ds];
-    journalSheet.appendRow([ds, entry.text || '', entry.font || '', entry.color || '', entry.updated || '']);
+    journalRows.push([ds, entry.text || '', entry.font || '', entry.color || '', entry.updated || '']);
   });
+  writeSheet(journalSheet, journalRows);
   rows.journal = journalDates.length;
 
   // 9) Diet tab — one row per logged meal
   const dietSheet = getOrCreateSheet('Diet');
-  dietSheet.clear();
-  dietSheet.appendRow(['Date', 'Time', 'Meal', 'Calories', 'Protein', 'Carbs', 'Fat', 'Fiber']);
+  const dietRows = [['Date', 'Time', 'Meal', 'Calories', 'Protein', 'Carbs', 'Fat', 'Fiber']];
   const dietMeals = (body.diet && body.diet.meals) || {};
   let dietTotal = 0;
   Object.keys(dietMeals).sort().forEach(ds => {
     (dietMeals[ds] || []).forEach(m => {
-      dietSheet.appendRow([ds, m.time || '', m.name, m.calories || 0, m.protein || 0, m.carbs || 0, m.fat || 0, m.fiber || 0]);
+      dietRows.push([ds, m.time || '', m.name, m.calories || 0, m.protein || 0, m.carbs || 0, m.fat || 0, m.fiber || 0]);
       dietTotal++;
     });
   });
+  writeSheet(dietSheet, dietRows);
   rows.diet = dietTotal;
 
   // 10) Goals tab
   const goalsSheet = getOrCreateSheet('Goals');
-  goalsSheet.clear();
-  goalsSheet.appendRow(['Title', 'Type', 'Target', 'Current/Progress', 'Deadline']);
+  const goalRows = [['Title', 'Type', 'Target', 'Current/Progress', 'Deadline']];
   (body.goals || []).forEach(g => {
-    goalsSheet.appendRow([g.title, g.mode, g.target, g.current !== undefined ? g.current : '', g.deadline || '']);
+    goalRows.push([g.title, g.mode, g.target, g.current !== undefined ? g.current : '', g.deadline || '']);
   });
+  writeSheet(goalsSheet, goalRows);
   rows.goals = (body.goals || []).length;
 
   // 11) Subscriptions tab
   const subsSheet = getOrCreateSheet('Subscriptions');
-  subsSheet.clear();
-  subsSheet.appendRow(['Name', 'Amount', 'Cycle', 'Renews', 'Category']);
+  const subsRows = [['Name', 'Amount', 'Cycle', 'Renews', 'Category']];
   (body.subscriptions || []).forEach(s => {
-    subsSheet.appendRow([s.name, s.amount, s.cycle, s.cycle === 'monthly' ? ('Day ' + s.renewDay) : s.renewDate, s.category || '']);
+    subsRows.push([s.name, s.amount, s.cycle, s.cycle === 'monthly' ? ('Day ' + s.renewDay) : s.renewDate, s.category || '']);
   });
+  writeSheet(subsSheet, subsRows);
   rows.subscriptions = (body.subscriptions || []).length;
 
   // 12) Assets tab (net worth)
   const assetsSheet = getOrCreateSheet('Assets');
-  assetsSheet.clear();
-  assetsSheet.appendRow(['Name', 'Type', 'Value']);
+  const assetRows = [['Name', 'Type', 'Value']];
   (body.assets || []).forEach(a => {
-    assetsSheet.appendRow([a.name, a.type, a.value]);
+    assetRows.push([a.name, a.type, a.value]);
   });
   const totalAssets = (body.assets || []).reduce(function (s, a) { return s + Number(a.value || 0); }, 0);
   const totalLiab = (body.debts || []).reduce(function (s, d) { return s + Number(d.balance || 0); }, 0);
-  assetsSheet.appendRow(['', '', '']);
-  assetsSheet.appendRow(['Net worth (assets − Debts/EMI balances)', '', totalAssets - totalLiab]);
+  assetRows.push(['', '', '']);
+  assetRows.push(['Net worth (assets − Debts/EMI balances)', '', totalAssets - totalLiab]);
+  writeSheet(assetsSheet, assetRows);
   rows.assets = (body.assets || []).length;
 
   // 13) Health tab — vitals history + medicines
   const healthSheet = getOrCreateSheet('Health');
-  healthSheet.clear();
-  healthSheet.appendRow(['Date', 'BP', 'Sugar', 'Weight']);
+  const healthRows = [['Date', 'BP', 'Sugar', 'Weight']];
   const vitals = (body.health && body.health.vitals) || {};
   Object.keys(vitals).sort().forEach(ds => {
     const v = vitals[ds];
-    healthSheet.appendRow([ds, v.bp || '', v.sugar || '', v.weight || '']);
+    healthRows.push([ds, v.bp || '', v.sugar || '', v.weight || '']);
   });
-  healthSheet.appendRow(['', '', '', '']);
-  healthSheet.appendRow(['Medicine', 'Dose', 'Times', '']);
+  healthRows.push(['', '', '', '']);
+  healthRows.push(['Medicine', 'Dose', 'Times', '']);
   ((body.health && body.health.meds) || []).forEach(m => {
-    healthSheet.appendRow([m.name, m.dose || '', (m.times || []).join(', '), '']);
+    healthRows.push([m.name, m.dose || '', (m.times || []).join(', '), '']);
   });
+  writeSheet(healthSheet, healthRows);
   rows.health = Object.keys(vitals).length;
 
   // 14) Documents tab (vault — reference info only)
   const docsSheet = getOrCreateSheet('Documents');
-  docsSheet.clear();
-  docsSheet.appendRow(['Title', 'Category', 'Reference', 'Expiry', 'Notes']);
+  const docRows = [['Title', 'Category', 'Reference', 'Expiry', 'Notes']];
   (body.documents || []).forEach(d => {
-    docsSheet.appendRow([d.title, d.category || '', d.ref || '', d.expiryDate || '', d.notes || '']);
+    docRows.push([d.title, d.category || '', d.ref || '', d.expiryDate || '', d.notes || '']);
   });
+  writeSheet(docsSheet, docRows);
   rows.documents = (body.documents || []).length;
 
   // 15) Budgets tab
   const budgetsSheet = getOrCreateSheet('Budgets');
-  budgetsSheet.clear();
-  budgetsSheet.appendRow(['Category', 'Monthly Limit']);
+  const budgetRows = [['Category', 'Monthly Limit']];
   (body.budgets || []).forEach(b => {
-    budgetsSheet.appendRow([b.category, b.limit]);
+    budgetRows.push([b.category, b.limit]);
   });
+  writeSheet(budgetsSheet, budgetRows);
   rows.budgets = (body.budgets || []).length;
 
   // 16) Routine templates tab — the two editable weekday/weekend day-plans and which days use which
   const tplSheet = getOrCreateSheet('RoutineTemplates');
-  tplSheet.clear();
-  tplSheet.appendRow(['Plan', 'Applies To (days)', 'Start', 'End', 'Category', 'Note']);
+  const tplRows = [['Plan', 'Applies To (days)', 'Start', 'End', 'Category', 'Note']];
   const rtpl = body.routineTemplates || {};
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const dayAssign = rtpl.dayAssignment || {};
@@ -299,10 +342,11 @@ function handleSync(body) {
     if (!tpl) return;
     const days = Object.keys(dayAssign).filter(d => dayAssign[d] === key).map(d => dayNames[Number(d)]).join(', ');
     (tpl.blocks || []).forEach(b => {
-      tplSheet.appendRow([tpl.label || key, days, b.start, b.end, b.cat, b.note || '']);
+      tplRows.push([tpl.label || key, days, b.start, b.end, b.cat, b.note || '']);
       rtplTotal++;
     });
   });
+  writeSheet(tplSheet, tplRows);
   rows.routineTemplates = rtplTotal;
 
   return { ok: true, source: 'handleSync', version: SCRIPT_VERSION, rows: rows, syncedAt: new Date().toISOString() };

@@ -112,6 +112,14 @@ You'll get a real home-screen icon and a full-screen app with no browser bar.
 9. Tap **Test connection** — you should see a message confirming it's reachable, plus a debug log entry.
 10. Tap **Sync now**. Open your Google Sheet — you should now see tabs: `Data`, `Habits`, `Settings`, `Transactions_<year>`, `Routine`, `RoutineTemplates`, `Reports`, `Debts`, `Journal`, `Diet`, `Goals`, `Subscriptions`, `Assets`, `Health`, `Documents`, `Budgets`.
 
+> **Already on v9.4.1 and just upgrading to v9.5.0?** Same deal — paste in
+> the *new* `apps-script.gs` and redeploy (**Deploy → Manage deployments →
+> ✏️ edit → New version → Deploy**). This is a pure speed fix — same tabs,
+> same columns, same data — so nothing else changes, but it's worth doing
+> if sync has felt slow: v9.5.0 batches each tab into one write instead of
+> one call per row, which is usually a large, noticeable speedup once you
+> have more than a handful of habits/transactions/routine entries.
+
 > **Already on v9.4 and just upgrading to v9.4.1?** Same deal — paste in
 > the *new* `apps-script.gs` and redeploy. This one matters even if sync
 > was "working" for you before: v9.4.1 fixes a real bug where logging a

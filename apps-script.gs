@@ -1,9 +1,20 @@
 /**
- * GP LEDGER — Google Apps Script backend (v9.5.0)
+ * GP LEDGER — Google Apps Script backend (v9.5.1)
  * ---------------------------------------------------------------
  * Paste this whole file into script.google.com (Extensions > Apps
  * Script, from a Google Sheet), then deploy as a Web App.
  * Full click-by-click steps are in SETUP_GUIDE.md.
+ *
+ * v9.5.1 fix — real bug: "Sync did not verify" / TypeError on
+ *  dataSheet.clearContent. The Data-tab backup snapshot was SUPPOSED to
+ *  degrade gracefully if anything went wrong writing it (see the v9.4.1
+ *  note below) — but getOrCreateSheet('Data') and dataSheet.clearContent()
+ *  were both called BEFORE the try/catch that was meant to protect that
+ *  section, so if either of those two calls itself threw for any reason,
+ *  the entire sync died right there before Habits, Diet, Finance, or any
+ *  other tab ever got written. Moved both calls inside the try/catch, so
+ *  a problem specific to the Data tab can no longer take every other tab
+ *  down with it.
  *
  * v9.5.0 fix — sync speed. Every tab was written with the sheet's own
  *  appendRow() called once per header row + once per data row. Each
@@ -68,7 +79,7 @@ const SS = SpreadsheetApp.getActiveSpreadsheet();
 // Bump this every time you paste updated code, so the app's "Test connection"
 // and sync-failure messages can tell you when a deployment is stale (i.e. you
 // edited/pasted new code but forgot Deploy > Manage deployments > New version).
-const SCRIPT_VERSION = 'v9.5.0';
+const SCRIPT_VERSION = 'v9.5.1';
 
 function doGet(e) {
   const action = (e && e.parameter && e.parameter.action) || 'status';
@@ -140,9 +151,20 @@ function handleSync(body) {
   // (skips just the snapshot, keeps rows.data=0) instead of throwing and
   // failing the ENTIRE sync — which is what used to make "Sync did not
   // verify" show up even though every other tab synced fine.
-  const dataSheet = getOrCreateSheet('Data');
-  dataSheet.clearContent();
+  // v12.5.1 fix — that protection had a hole: getOrCreateSheet('Data') and
+  // dataSheet.clearContent() were both called BEFORE the try block started,
+  // so if either of those two calls itself threw (e.g. a transient Sheets
+  // API error, a permissions hiccup, a stale/duplicate "Data" tab), the
+  // whole handleSync call died right there — before Habits, Diet, Finance,
+  // or any other tab ever got written — which is exactly what "TypeError:
+  // dataSheet.clearContent is not a function" in the debug log looks like.
+  // Everything Data-tab-related now lives inside one try/catch, so a
+  // problem specific to this one backup tab can no longer take the rest of
+  // the sync down with it.
+  let dataSheet = null;
   try {
+    dataSheet = getOrCreateSheet('Data');
+    dataSheet.clearContent();
     const snapshot = JSON.stringify(body);
     if (snapshot.length > 49000) {
       dataSheet.getRange(1, 1).setValue('Snapshot too large to store in one cell (' + snapshot.length + ' chars) — every other tab below is still up to date. This usually means a meal photo or similar large field slipped into the sync payload.');
@@ -155,7 +177,7 @@ function handleSync(body) {
       rows.data = 1;
     }
   } catch (err) {
-    dataSheet.getRange(1, 1).setValue('Snapshot write failed: ' + String(err));
+    try { if (dataSheet) dataSheet.getRange(1, 1).setValue('Snapshot write failed: ' + String(err)); } catch (err2) {}
     rows.data = 0;
   }
 

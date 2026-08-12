@@ -1,4 +1,20 @@
-# Changelog — v12.5.1 (meal photo gallery picker, Back-navigation fix, sync backup visibility) → history below
+# Changelog — v12.5.1 / apps-script v9.5.1 (real sync-crash fix, meal photo gallery picker, Back-navigation fix) → history below
+
+## apps-script v9.5.1
+
+**Real bug fix — sync could fail completely with `TypeError:
+dataSheet.clearContent is not a function`.** The Data-tab backup
+snapshot was supposed to degrade gracefully if anything went wrong
+writing it (see v9.4.1 below) — but `getOrCreateSheet('Data')` and
+`dataSheet.clearContent()` were both called *before* the try/catch
+meant to protect that section, so if either of those two calls itself
+threw for any reason, the whole sync died right there — before Habits,
+Diet, Finance, or any other tab ever got written, even though nothing
+was actually wrong with your data. Both calls now live inside the
+try/catch, so a problem specific to the Data tab can't take every
+other tab down with it anymore. **Requires a redeploy** — paste the
+new `apps-script.gs` and go Deploy → Manage deployments → ✏️ → New
+version → Deploy.
 
 ## v12.5.1
 

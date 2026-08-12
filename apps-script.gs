@@ -1,9 +1,26 @@
 /**
- * GP LEDGER — Google Apps Script backend (v9.5.1)
+ * GP LEDGER — Google Apps Script backend (v9.5.2)
  * ---------------------------------------------------------------
  * Paste this whole file into script.google.com (Extensions > Apps
  * Script, from a Google Sheet), then deploy as a Web App.
  * Full click-by-click steps are in SETUP_GUIDE.md.
+ *
+ * v9.5.2 fix — real bug, finally the actual cause of "Sync did not
+ *  verify" / "TypeError: sheet.clearContent is not a function":
+ *  Apps Script's Sheet class does not have a clearContent() method —
+ *  that method only exists on the Range class. The Sheet-level
+ *  equivalent is clearContents() (with an "s"). Both writeSheet()
+ *  (used for every tab: Habits, Settings, Transactions, Routine,
+ *  Debts, Journal, Diet, Goals, Subscriptions, Assets, Health,
+ *  Documents, Budgets, RoutineTemplates) and the Data-tab backup write
+ *  were calling sheet.clearContent() / dataSheet.clearContent(), which
+ *  throws immediately since that method doesn't exist on a Sheet — so
+ *  the very first tab written died and the whole sync never verified.
+ *  This is unrelated to the v9.5.1 try/catch fix below, which was a
+ *  real improvement but didn't touch this line. Both call sites now
+ *  correctly call clearContents(). doGet/ping and the Load-from-Sheet
+ *  path never called this method, which is why those kept working while
+ *  sync didn't.
  *
  * v9.5.1 fix — real bug: "Sync did not verify" / TypeError on
  *  dataSheet.clearContent. The Data-tab backup snapshot was SUPPOSED to
@@ -79,7 +96,7 @@ const SS = SpreadsheetApp.getActiveSpreadsheet();
 // Bump this every time you paste updated code, so the app's "Test connection"
 // and sync-failure messages can tell you when a deployment is stale (i.e. you
 // edited/pasted new code but forgot Deploy > Manage deployments > New version).
-const SCRIPT_VERSION = 'v9.5.1';
+const SCRIPT_VERSION = 'v9.5.2';
 
 function doGet(e) {
   const action = (e && e.parameter && e.parameter.action) || 'status';
@@ -135,7 +152,7 @@ function jsonOut(obj) {
  * `rows2d` must be rectangular (every row the same length) — pad shorter
  * rows with '' before calling this, same as the writers below already do. */
 function writeSheet(sheet, rows2d) {
-  sheet.clearContent();
+  sheet.clearContents();
   if (!rows2d.length) return;
   sheet.getRange(1, 1, rows2d.length, rows2d[0].length).setValues(rows2d);
 }
@@ -164,7 +181,7 @@ function handleSync(body) {
   let dataSheet = null;
   try {
     dataSheet = getOrCreateSheet('Data');
-    dataSheet.clearContent();
+    dataSheet.clearContents();
     const snapshot = JSON.stringify(body);
     if (snapshot.length > 49000) {
       dataSheet.getRange(1, 1).setValue('Snapshot too large to store in one cell (' + snapshot.length + ' chars) — every other tab below is still up to date. This usually means a meal photo or similar large field slipped into the sync payload.');

@@ -1,3 +1,31 @@
+# Changelog — v12.5.2 / apps-script v9.5.2 (the actual sync-crash fix) → history below
+
+## apps-script v9.5.2
+
+**Real bug fix — the actual cause of `TypeError: sheet.clearContent is
+not a function`, which the v9.5.1 fix below did not address.** Apps
+Script's `Sheet` class does not have a `clearContent()` method — that
+method only exists on the `Range` class. The `Sheet`-level equivalent
+is `clearContents()` (with an "s"). `writeSheet()` — the helper used
+to write every single tab (Habits, Settings, Transactions, Routine,
+Debts, Journal, Diet, Goals, Subscriptions, Assets, Health, Documents,
+Budgets, RoutineTemplates) — and the Data-tab backup write were both
+calling the non-existent `clearContent()`, so the very first tab
+written on every sync threw immediately and the whole sync died before
+anything got saved. This explains why "Test connection" and "Load from
+Sheet" (which never call this method) kept working fine while every
+sync failed. Both call sites now correctly call `clearContents()`.
+**Requires a redeploy** — paste the new `apps-script.gs` and go
+Deploy → Manage deployments → ✏️ → New version → Deploy.
+
+## v12.5.2
+
+**App now expects apps-script v9.5.2.** Bumped `APP_SCRIPT_VERSION` to
+match the fix above — Test Connection will correctly flag a mismatch
+until you redeploy the new `apps-script.gs`. Service worker cache name
+bumped too, so this update actually reaches installed/home-screen
+copies on next launch instead of serving a stale cached `index.html`.
+
 # Changelog — v12.5.1 / apps-script v9.5.1 (real sync-crash fix, meal photo gallery picker, Back-navigation fix) → history below
 
 ## apps-script v9.5.1

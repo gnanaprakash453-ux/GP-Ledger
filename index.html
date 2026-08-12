@@ -1463,7 +1463,7 @@ nav.bottom, .fab{ transition:transform .18s ease; }
    change it here only; both the photo estimator and the AI Coach read
    from this constant. */
 const GEMINI_MODEL = 'gemini-3.5-flash';
-const APP_VERSION = 'v12.5.1'; // single source of truth for About screen & Settings row
+const APP_VERSION = 'v12.5.2'; // single source of truth for About screen & Settings row
 
 /* ---------- v9.5: module registry (drives bottom nav, Home, More, Settings toggles) ---------- */
 /* core:true = one of the 4 primary tabs when enabled; group = header used in the More screen. */
@@ -5126,7 +5126,7 @@ document.getElementById('testTgBtn').addEventListener('click', async ()=>{
 });
 
 /* ---------- Google Sheets sync ---------- */
-const APP_SCRIPT_VERSION = 'v9.5.1'; // must match SCRIPT_VERSION at the top of apps-script.gs
+const APP_SCRIPT_VERSION = 'v9.5.2'; // must match SCRIPT_VERSION at the top of apps-script.gs
 function debugLog(msg){
   const box = document.getElementById('syncDebug'); box.style.display='block';
   box.textContent = `[${new Date().toLocaleTimeString()}] ${msg}\n` + box.textContent;

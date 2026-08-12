@@ -112,6 +112,16 @@ You'll get a real home-screen icon and a full-screen app with no browser bar.
 9. Tap **Test connection** — you should see a message confirming it's reachable, plus a debug log entry.
 10. Tap **Sync now**. Open your Google Sheet — you should now see tabs: `Data`, `Habits`, `Settings`, `Transactions_<year>`, `Routine`, `RoutineTemplates`, `Reports`, `Debts`, `Journal`, `Diet`, `Goals`, `Subscriptions`, `Assets`, `Health`, `Documents`, `Budgets`.
 
+> **Already on v9.5.1 and just upgrading to v9.5.2?** Same deal — paste
+> in the *new* `apps-script.gs` and redeploy (**Deploy → Manage
+> deployments → ✏️ edit → New version → Deploy**). This one matters even
+> if v9.5.1 seemed to install fine: v9.5.2 fixes the actual cause of
+> `TypeError: sheet.clearContent is not a function` (Apps Script's
+> `Sheet` class has no `clearContent()` method — only `clearContents()`,
+> with an "s" — v9.5.1 fixed a real but different ordering bug that
+> didn't touch this). If your debug log ever showed that exact
+> `clearContent is not a function` message, this is the fix for it.
+
 > **Already on v9.4.1 and just upgrading to v9.5.0?** Same deal — paste in
 > the *new* `apps-script.gs` and redeploy (**Deploy → Manage deployments →
 > ✏️ edit → New version → Deploy**). This is a pure speed fix — same tabs,

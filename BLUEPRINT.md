@@ -724,3 +724,32 @@ two `settings-group` blocks — "Quote & photo cards" (`setBgAuto`,
 (`setBgOn`, `setBgOpacity`). No id changed, so `loadSettingsForm()` and
 every event listener are untouched — this was purely a markup/copy
 reorganization plus the one JS condition fix above.
+
+## 18. apps-script.gs v9.5.2 / v12.5.2 — the actual sync-crash fix
+
+**Root cause was a Sheet-vs-Range API mismatch, not a try/catch gap.**
+The v9.5.1 entry above (§15/CHANGELOG) fixed a real ordering bug, but
+the debug log the person actually hit —
+`TypeError: sheet.clearContent is not a function` — pointed at a
+different bug entirely: Apps Script's `Sheet` class has no
+`clearContent()` method. That method exists only on `Range`
+(`Range.clearContent()`, clears a cell range's contents). The
+`Sheet`-level equivalent is `clearContents()` (with an "s"). Both call
+sites — `writeSheet()`'s `sheet.clearContent()` (used for all 14
+readable tabs) and the Data-tab backup's `dataSheet.clearContent()` —
+were calling the `Range` method name on a `Sheet` object, so the very
+first tab write in every `handleSync()` call threw immediately,
+before Habits, Diet, Finance, or anything else got written. Fixed by
+renaming both to `clearContents()`. **If any future writer function
+in `apps-script.gs` calls `.clearContent()` on a `sheet` object, that
+is this exact bug again** — the correct Sheet-clearing call is always
+`clearContents()`; `clearContent()` (no "s") is only ever valid when
+called on a `Range` returned by `getRange(...)`.
+
+**Version pairing:** `APP_SCRIPT_VERSION` in `index.html` and
+`SCRIPT_VERSION` in `apps-script.gs` bumped together to `v9.5.2`, same
+discipline as every prior apps-script fix (§15). App version bumped to
+`v12.5.2` and the service worker `CACHE_NAME` bumped alongside it —
+per the SW's own header comment, a redeploy without a `CACHE_NAME`
+bump can leave installed/home-screen copies on stale cached JS, so any
+release that touches `index.html` should bump `CACHE_NAME` too.

@@ -1,4 +1,25 @@
-# Changelog — v13.12.0 (Morning Summary: collapsible Yesterday + header clock) → history below
+# Changelog — v13.13.0 (two-row mobile header) → history below
+
+## v13.13.0
+
+**Header layout fix, requested with a reference screenshot after the
+v13.12.0 header clock turned out too cramped on real phones.** Header-only
+change — no other Home content or module touched.
+
+- The header is now two rows instead of one. **Row 1** is the greeting
+  alone, full width (`greetName`/`greetSub`, unchanged wording/behavior).
+  **Row 2** holds the date/time on the left and the existing Search +
+  Save & Sync buttons on the right.
+- The date/time indicator no longer needs to hide itself on narrow
+  screens (the v13.12.0 `@media (max-width:380px)` rule is gone) — it now
+  has its own row and always has room.
+- `#app` is capped at 560px and centered at every viewport width, so
+  there's no separate desktop header layout in this app to preserve
+  separately from mobile — the two-row structure applies unconditionally
+  rather than behind a breakpoint.
+- Still updates every 30s via the same `updateHeaderDateTime()` from
+  v13.12.0, still the browser's local timezone, still doesn't touch
+  `greetName`/`greetSub`/the search button/the sync button internals.
 
 ## v13.12.0
 

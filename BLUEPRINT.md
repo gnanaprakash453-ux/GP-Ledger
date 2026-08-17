@@ -1137,3 +1137,30 @@ overflow check, which is simpler and has the same effect in practice.
 **Version bump.** `APP_VERSION` and `sw.js`'s `CACHE_NAME` now both
 correctly read v13.12.0, closing the gap noted at the end of the v13.10.0
 section above.
+
+## 30. v13.13.0 — header restructured to two rows
+
+The v13.12.0 header clock worked, but real-phone testing showed the
+single row (badge + greeting + date/time + Search + Save & Sync) was too
+tight — exactly what the earlier `@media (max-width:380px)` hide-it
+fallback was papering over. The brief this round provided a reference
+screenshot and asked for a proper fix instead: two rows, greeting alone
+on top, date/time + the two existing buttons below it.
+
+**Change was structural, not stylistic**: `.header-datetime` and
+`.header-actions` moved out of the top-level header flex row into a new
+`.header-row2` wrapper; `header.top` switched from `flex-direction:row`
+to `flex-direction:column`. `.greet` (badge + `greetName`/`greetSub`) is
+untouched internally and now simply occupies its own full-width row with
+nothing competing for space.
+
+**No breakpoint needed.** `#app` has been capped at `max-width:560px`
+and centered since the very first version of this app, at every
+viewport width — there is no meaningfully different "desktop" header
+layout already in place to preserve. So the two-row structure was
+applied unconditionally rather than gated behind a media query, and the
+now-unnecessary narrow-screen hide rule from v13.12.0 was removed
+outright rather than left dead in the CSS.
+
+**Version bump.** `APP_VERSION` and `sw.js`'s `CACHE_NAME` now read
+v13.13.0.

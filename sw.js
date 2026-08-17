@@ -30,7 +30,10 @@
 // below the existing Dashboard Image/Quote, a Main Achievement row was
 // added, and a small live Day/Date/Time indicator was added to the header
 // — index.html changed again, same reasoning, bump.
-const CACHE_NAME = 'gp-ledger-v13-12-0';
+// v13.13.0: header restructured to two rows (greeting alone on row 1;
+// date/time + Search/Save & Sync on row 2) so nothing crowds the greeting
+// on narrow phones — index.html changed again, same reasoning, bump.
+const CACHE_NAME = 'gp-ledger-v13-13-0';
 const IMG_CACHE_NAME = 'gp-ledger-images-v1';
 const CORE_ASSETS = [
   './index.html',

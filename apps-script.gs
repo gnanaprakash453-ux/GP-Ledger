@@ -119,7 +119,7 @@ const SS = SpreadsheetApp.getActiveSpreadsheet();
 // Bump this every time you paste updated code, so the app's "Test connection"
 // and sync-failure messages can tell you when a deployment is stale (i.e. you
 // edited/pasted new code but forgot Deploy > Manage deployments > New version).
-const SCRIPT_VERSION = 'v9.7.0';
+const SCRIPT_VERSION = 'v9.7.1';
 
 // v9.7.0 — the Data tab's full JSON snapshot used to live in ONE cell,
 // which Google Sheets caps at ~50,000 characters. Once total synced history
@@ -264,7 +264,14 @@ function handleSync(body) {
       ' row' + (chunks.length === 1 ? '' : 's') + ' below (' + snapshot.length + ' chars total).'
     );
     dataSheet.getRange(2, 1, chunks.length, 1).setValues(chunks.map(function (c) { return [c]; }));
-    rows.data = 1;
+    // v9.7.1 — report the real chunk count here (not a flat 1) so the
+    // app's debug log makes it unmistakable, right after a sync, that the
+    // new chunked-storage script is actually live: seeing "data":1 with a
+    // sizeable account would mean the OLD single-cell script is still
+    // deployed (paste ≠ publish — Deploy → Manage deployments → New
+    // version → Deploy was skipped), not that anything is wrong with your
+    // data.
+    rows.data = chunks.length;
   } catch (err) {
     try { if (dataSheet) dataSheet.getRange(1, 1).setValue('Snapshot write failed: ' + String(err)); } catch (err2) {}
     rows.data = 0;

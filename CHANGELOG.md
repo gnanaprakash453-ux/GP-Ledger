@@ -1,3 +1,28 @@
+# Changelog — v13.14.1 / apps-script v9.7.1 (Data tab fix now self-verifying) → history below
+
+## v13.14.1 / apps-script v9.7.1
+
+**Follow-up to v13.14.0/v9.7.0 below** — that fix was correct, but had no
+way to prove from the app alone whether a given account's deployed Apps
+Script was actually the new version or still the old one (paste ≠
+publish: editing `apps-script.gs` in script.google.com does not
+republish the live `/exec` URL — that only happens via **Deploy → Manage
+deployments → ✏️ → New version → Deploy**, a step that's easy to miss).
+
+- `rows.data` in the sync response now reports the **actual number of
+  snapshot rows written** (e.g. `3`) instead of a flat `1`. On any
+  account with real history, seeing `"data":1` after a sync is now a
+  clear signal the old single-cell script is still deployed — the app's
+  debug log spells this out directly after every "Sync now".
+- `SCRIPT_VERSION` / `APP_SCRIPT_VERSION` bumped to `v9.7.1` so **Test
+  connection** and any sync attempt will explicitly flag a version
+  mismatch (old script vs. what the app expects) if the redeploy step was
+  missed — this is usually the real fix if "Load from Sheet" still fails
+  after pasting the v9.7.0 file.
+- **Requires a redeploy** — paste the new `apps-script.gs` and go
+  Deploy → Manage deployments → ✏️ → New version → Deploy, then Sync now
+  once, then Load from Sheet.
+
 # Changelog — v13.14.0 / apps-script v9.7.0 (Data tab size ceiling removed) → history below
 
 ## v13.14.0 / apps-script v9.7.0

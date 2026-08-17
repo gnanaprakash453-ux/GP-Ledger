@@ -39,7 +39,12 @@
 // the related debug-log wording in syncNow() — index.html changed again,
 // same reasoning, bump so installed copies pick up the corrected version
 // check instead of comparing against the old v9.6.1.
-const CACHE_NAME = 'gp-ledger-v13-14-0';
+// v13.14.1: APP_SCRIPT_VERSION bumped to v9.7.1 — the Data tab's rows.data
+// now reports the real chunk count instead of a flat 1, so the sync debug
+// log doubles as proof the new script is actually deployed (paste ≠
+// publish; a stale deployment was the likely reason v13.14.0's fix didn't
+// visibly take effect yet) — index.html changed again, same reasoning.
+const CACHE_NAME = 'gp-ledger-v13-14-1';
 const IMG_CACHE_NAME = 'gp-ledger-images-v1';
 const CORE_ASSETS = [
   './index.html',

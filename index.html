@@ -1716,7 +1716,7 @@ nav.bottom, .fab{ transition:transform .18s ease; }
    change it here only; both the photo estimator and the AI Coach read
    from this constant. */
 const GEMINI_MODEL = 'gemini-3.5-flash';
-const APP_VERSION = 'v13.14.0'; // single source of truth for About screen & Settings row
+const APP_VERSION = 'v13.14.1'; // single source of truth for About screen & Settings row
 
 /* ---------- v9.5: module registry (drives bottom nav, Home, More, Settings toggles) ---------- */
 /* core:true = one of the 4 primary tabs when enabled; group = header used in the More screen. */
@@ -6440,7 +6440,7 @@ document.getElementById('testTgBtn').addEventListener('click', async ()=>{
 });
 
 /* ---------- Google Sheets sync ---------- */
-const APP_SCRIPT_VERSION = 'v9.7.0'; // must match SCRIPT_VERSION at the top of apps-script.gs — v9.7.0 fixes "Data tab is empty" on large accounts (chunked snapshot storage, see apps-script.gs)
+const APP_SCRIPT_VERSION = 'v9.7.1'; // must match SCRIPT_VERSION at the top of apps-script.gs — fixes "Data tab is empty" on large accounts (chunked snapshot storage, see apps-script.gs)
 function debugLog(msg){
   const box = document.getElementById('syncDebug'); box.style.display='block';
   box.textContent = `[${new Date().toLocaleTimeString()}] ${msg}\n` + box.textContent;
@@ -6527,12 +6527,22 @@ async function syncNow(silent, extra){
       // needed instead of one cell, so there's no practical size ceiling
       // left — rows.data===0 at this point means the Data tab write threw
       // a real error (permissions, a transient Sheets API hiccup, etc.),
-      // not a size limit. Surfacing it distinctly either way, since it's
-      // the one thing that wouldn't otherwise be visible from "Synced ✓".
+      // not a size limit.
+      // v9.7.1 — rows.data is now the actual chunk/row count the script
+      // wrote (not a flat 1), so it doubles as a live sanity check: a
+      // sizeable account still reporting "data":1 means the deployed
+      // script is still the OLD single-cell version — pasting new code
+      // into script.google.com does NOT republish it, that only happens
+      // via Deploy → Manage deployments → ✏️ → New version → Deploy.
+      // Surfacing the number distinctly either way, since it's the one
+      // thing that wouldn't otherwise be visible from "Synced ✓".
       if(data.rows.data===0){
         debugLog('Note: every other tab synced fine, but the full backup snapshot (Data tab, used by "Load from Sheet") failed to write — this now means a real error on the Apps Script side (not a size limit — that ceiling was removed in Apps Script v9.7.0), e.g. a permissions issue or a transient Sheets API error. Check the Data tab\'s cell A1 in your Sheet for the specific error, or just try Sync now again.');
         if(!silent) showToast('Synced ✓ (backup snapshot failed — see debug log)', '⚠️');
-      } else if(!silent) showToast('Synced to Google Sheet ✓', '☁️');
+      } else {
+        debugLog(`Data tab snapshot: wrote ${data.rows.data} row(s). If this is "1" on an account with a lot of history, your deployed Apps Script is likely still the OLD version — go script.google.com → Deploy → Manage deployments → ✏️ → New version → Deploy, then Sync now again.`);
+        if(!silent) showToast('Synced to Google Sheet ✓', '☁️');
+      }
     } else {
       let hint = '';
       if(data && data.version && data.version !== APP_SCRIPT_VERSION){

@@ -91,7 +91,28 @@
 // updateBackFab()/the back button in a stale state). index.html changed,
 // so bump so installed copies actually receive this instead of serving a
 // cached v13.16.0.
-const CACHE_NAME = 'gp-ledger-v13-17-0';
+// v13.18.0: two further root causes, found after v13.17.0's fixes weren't
+// enough. (1) Bottom nav (Home/Habit/Routine/+Add) going invisible and
+// untappable: the 'kb-open' body class (hides the fixed nav+FAB under the
+// keyboard on focusin) was only ever cleared by a focusout event resolving
+// through a 120ms timeout — nothing tied its removal to navigation, so a
+// missed/delayed blur (a real risk any time a focused field's screen gets
+// hidden by a screen swap rather than a normal user blur) left it stuck on
+// <body> forever, with no recovery short of reload. goToScreen() and
+// closeModal() now blur any focused field and clear 'kb-open'
+// deterministically every time, instead of relying on event timing.
+// (2) App-wide scroll stutter/jumping: setupPullBounce()'s own comment
+// says it's meant only for screens too short to scroll natively, but the
+// code never actually checked that — it hijacked any touch starting at
+// scrollTop<=0 into a transform-based drag, which is true at the start of
+// nearly every normal scroll, so most real scroll gestures throughout the
+// app were fighting native momentum scrolling instead of using it. Restored
+// the actual scrollHeight<=clientHeight check so the synthetic bounce only
+// engages on genuinely non-scrollable screens, and every screen with real
+// content scrolls 100% natively again. index.html changed, so bump so
+// installed copies actually receive this instead of serving a cached
+// v13.17.0.
+const CACHE_NAME = 'gp-ledger-v13-18-0';
 const IMG_CACHE_NAME = 'gp-ledger-images-v1';
 const CORE_ASSETS = [
   './index.html',

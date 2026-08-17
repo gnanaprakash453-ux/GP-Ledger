@@ -3473,6 +3473,25 @@ function setupPullBounce(){
     const dx = e.touches[0].clientX - startX, dy = e.touches[0].clientY - startY;
     if(!pulling){
       if(Math.abs(dy) < 6 || Math.abs(dx) > Math.abs(dy)) return; // not a clear vertical drag yet
+      // v13.18.0 — real cause of app-wide scroll stutter/jumping: this was
+      // engaging on ANY touch that started at scrollTop<=0, which is true
+      // at the start of almost every normal downward scroll (you always
+      // begin scrolling from the top once). That hijacked the vast
+      // majority of real scroll gestures into this transform-based drag
+      // (transition forced off) instead of letting native momentum
+      // scrolling handle them, fighting the browser's own scroll physics
+      // on every screen with real content — the actual source of the
+      // stutter/jump/stop-dead symptoms. The comment above this function
+      // always said the intent was screens with "too little content to
+      // natively scroll", but the code never actually checked for that.
+      // Restoring that check: only take over when the screen truly has no
+      // scrollable room in the pulled direction, so every screen with real
+      // content scrolls 100% natively (including iOS's own elastic bounce,
+      // which -webkit-overflow-scrolling:touch already provides and which
+      // this was otherwise fighting), and the synthetic bounce still does
+      // its job on genuinely short screens exactly as designed.
+      const noScrollRoom = el.scrollHeight - el.clientHeight <= 1;
+      if(!noScrollRoom){ el = null; return; }
       const atTop = el.scrollTop <= 0;
       const atBottom = el.scrollTop >= el.scrollHeight - el.clientHeight - 1;
       if(dy>0 && atTop) dir = 1;
@@ -5876,7 +5895,17 @@ function openModal(html){
   document.getElementById('modalBackdrop').classList.add('open');
   document.querySelectorAll('[data-close]').forEach(b=> b.onclick = closeModal);
 }
-function closeModal(){ document.getElementById('modalBackdrop').classList.remove('open'); }
+function closeModal(){
+  document.getElementById('modalBackdrop').classList.remove('open');
+  // v13.18.0 — same fix as goToScreen: closing a modal (many contain
+  // inputs, e.g. Add Transaction) is a second path that can leave
+  // 'kb-open' stuck without ever going through goToScreen at all, since
+  // the user hasn't changed screens. Clear it here too so the nav can't
+  // get stranded behind a modal close either.
+  const activeEl = document.activeElement;
+  if(activeEl && (activeEl.tagName==='INPUT' || activeEl.tagName==='TEXTAREA' || activeEl.tagName==='SELECT')) activeEl.blur();
+  document.body.classList.remove('kb-open');
+}
 document.getElementById('modalBackdrop').addEventListener('click', (e)=>{ if(e.target.id==='modalBackdrop') closeModal(); });
 
 /* ---------- navigation ---------- */
@@ -5991,6 +6020,28 @@ function goToScreen(name, opts){
   const timerHost = document.getElementById('timerFullscreen');
   if(timerHost && timerHost.classList.contains('open')) closeTimerOverlay();
   if(document.getElementById('modalBackdrop').classList.contains('open')) closeModal();
+  // v13.18.0 — real cause of the bottom nav (Home/Habit/Routine/+ Add)
+  // going invisible and untappable: 'kb-open' (set on focusin into any
+  // input/textarea/select, to slide the fixed nav+FAB out from under the
+  // keyboard) was only ever cleared by a focusout event resolving through
+  // a 120ms timeout — nothing tied its removal to navigation itself. The
+  // Search screen even auto-focuses its input on open. If focus moved to
+  // a different screen without a clean native blur (a real risk any time
+  // an input's container gets hidden by the screen swap rather than the
+  // user backing out of the field normally — timing here varies by
+  // platform/WebView), 'kb-open' stayed on <body> permanently: nav.bottom
+  // and .fab keep the CSS pushing them off-screen with pointer-events:none
+  // forever, with no way back short of a reload. Clearing it here — once,
+  // deterministically, on every screen change — means the nav can never
+  // get stranded behind a missed event, regardless of platform timing.
+  // Blurring first (rather than just removing the class) is what actually
+  // dismisses the on-screen keyboard when it's the *reason* for the
+  // navigation (e.g. tapping a bottom-nav icon while a field is focused),
+  // instead of leaving the keyboard up over a nav bar that's now visible
+  // again underneath it.
+  const activeEl = document.activeElement;
+  if(activeEl && (activeEl.tagName==='INPUT' || activeEl.tagName==='TEXTAREA' || activeEl.tagName==='SELECT')) activeEl.blur();
+  document.body.classList.remove('kb-open');
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   target.classList.add('active');
   try{ localStorage.setItem('gpl_lastScreen', name); }catch(e){} // v12.3 — see init()'s restore logic

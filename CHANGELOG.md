@@ -1,4 +1,49 @@
-# Changelog — v13.17.0 (UI stability: black screen / lag / stuck buttons) → history below
+# Changelog — v13.18.0 (real fix for stuck bottom nav + app-wide scroll stutter) → history below
+
+## v13.18.0
+
+**Follow-up bug-fix release — the v13.17.0 fixes weren't the actual root
+cause of the bottom nav getting stuck or scrolling feeling rough. Found and
+fixed the real causes this time.** Only `index.html` and `sw.js` changed.
+No design, layout, colors, icons, navigation structure, or features changed.
+
+- **Bottom nav (Home/Habit/Routine/+Add) going invisible/untappable —
+  actual cause:** a body class `kb-open` slides the fixed nav and FAB
+  off-screen and disables their touches (`pointer-events:none`) whenever a
+  text field is focused, so the keyboard doesn't cover them or eat stray
+  taps. It's added on `focusin` and was **only** removed by a `focusout`
+  event resolving through a fixed 120ms timeout — nothing tied its removal
+  to navigation itself. The Search screen even auto-focuses its input on
+  open. Any time focus moved away without a clean native blur resolving in
+  time (platform/WebView timing varies, especially when the focused field's
+  screen gets hidden by a screen swap rather than a normal user tap-out),
+  `kb-open` stayed on `<body>` permanently — nav pinned off-screen and
+  untappable, with no recovery short of a reload, exactly matching what was
+  reported. Fix: `goToScreen()` and `closeModal()` now blur any focused
+  field and remove `kb-open` **deterministically**, every single time,
+  instead of depending on an event/timeout race. This can no longer get
+  stuck regardless of platform or timing.
+- **App-wide scroll stutter/jumping/stopping — actual cause:**
+  `setupPullBounce()`'s own comment says it exists only to give a bounce
+  feel to screens *too short to scroll natively* — but the code never
+  actually checked for that. It engaged on any touch starting at
+  `scrollTop<=0`, which is true at the start of nearly every normal
+  downward scroll on nearly every screen (you always start scrolling from
+  the top). That hijacked the vast majority of real scroll gestures
+  throughout the entire app into a hand-rolled, transform-based drag
+  (`transition:none` forced) fighting the browser's own native momentum
+  scrolling — and on iOS, fighting the native elastic bounce
+  `-webkit-overflow-scrolling:touch` already provides. That fight is what
+  produced the stutter/jump/stop-dead scrolling everywhere. Fix: restored
+  the actual `scrollHeight <= clientHeight` check from the feature's own
+  stated intent, so the synthetic bounce only ever engages on genuinely
+  non-scrollable screens (where it still works exactly as before), and
+  every screen with real content now scrolls entirely natively.
+- **Not changed:** no screens, modules, styling, or navigation paths were
+  added, removed, or restructured; the pull-to-bounce feel on short screens
+  and the keyboard-avoidance behavior for the nav both still work exactly
+  as designed — they just no longer misfire on cases they were never meant
+  to cover.
 
 ## v13.17.0 (apps-script.gs unchanged this release)
 

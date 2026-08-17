@@ -112,6 +112,18 @@ You'll get a real home-screen icon and a full-screen app with no browser bar.
 9. Tap **Test connection** — you should see a message confirming it's reachable, plus a debug log entry.
 10. Tap **Sync now**. Open your Google Sheet — you should now see tabs: `Data`, `Habits`, `Settings`, `Transactions_<year>`, `Routine`, `RoutineTemplates`, `Reports`, `Debts`, `Journal`, `Diet`, `Goals`, `Subscriptions`, `Assets`, `Health`, `Documents`, `Budgets`, `Quotes`.
 
+> **Already on v9.6.1 and just upgrading to v9.7.0?** Same deal — paste
+> in the *new* `apps-script.gs` and redeploy (**Deploy → Manage
+> deployments → ✏️ edit → New version → Deploy**). This fixes **"Load
+> from Sheet" failing with "Data tab is empty"** even on accounts that
+> synced successfully — the full backup snapshot used to be capped at one
+> ~50,000-character Sheet cell and silently skipped itself once total
+> history (habits + transactions + routine logs + diet, etc. combined)
+> grew past that. It's now split across as many rows as needed instead of
+> one cell, so there's no practical size ceiling anymore. Nothing to do
+> manually after redeploying — the next **Sync now** rewrites the Data tab
+> in the new format automatically, and no history is lost either way.
+
 > **Already on v9.6.0 and just upgrading to v9.6.1?** Same deal — paste
 > in the *new* `apps-script.gs` and redeploy. This is the fix mentioned
 > above: `checkReminders` now also covers Finance, Health, Documents, and
@@ -178,6 +190,17 @@ really came from the sync handler (not a generic/error page), and shows a
    (only the nutrition numbers are synced, never the photo) — if you're
    still on an older version and this matches what you're seeing, update
    to the latest files and redeploy.
+1b. **"Load from Sheet" says "Data tab is empty" even though Sync now
+   succeeds (fixed in v9.7.0).** Before v9.7.0, the full backup snapshot
+   (only used by Load-from-Sheet — every readable tab like Habits/Finance/
+   Diet syncs independently of it) was written into one Sheets cell, capped
+   at ~50,000 characters. Once total history across every module grew past
+   that, the snapshot was silently skipped — Sync still reported success
+   because every other tab wrote fine, but Load then found nothing. If
+   you're on v9.7.0 this can't happen anymore (the snapshot is split
+   across as many rows as it needs); if you're on an older version and
+   this matches what you're seeing, update `apps-script.gs`, redeploy, and
+   tap **Sync now** once to rewrite the Data tab in the new format.
 2. **You edited the script but didn't redeploy.** Apps Script's "Save" does *not*
    republish the live `/exec` URL. You must go **Deploy → Manage deployments →
    ✏️ edit → New version → Deploy** every time you change `apps-script.gs`.
@@ -248,7 +271,7 @@ plus a **Notification history** to see everything that's fired.
 Only **Habit** reminders had this treatment before; **Finance/Health/
 Documents/Goals now also send to Telegram** on the same `checkReminders`
 trigger you already set up — no second trigger needed, just redeploy
-`apps-script.gs` (now v9.6.1). One difference: Goals sends a same-day
+`apps-script.gs` (now v9.7.0). One difference: Goals sends a same-day
 nudge on the deadline regardless of whether it's already met (the in-app
 popup only fires if it isn't — replicating that exact check server-side
 wasn't worth the duplication for one extra condition).

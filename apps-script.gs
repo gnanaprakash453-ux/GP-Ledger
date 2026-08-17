@@ -1,9 +1,32 @@
 /**
- * GP LEDGER — Google Apps Script backend (v9.5.2)
+ * GP LEDGER — Google Apps Script backend (v9.7.0)
  * ---------------------------------------------------------------
  * Paste this whole file into script.google.com (Extensions > Apps
  * Script, from a Google Sheet), then deploy as a Web App.
  * Full click-by-click steps are in SETUP_GUIDE.md.
+ *
+ * v9.7.0 fix — real bug: "Load from Sheet" failing with "Data tab is
+ *  empty" on accounts that HAD synced successfully. Root cause: the full
+ *  JSON snapshot (used only by Load-from-Sheet, not by any of the
+ *  readable per-module tabs) was written into a single Sheets cell, which
+ *  caps out at ~50,000 characters. Once total synced history — habits,
+ *  transactions, routine logs, diet entries, everything combined —
+ *  crossed that line, handleSync silently wrote just a warning note
+ *  instead of the real snapshot (rows.data=0), while every OTHER tab
+ *  (Habits, Finance, Diet, etc.) kept syncing fine with no visible error.
+ *  Documents/meal-photo attachments were already excluded from this
+ *  payload well before this fix (they're kept device-local, see
+ *  index.html's gpl_docAttachments comment) — this was purely a "years of
+ *  history no longer fit in one cell" ceiling, nothing image-related.
+ *  Fix: the snapshot is now split into fixed-size chunks and written one
+ *  chunk per row (column A, row 2 downward — see chunkSnapshot_() and
+ *  SNAPSHOT_CHUNK_SIZE) instead of one cell, and read back by joining
+ *  those rows (readDataSnapshotRaw_()) before parsing. No practical size
+ *  ceiling anymore. handleLoad, checkReminders, and sendDailyQuote all
+ *  switched to the same reader helper. One-time note: the very first
+ *  "Sync now" after pasting this version rewrites the Data tab in the new
+ *  format automatically — nothing to do manually, and no data is lost
+ *  either way since every other tab was already up to date.
  *
  * v9.5.2 fix — real bug, finally the actual cause of "Sync did not
  *  verify" / "TypeError: sheet.clearContent is not a function":
@@ -96,7 +119,59 @@ const SS = SpreadsheetApp.getActiveSpreadsheet();
 // Bump this every time you paste updated code, so the app's "Test connection"
 // and sync-failure messages can tell you when a deployment is stale (i.e. you
 // edited/pasted new code but forgot Deploy > Manage deployments > New version).
-const SCRIPT_VERSION = 'v9.6.1';
+const SCRIPT_VERSION = 'v9.7.0';
+
+// v9.7.0 — the Data tab's full JSON snapshot used to live in ONE cell,
+// which Google Sheets caps at ~50,000 characters. Once total synced history
+// (habits + transactions + routine logs + diet + everything else combined)
+// grew past that, handleSync was silently skipping the snapshot entirely
+// (writing only a warning note, never the actual data) — which made
+// "Load from Sheet" fail with "Data tab is empty" even though every other
+// readable tab (Habits, Finance, Diet, etc.) had synced fine. Root cause
+// was the single-cell design, not any one field — Documents/meal-photo
+// attachments were already excluded from the payload well before this
+// (see the client's gpl_docAttachments comment), so this was purely a
+// "years of history no longer fits in one cell" ceiling.
+// Fix: the snapshot is now split into fixed-size chunks and written one
+// chunk per row (column A, row 2 downward) instead of one giant cell.
+// There is effectively no size ceiling anymore — it just uses more rows
+// as history grows. Reading it back (handleLoad, checkReminders,
+// sendDailyQuote) now goes through readDataSnapshotRaw_(), which
+// reassembles every chunk row back into the original JSON string before
+// parsing it. This is a one-way format change: the OLD single-cell format
+// (all in B2) is no longer written, but readDataSnapshotRaw_() below also
+// still understands it for one sync cycle, so nothing is lost — the very
+// next "Sync now" rewrites it in the new chunked format automatically.
+const SNAPSHOT_CHUNK_SIZE = 45000; // safely under Sheets' ~50,000 char/cell cap
+
+/** Splits a JSON string into <=SNAPSHOT_CHUNK_SIZE-character chunks. */
+function chunkSnapshot_(jsonStr) {
+  const chunks = [];
+  for (let i = 0; i < jsonStr.length; i += SNAPSHOT_CHUNK_SIZE) {
+    chunks.push(jsonStr.slice(i, i + SNAPSHOT_CHUNK_SIZE));
+  }
+  return chunks.length ? chunks : [''];
+}
+
+/**
+ * Reads the Data tab's snapshot back into one JSON string, regardless of
+ * whether it was written in the new chunked-rows format (row 2 downward,
+ * column A, one chunk per row) or the old single-cell format (all of it in
+ * B2, from before v9.7.0). Returns '' if there's nothing there yet.
+ */
+function readDataSnapshotRaw_(dataSheet) {
+  const lastRow = dataSheet.getLastRow();
+  if (lastRow < 2) return '';
+  // Old format: exactly one data row, snapshot in column B (getRange(2,1)
+  // in 1-indexed columns is actually column A — the historic code stored
+  // the label in A1 and the full JSON in A2, one cell). Chunked format
+  // instead uses column A rows 2..N, one chunk per row. Both live in
+  // column A, so a plain top-to-bottom read of column A from row 2 down
+  // and joining every non-empty cell works for both formats identically —
+  // the old format is just the special case of exactly one chunk.
+  const values = dataSheet.getRange(2, 1, lastRow - 1, 1).getValues();
+  return values.map(function (r) { return r[0]; }).filter(function (v) { return v !== '' && v != null; }).join('');
+}
 
 function doGet(e) {
   const action = (e && e.parameter && e.parameter.action) || 'status';
@@ -113,10 +188,10 @@ function doGet(e) {
 function handleLoad() {
   const dataSheet = SS.getSheetByName('Data');
   if (!dataSheet) return { ok: false, source: 'doGet', error: 'No data has been synced to this Sheet yet.' };
-  const raw = dataSheet.getRange(2, 1).getValue();
+  const raw = readDataSnapshotRaw_(dataSheet);
   if (!raw) return { ok: false, source: 'doGet', error: 'Data tab is empty — sync from the app at least once first.' };
   let payload;
-  try { payload = JSON.parse(raw); } catch (e) { return { ok: false, source: 'doGet', error: 'Stored snapshot is not valid JSON.' }; }
+  try { payload = JSON.parse(raw); } catch (e) { return { ok: false, source: 'doGet', error: 'Stored snapshot is not valid JSON — try Sync now again to rewrite it.' }; }
   return { ok: true, source: 'doGet', data: payload };
 }
 
@@ -162,37 +237,34 @@ function handleSync(body) {
   const rows = {};
 
   // 1) Full JSON snapshot — source of truth / backup
-  // v9.4.1: wrapped in try/catch. A single Google Sheets cell caps out at
-  // 50,000 characters — if a future payload ever exceeds that for any reason
-  // (very large photo, huge history, etc.), this now degrades gracefully
-  // (skips just the snapshot, keeps rows.data=0) instead of throwing and
-  // failing the ENTIRE sync — which is what used to make "Sync did not
-  // verify" show up even though every other tab synced fine.
-  // v12.5.1 fix — that protection had a hole: getOrCreateSheet('Data') and
-  // dataSheet.clearContent() were both called BEFORE the try block started,
-  // so if either of those two calls itself threw (e.g. a transient Sheets
-  // API error, a permissions hiccup, a stale/duplicate "Data" tab), the
-  // whole handleSync call died right there — before Habits, Diet, Finance,
-  // or any other tab ever got written — which is exactly what "TypeError:
-  // dataSheet.clearContent is not a function" in the debug log looks like.
-  // Everything Data-tab-related now lives inside one try/catch, so a
-  // problem specific to this one backup tab can no longer take the rest of
-  // the sync down with it.
+  // v9.4.1: wrapped in try/catch so a problem writing this one backup tab
+  // can't take the whole sync down with it (see rows.data=0 fallback below).
+  // v12.5.1 fix — getOrCreateSheet('Data') and dataSheet.clearContents()
+  // both moved INSIDE the try block, so a transient Sheets API error,
+  // permissions hiccup, or stale/duplicate "Data" tab can't kill the whole
+  // handleSync call before Habits, Diet, Finance, etc. ever get written.
+  // v9.7.0 — a single Sheets cell caps out at ~50,000 characters, and this
+  // used to write the entire snapshot into ONE cell, silently skipping it
+  // (rows.data=0, no real data written) whenever total history grew past
+  // that — which is what made "Load from Sheet" fail with "Data tab is
+  // empty" even on a fully-synced Sheet. Now the snapshot is split into
+  // SNAPSHOT_CHUNK_SIZE-character chunks and written one per row (column A,
+  // row 2 downward) via chunkSnapshot_() — there's no longer a practical
+  // size ceiling, it just uses more rows as history grows. handleLoad,
+  // checkReminders, and sendDailyQuote all read it back through the
+  // matching readDataSnapshotRaw_() helper.
   let dataSheet = null;
   try {
     dataSheet = getOrCreateSheet('Data');
     dataSheet.clearContents();
     const snapshot = JSON.stringify(body);
-    if (snapshot.length > 49000) {
-      dataSheet.getRange(1, 1).setValue('Snapshot too large to store in one cell (' + snapshot.length + ' chars) — every other tab below is still up to date. This usually means a meal photo or similar large field slipped into the sync payload.');
-      rows.data = 0;
-    } else {
-      dataSheet.getRange(1, 1, 2, 1).setValues([
-        ['Full JSON snapshot (do not edit by hand)'],
-        [snapshot]
-      ]);
-      rows.data = 1;
-    }
+    const chunks = chunkSnapshot_(snapshot);
+    dataSheet.getRange(1, 1).setValue(
+      'Full JSON snapshot (do not edit by hand) — split into ' + chunks.length +
+      ' row' + (chunks.length === 1 ? '' : 's') + ' below (' + snapshot.length + ' chars total).'
+    );
+    dataSheet.getRange(2, 1, chunks.length, 1).setValues(chunks.map(function (c) { return [c]; }));
+    rows.data = 1;
   } catch (err) {
     try { if (dataSheet) dataSheet.getRange(1, 1).setValue('Snapshot write failed: ' + String(err)); } catch (err2) {}
     rows.data = 0;
@@ -438,7 +510,7 @@ function getOrCreateSheet(name) {
 function checkReminders() {
   const dataSheet = SS.getSheetByName('Data');
   if (!dataSheet) return;
-  const raw = dataSheet.getRange(2, 1).getValue();
+  const raw = readDataSnapshotRaw_(dataSheet);
   if (!raw) return;
   let payload;
   try { payload = JSON.parse(raw); } catch (e) { return; }
@@ -616,7 +688,7 @@ const QUOTES = [
 function sendDailyQuote() {
   const dataSheet = SS.getSheetByName('Data');
   if (!dataSheet) return;
-  const raw = dataSheet.getRange(2, 1).getValue();
+  const raw = readDataSnapshotRaw_(dataSheet);
   if (!raw) return;
   let payload;
   try { payload = JSON.parse(raw); } catch (e) { return; }

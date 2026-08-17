@@ -1716,7 +1716,7 @@ nav.bottom, .fab{ transition:transform .18s ease; }
    change it here only; both the photo estimator and the AI Coach read
    from this constant. */
 const GEMINI_MODEL = 'gemini-3.5-flash';
-const APP_VERSION = 'v13.13.0'; // single source of truth for About screen & Settings row
+const APP_VERSION = 'v13.14.0'; // single source of truth for About screen & Settings row
 
 /* ---------- v9.5: module registry (drives bottom nav, Home, More, Settings toggles) ---------- */
 /* core:true = one of the 4 primary tabs when enabled; group = header used in the More screen. */
@@ -6440,7 +6440,7 @@ document.getElementById('testTgBtn').addEventListener('click', async ()=>{
 });
 
 /* ---------- Google Sheets sync ---------- */
-const APP_SCRIPT_VERSION = 'v9.6.1'; // must match SCRIPT_VERSION at the top of apps-script.gs
+const APP_SCRIPT_VERSION = 'v9.7.0'; // must match SCRIPT_VERSION at the top of apps-script.gs — v9.7.0 fixes "Data tab is empty" on large accounts (chunked snapshot storage, see apps-script.gs)
 function debugLog(msg){
   const box = document.getElementById('syncDebug'); box.style.display='block';
   box.textContent = `[${new Date().toLocaleTimeString()}] ${msg}\n` + box.textContent;
@@ -6474,8 +6474,9 @@ async function syncNow(silent, extra){
   btn.classList.add('syncing'); label.textContent='Syncing…';
   // v9.4.1 fix: meal photos are stored as full base64 images in S.diet.meals[date][].image
   // for the in-app preview and the one-time AI estimate — they must NOT be sent to the Sheet.
-  // Google Sheets caps a single cell at 50,000 characters, and the full snapshot goes into
-  // one cell, so even one photo would blow past that and make the whole sync fail. Only the
+  // Even with the Data tab's snapshot now chunked across rows instead of one cell (Apps
+  // Script v9.7.0), there's no good reason to ship 100-300KB of base64 per photo through
+  // Sync just to sit unused in a backup — so this stays excluded regardless. Only the
   // nutrition numbers (already extracted from the photo) are synced; the photo itself stays
   // on-device only.
   const dietForSync = { settings: S.diet.settings, meals: {} };
@@ -6515,15 +6516,22 @@ async function syncNow(silent, extra){
       document.getElementById('lastSyncHint').textContent = `Last synced: ${new Date(S.settings.lastSync).toLocaleString()} — rows: ${JSON.stringify(data.rows)}`;
       debugLog('Sync OK: '+text.slice(0,300));
       // v12.5.1 — every readable tab (Habits, Diet, Finance, etc.) writes
-      // independently of the single-cell full JSON backup on the Data tab,
-      // so rows.data===0 does NOT mean the sync failed — it means only the
-      // "Load from Sheet" backup snapshot was skipped for being too big for
-      // one cell (see handleSync in apps-script.gs). Surface that distinctly
-      // instead of staying silent, since it's the one thing that wouldn't
-      // otherwise be visible from "Synced ✓".
+      // independently of the full JSON backup on the Data tab, so
+      // rows.data===0 does NOT mean the whole sync failed — it means only
+      // the "Load from Sheet" backup snapshot itself hit a problem.
+      // v9.7.0 (apps-script.gs) — the Data tab snapshot used to be capped
+      // at one ~50,000-char Sheets cell and would silently skip itself
+      // (rows.data=0) once total history grew past that, which is what
+      // used to make "Load from Sheet" fail with "Data tab is empty" even
+      // on a fully-synced Sheet. It's now written across as many rows as
+      // needed instead of one cell, so there's no practical size ceiling
+      // left — rows.data===0 at this point means the Data tab write threw
+      // a real error (permissions, a transient Sheets API hiccup, etc.),
+      // not a size limit. Surfacing it distinctly either way, since it's
+      // the one thing that wouldn't otherwise be visible from "Synced ✓".
       if(data.rows.data===0){
-        debugLog('Note: everything above synced, but the full backup snapshot (Data tab, used by "Load from Sheet") was skipped — payload was too large for one Sheets cell. This is very rarely meal-photo related anymore (photos are never sent, since v9.4.1) — more likely a lot of history has built up. Nothing was lost on-device.');
-        if(!silent) showToast('Synced ✓ (backup snapshot skipped — see debug log)', '⚠️');
+        debugLog('Note: every other tab synced fine, but the full backup snapshot (Data tab, used by "Load from Sheet") failed to write — this now means a real error on the Apps Script side (not a size limit — that ceiling was removed in Apps Script v9.7.0), e.g. a permissions issue or a transient Sheets API error. Check the Data tab\'s cell A1 in your Sheet for the specific error, or just try Sync now again.');
+        if(!silent) showToast('Synced ✓ (backup snapshot failed — see debug log)', '⚠️');
       } else if(!silent) showToast('Synced to Google Sheet ✓', '☁️');
     } else {
       let hint = '';

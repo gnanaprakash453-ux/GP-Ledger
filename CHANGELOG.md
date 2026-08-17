@@ -1,4 +1,41 @@
-# Changelog — v13.13.0 (two-row mobile header) → history below
+# Changelog — v13.14.0 / apps-script v9.7.0 (Data tab size ceiling removed) → history below
+
+## v13.14.0 / apps-script v9.7.0
+
+**Real bug fix — "Load from Sheet" failing with "Data tab is empty" even
+on accounts where Sync now reported success.** `index.html` and
+`apps-script.gs` both changed; no other module touched.
+
+- **Root cause:** the full JSON backup snapshot (used only by "Load from
+  Sheet" — every readable per-module tab like Habits/Finance/Diet writes
+  independently of it and was never affected) was stored in a single
+  Google Sheets cell, which caps out at ~50,000 characters. Once total
+  synced history — habits, transactions, routine logs, diet entries,
+  everything combined — grew past that limit, `handleSync` silently wrote
+  just a warning note into the Data tab instead of the real snapshot.
+  Sync itself still reported success (every other tab genuinely did
+  write), which is exactly why this was confusing: "Sync now" looked
+  fine, but "Load from Sheet" then found nothing.
+- **Not related to Documents/meal-photo attachments.** Those were already
+  excluded from the sync payload entirely (Documents photos are
+  deliberately device-local only, since v13.9.0; meal photos since
+  v9.4.1) — this bug was purely "years of combined history no longer fit
+  in one cell," not any image field.
+- **Fix:** `apps-script.gs` now splits the snapshot into fixed-size
+  chunks and writes one chunk per row (`chunkSnapshot_()`,
+  `SNAPSHOT_CHUNK_SIZE`) instead of one cell — there's no practical size
+  ceiling anymore, it just uses more rows as history grows.
+  `handleLoad`, `checkReminders`, and `sendDailyQuote` all read it back
+  through a shared `readDataSnapshotRaw_()` helper, which also still
+  understands the old single-cell format for one transition cycle, so
+  nothing is lost — the very next "Sync now" rewrites it in the new
+  format automatically.
+- `SCRIPT_VERSION` bumped to `v9.7.0`; `index.html`'s
+  `APP_SCRIPT_VERSION` bumped to match, plus the sync debug-log wording
+  updated to reflect that a `rows.data===0` result now means a real
+  write error, not a size limit. **Requires a redeploy** of
+  `apps-script.gs` — paste the new file and go Deploy → Manage
+  deployments → ✏️ → New version → Deploy.
 
 ## v13.13.0
 

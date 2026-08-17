@@ -33,7 +33,13 @@
 // v13.13.0: header restructured to two rows (greeting alone on row 1;
 // date/time + Search/Save & Sync on row 2) so nothing crowds the greeting
 // on narrow phones — index.html changed again, same reasoning, bump.
-const CACHE_NAME = 'gp-ledger-v13-13-0';
+// v13.14.0: APP_SCRIPT_VERSION bumped to v9.7.0 to match the apps-script.gs
+// fix for "Load from Sheet" failing with "Data tab is empty" on large
+// accounts (chunked snapshot storage instead of one capped cell) — plus
+// the related debug-log wording in syncNow() — index.html changed again,
+// same reasoning, bump so installed copies pick up the corrected version
+// check instead of comparing against the old v9.6.1.
+const CACHE_NAME = 'gp-ledger-v13-14-0';
 const IMG_CACHE_NAME = 'gp-ledger-images-v1';
 const CORE_ASSETS = [
   './index.html',

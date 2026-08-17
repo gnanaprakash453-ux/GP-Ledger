@@ -58,7 +58,22 @@
 // automatically once index.html started sending them, same as every
 // module added since v13.2.0. index.html changed, so bump so installed
 // copies actually receive this instead of serving a cached v13.14.1.
-const CACHE_NAME = 'gp-ledger-v13-15-0';
+// v13.16.0: "Load from Sheet" error handling fix — a Sheet that's empty,
+// a corrupt stored snapshot, and an unreachable/undeployed URL used to all
+// collapse into the same generic "redeploy" alert, hiding handleLoad()'s
+// real error string. Each is now told apart and shown with its actual
+// cause. Also added a local "unsynced changes" flag (set on every
+// saveState(), cleared on a confirmed Save & Sync / Load from Sheet) so
+// Load from Sheet now warns specifically when it would overwrite local
+// edits that were never pushed to the Sheet, instead of only a generic
+// "this replaces everything" confirm. Save & Sync's success toast no
+// longer reads as a plain "Synced ✓" when the Data-tab snapshot (the one
+// Load from Sheet actually reads) failed to write. apps-script.gs is
+// unchanged — its chunked-snapshot read/write and handleLoad() error
+// strings were already correct; this was purely the client discarding
+// them. index.html changed, so bump so installed copies actually receive
+// this instead of serving a cached v13.15.0.
+const CACHE_NAME = 'gp-ledger-v13-16-0';
 const IMG_CACHE_NAME = 'gp-ledger-images-v1';
 const CORE_ASSETS = [
   './index.html',

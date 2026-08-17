@@ -1716,7 +1716,7 @@ nav.bottom, .fab{ transition:transform .18s ease; }
    change it here only; both the photo estimator and the AI Coach read
    from this constant. */
 const GEMINI_MODEL = 'gemini-3.5-flash';
-const APP_VERSION = 'v13.15.0'; // single source of truth for About screen & Settings row
+const APP_VERSION = 'v13.16.0'; // single source of truth for About screen & Settings row
 
 /* ---------- v9.5: module registry (drives bottom nav, Home, More, Settings toggles) ---------- */
 /* core:true = one of the 4 primary tabs when enabled; group = header used in the More screen. */
@@ -3083,6 +3083,17 @@ let S = { habits:[], transactions:[], settings:{}, routineLogs:{}, routineCats:[
   notes:[], trips:[], learningItems:[], ideas:[], mealPlan:{}, mealFavorites:[], people:[], trash:[], accounts:[] };
 let selectedDate = todayStr();
 
+/* v13.16.0 — tracks whether this device has local changes that have not
+   yet been pushed to the Google Sheet via "Save & Sync". Used by "Load
+   from Sheet" to warn before an overwrite could silently discard them
+   (see the loadFromSheetBtn handler near syncNow). Deliberately NOT part
+   of S / the backup snapshot — it's local sync state, not app data — but
+   it does persist across reloads via its own localStorage key so a page
+   refresh with real unsynced edits doesn't quietly lose the warning. */
+let syncDirty = (function(){ try{ return localStorage.getItem('gpl_syncDirty') === '1'; }catch(e){ return false; } })();
+function markSynced_(){ syncDirty = false; try{ localStorage.setItem('gpl_syncDirty','0'); }catch(e){} }
+function markDirty_(){ syncDirty = true; try{ localStorage.setItem('gpl_syncDirty','1'); }catch(e){} }
+
 function defaultDietSettings(){
   return { height:'', weight:'', age:'', sex:'male', activity:'1.375', goal:'maintain', geminiKey:'', calorieMode:'auto', manualCalories:'' };
 }
@@ -3276,6 +3287,12 @@ function loadState(){
   saveState(); // persist any seeding immediately so a refresh mid-session can't glitch
 }
 function saveState(){
+  // v13.16.0 — every real state change goes through saveState(), so this is
+  // the one place to flag "local data has changed since the last successful
+  // Save & Sync". syncNow() and the Load-from-Sheet/Import-Backup handlers
+  // explicitly call markSynced_() right after this to clear the flag again
+  // once local truly matches what's on the Sheet — see their comments.
+  markDirty_();
   try{
     localStorage.setItem('gpl_habits', JSON.stringify(S.habits));
     localStorage.setItem('gpl_transactions', JSON.stringify(S.transactions));
@@ -6566,6 +6583,11 @@ async function syncNow(silent, extra){
     if(data && data.ok && data.source==='handleSync' && typeof data.rows==='object'){
       S.settings.lastSync = new Date().toISOString();
       saveState();
+      // v13.16.0 — local data now matches what was just pushed to the
+      // Sheet, so clear the "unsynced changes" flag saveState() just set.
+      // Left dirty (not cleared) below when data.rows.data===0, since in
+      // that case the actual Load-from-Sheet snapshot did NOT get written.
+      if(data.rows.data !== 0) markSynced_();
       document.getElementById('lastSyncHint').textContent = `Last synced: ${new Date(S.settings.lastSync).toLocaleString()} — rows: ${JSON.stringify(data.rows)}`;
       debugLog('Sync OK: '+text.slice(0,300));
       // v12.5.1 — every readable tab (Habits, Diet, Finance, etc.) writes
@@ -6591,7 +6613,13 @@ async function syncNow(silent, extra){
       // thing that wouldn't otherwise be visible from "Synced ✓".
       if(data.rows.data===0){
         debugLog('Note: every other tab synced fine, but the full backup snapshot (Data tab, used by "Load from Sheet") failed to write — this now means a real error on the Apps Script side (not a size limit — that ceiling was removed in Apps Script v9.7.0), e.g. a permissions issue or a transient Sheets API error. Check the Data tab\'s cell A1 in your Sheet for the specific error, or just try Sync now again.');
-        if(!silent) showToast('Synced ✓ (backup snapshot failed — see debug log)', '⚠️');
+        // v13.16.0 — this device still counts as having unsynced changes:
+        // the per-module tabs (Habits, Diet, etc.) did write, but the one
+        // snapshot Load-from-Sheet actually reads from did NOT, so don't
+        // clear syncDirty and don't word this as a plain success — the
+        // thing the user cares about ("can I now Load from Sheet safely
+        // elsewhere") did not happen.
+        if(!silent) showToast('Sync incomplete — backup snapshot failed, see debug log', '⚠️');
       } else {
         debugLog(`Data tab snapshot: wrote ${data.rows.data} row(s). If this is "1" on an account with a lot of history, your deployed Apps Script is likely still the OLD version — go script.google.com → Deploy → Manage deployments → ✏️ → New version → Deploy, then Sync now again.`);
         if(!silent) showToast('Synced to Google Sheet ✓', '☁️');
@@ -6665,25 +6693,63 @@ function restoreBackupSnapshot_(d){
 document.getElementById('loadFromSheetBtn').addEventListener('click', async ()=>{
   const url = S.settings.sheetUrl;
   if(!url){ alert('Add your Google Apps Script Web App URL first.'); return; }
-  if(!confirm('This replaces everything currently on this device with what is saved in your Google Sheet. Continue?')) return;
   try{
     const res = await fetch(url+(url.includes('?')?'&':'?')+'action=load', { method:'GET' });
     const text = await res.text();
     let data; try{ data = JSON.parse(text); }catch{ data=null; }
-    // v13.15.0 — validated with isValidBackupSnapshot_ BEFORE anything in S
-    // is touched, and restored through the same restoreBackupSnapshot_()
-    // Import Backup uses. An invalid/corrupt snapshot now leaves the
-    // current on-device data completely untouched instead of partially
-    // overwriting it.
-    if(data && data.ok && data.data && isValidBackupSnapshot_(data.data)){
-      restoreBackupSnapshot_(data.data);
-      saveState(); loadSettingsForm(); applyTheme(); applyExperiencePack(S.settings.experiencePack || 'glass', {skipBg:true}); renderAll();
-      showToast('Loaded from Google Sheet ✓', '⬇️');
-      debugLog('Load OK — pulled saved snapshot from Sheet.');
-    } else {
-      debugLog('Load FAILED — response:\n'+text.slice(0,400));
-      alert((data && data.ok) ? 'That Sheet snapshot does not look like a valid GP Ledger backup — current data on this device was not changed.' : 'Could not load a valid snapshot. Make sure the Apps Script is redeployed to the latest version.');
+
+    // v13.16.0 — the three failure modes below used to all collapse into
+    // one generic "Could not load a valid snapshot... redeploy" alert,
+    // which actively hid the real reason (an empty Data tab, a corrupt
+    // snapshot, a bad/undeployed URL) behind a guess that was usually
+    // wrong. Each is now told apart and reported with its actual cause —
+    // handleLoad()'s own error string is surfaced verbatim where there is
+    // one, instead of being discarded.
+
+    // 1) Response wasn't parseable JSON at all — wrong/undeployed URL, an
+    // HTML error/login page, or an uncaught exception in the script.
+    if(!data){
+      debugLog('Load FAILED — response was not valid JSON:\n'+text.slice(0,400));
+      alert('Load failed: the Apps Script did not return a valid response. Double-check the Web App URL in Settings and that it\'s deployed as a Web App (Deploy → Manage deployments). See the debug log in Settings for the raw response.');
+      return;
     }
+    // 2) handleLoad() itself reported a failure — e.g. the Sheet is empty
+    // ("Data tab is empty — sync from the app at least once first.", or
+    // "No data has been synced to this Sheet yet."), or the stored
+    // snapshot wasn't valid JSON. Show that exact reason, not a generic one.
+    if(!data.ok){
+      debugLog('Load FAILED — ' + (data.error || 'unknown error'));
+      alert('Could not load from Sheet: ' + (data.error || 'Unknown error — see the debug log in Settings.'));
+      return;
+    }
+    // 3) Response claimed success but the payload doesn't look like a real
+    // GP Ledger snapshot (checked BEFORE anything in S is touched).
+    if(!data.data || !isValidBackupSnapshot_(data.data)){
+      debugLog('Load FAILED — response was ok but did not contain a valid GP Ledger snapshot:\n'+text.slice(0,400));
+      alert('That Sheet snapshot does not look like a valid GP Ledger backup — current data on this device was not changed.');
+      return;
+    }
+
+    // Sheet has a real, valid snapshot at this point — safe to proceed.
+    // v13.16.0 — if this device has local changes that were never pushed
+    // via "Save & Sync" (syncDirty), warn specifically about that before
+    // overwriting, so they can go Save & Sync first instead of losing them.
+    const proceed = syncDirty
+      ? confirm('This device has local changes that have not been saved to the Google Sheet yet (Save & Sync). Loading now will overwrite them with what\'s on the Sheet and they will be lost.\n\nPress Cancel and use "Save & Sync" first to keep them — or OK to load anyway and discard the local changes.')
+      : confirm('This replaces everything currently on this device with what is saved in your Google Sheet. Continue?');
+    if(!proceed) return;
+
+    // v13.15.0 — restored through the same restoreBackupSnapshot_() Import
+    // Backup uses, which REPLACES each field rather than merging, so this
+    // never leaves duplicates or a mix of old-and-new data behind.
+    restoreBackupSnapshot_(data.data);
+    saveState();
+    // v13.16.0 — local data now matches the Sheet, so this device has no
+    // more "unsynced" changes relative to it.
+    markSynced_();
+    loadSettingsForm(); applyTheme(); applyExperiencePack(S.settings.experiencePack || 'glass', {skipBg:true}); renderAll();
+    showToast('Loaded from Google Sheet ✓', '⬇️');
+    debugLog('Load OK — pulled saved snapshot from Sheet.');
   }catch(e){ debugLog('Load error: '+e.message); alert('Load failed: '+e.message); }
 });
 

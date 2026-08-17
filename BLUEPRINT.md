@@ -1269,3 +1269,59 @@ it, so old exported backups remain importable.
 **Version bump.** `APP_VERSION` and `sw.js`'s `CACHE_NAME` now read
 v13.15.0. No UI change — same Backup & Restore screen, buttons, confirm
 dialog, toasts, and debug log as before.
+
+## 32. v13.16.0 — Load from Sheet was hiding its own real errors
+
+**The bug (a requested full audit of Save & Sync / Load from Sheet
+turned this up):** the `loadFromSheetBtn` handler in `index.html` threw
+away whatever specific error `handleLoad()` (`apps-script.gs`) returned
+and replaced it with one generic guess — *"redeploy the Apps Script"* —
+no matter the real cause. `apps-script.gs` itself was already correct and
+already returning the right, specific error string in every case (empty
+Data tab, no sync yet, corrupt stored JSON) — this was purely the
+frontend discarding information the backend was already sending. Lesson,
+same shape as §26/§31: **a correct backend error is worthless if the
+client doesn't forward it** — always check what a handler actually does
+with a response's `error` field, not just whether it branches on `ok`.
+
+**Fix — three failure modes told apart, each shown with its real cause:**
+1. Response isn't valid JSON (bad/undeployed URL, HTML error page,
+   uncaught exception) → told to check the URL/deployment.
+2. `handleLoad()` returned `{ok:false, error:...}` → that `error` string
+   is shown verbatim, not replaced with a guess.
+3. `ok:true` but `isValidBackupSnapshot_()` fails on the payload → told
+   specifically ("doesn't look like a valid GP Ledger backup"), current
+   on-device data untouched (same pre-`S`-mutation gate `§31` established).
+
+**New: `syncDirty` — a local "unsynced changes" flag.** Not a data-model
+field (deliberately outside `S`/the backup snapshot — it's sync
+metadata, not app data), just a JS variable plus its own
+`gpl_syncDirty` localStorage key so it survives a reload:
+- Set to `true` inside `saveState()` — the one function every real edit
+  in the app already calls, so this needed touching only one place, not
+  every mutation site.
+- Cleared (`markSynced_()`) after: a Save & Sync that both verifies
+  (`data.ok && source==='handleSync'`) AND actually wrote the Data-tab
+  snapshot (`rows.data !== 0`); or a completed Load from Sheet (local now
+  matches the Sheet by definition). **Not** cleared when `rows.data===0`
+  (per-module tabs wrote, but the one snapshot Load-from-Sheet reads did
+  not — this device still has changes the Sheet doesn't reflect) or on
+  Import Backup (a local file may differ from what's on the Sheet).
+- Used by `loadFromSheetBtn`: once a valid Sheet snapshot is confirmed
+  present, if `syncDirty` is true the confirm dialog specifically warns
+  about local changes not yet pushed (Cancel → go Save & Sync first)
+  instead of the generic "this replaces everything" text.
+
+**Save & Sync's `rows.data===0` toast reworded** — was `Synced ✓ (backup
+snapshot failed...)`, which still led with a checkmark despite the one
+thing Load-from-Sheet needs having failed to write. Now `Sync incomplete
+— backup snapshot failed, see debug log`.
+
+**`apps-script.gs` did not need to change** — `handleLoad()`,
+`chunkSnapshot_()`, `readDataSnapshotRaw_()` were all already correct.
+`SCRIPT_VERSION`/`APP_SCRIPT_VERSION` stay at `v9.7.1`.
+
+**Version bump.** `APP_VERSION` and `sw.js`'s `CACHE_NAME` now read
+v13.16.0. No UI/feature change — same screen, same buttons, same overall
+confirm-before-overwrite flow, just accurate errors and one extra warning
+case.

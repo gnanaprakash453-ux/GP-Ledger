@@ -1,4 +1,63 @@
-# Changelog — v13.15.0 / apps-script v9.7.1 (canonical backup snapshot — one save/restore mechanism) → history below
+# Changelog — v13.16.0 / apps-script v9.7.1 (Load from Sheet error handling + unsynced-changes warning) → history below
+
+## v13.16.0 / apps-script v9.7.1 (apps-script.gs unchanged this release)
+
+**Bug-fix release, requested audit: "Load from Sheet" was masking its own
+real error messages, and there was no warning before it could silently
+overwrite local changes that were never pushed to the Sheet.** Only
+`index.html` and `sw.js` changed; `apps-script.gs` did not (see why below).
+
+- **The actual bug:** the `loadFromSheetBtn` handler discarded whatever
+  specific error `handleLoad()` (apps-script.gs) sent back and replaced it
+  with one generic guess — *"Could not load a valid snapshot. Make sure the
+  Apps Script is redeployed to the latest version."* — regardless of the
+  real cause. An empty Data tab, a corrupt stored snapshot, and a
+  wrong/undeployed Web App URL all produced that exact same misleading
+  text. `apps-script.gs`'s `handleLoad()` was already returning the correct,
+  specific error in every one of those cases (`"Data tab is empty — sync
+  from the app at least once first."`, `"No data has been synced to this
+  Sheet yet."`, `"Stored snapshot is not valid JSON — try Sync now again to
+  rewrite it."`) — the frontend just never surfaced it.
+- **Fix:** the handler now tells apart three distinct failure modes and
+  shows the real cause for each:
+  1. Response wasn't valid JSON at all (wrong/undeployed URL, HTML
+     error/login page, uncaught script exception) → tells you to check the
+     URL and deployment.
+  2. `handleLoad()` returned `ok:false` → shows its `error` string
+     **verbatim**, not a guess.
+  3. Response was `ok:true` but the payload doesn't pass
+     `isValidBackupSnapshot_()` → says so specifically, current on-device
+     data untouched (same guard `v13.15.0` already established).
+- **New: unsynced-changes warning (a real gap, not a regression).** There
+  was previously no tracking of "does this device have local changes that
+  were never pushed via Save & Sync" — Load from Sheet only ever showed the
+  same generic "this replaces everything, continue?" confirm regardless. A
+  new local flag, `syncDirty` (plain JS variable + its own `gpl_syncDirty`
+  localStorage key — deliberately **not** part of `S`/the backup snapshot,
+  since it's sync state, not app data), is set inside `saveState()` — the
+  one function every real edit already funnels through — and cleared by
+  `markSynced_()` after a **confirmed successful** Save & Sync or a
+  completed Load from Sheet. When Load from Sheet finds a valid Sheet
+  snapshot AND `syncDirty` is true, it now warns specifically that this
+  device has unsaved local changes and offers Cancel (go Save & Sync first)
+  before the generic replace-everything confirm.
+- **Save & Sync's toast wording tightened for the `rows.data===0` case**
+  (Data-tab snapshot — the one Load from Sheet actually reads — failed to
+  write even though every other tab synced fine): it used to read `Synced ✓
+  (backup snapshot failed — see debug log)`, which still led with a
+  checkmark. Now reads `Sync incomplete — backup snapshot failed, see debug
+  log`, and `syncDirty` is deliberately **not** cleared in this case, since
+  the thing Load-from-Sheet-elsewhere depends on didn't actually get
+  written.
+- **`apps-script.gs` needed no changes.** Its chunked snapshot read/write
+  (`chunkSnapshot_`/`readDataSnapshotRaw_`, `v9.7.0`/`v9.7.1`) and
+  `handleLoad()`'s specific error strings were already correct — this was
+  purely the client discarding information the backend was already sending
+  correctly. `SCRIPT_VERSION`/`APP_SCRIPT_VERSION` stay at `v9.7.1`.
+- `CACHE_NAME` bumped to `gp-ledger-v13-16-0` (index.html changed).
+- **Nothing in the UI changed** — same Backup & Restore screen, same
+  buttons, same overall confirm-before-overwrite flow (just smarter about
+  when and what it warns you about).
 
 ## v13.15.0 / apps-script v9.7.1 (apps-script.gs unchanged this release)
 

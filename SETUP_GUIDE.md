@@ -110,7 +110,23 @@ You'll get a real home-screen icon and a full-screen app with no browser bar.
 7. Copy the **Web app URL** it gives you (ends in `/exec`).
 8. In GP Ledger → **Settings → Google Sheet database**, paste that URL into **Apps Script Web App URL**.
 9. Tap **Test connection** — you should see a message confirming it's reachable, plus a debug log entry.
-10. Tap **Sync now**. Open your Google Sheet — you should now see tabs: `Data`, `Habits`, `Settings`, `Transactions_<year>`, `Routine`, `RoutineTemplates`, `Reports`, `Debts`, `Journal`, `Diet`, `Goals`, `Subscriptions`, `Assets`, `Health`, `Documents`, `Budgets`.
+10. Tap **Sync now**. Open your Google Sheet — you should now see tabs: `Data`, `Habits`, `Settings`, `Transactions_<year>`, `Routine`, `RoutineTemplates`, `Reports`, `Debts`, `Journal`, `Diet`, `Goals`, `Subscriptions`, `Assets`, `Health`, `Documents`, `Budgets`, `Quotes`.
+
+> **Already on v9.6.0 and just upgrading to v9.6.1?** Same deal — paste
+> in the *new* `apps-script.gs` and redeploy. This is the fix mentioned
+> above: `checkReminders` now also covers Finance, Health, Documents, and
+> Goals, sending to Telegram on the same trigger — previously those four
+> only fired locally while the app was open.
+
+> **Already on v9.5.2 and just upgrading to v9.6.0?** Same deal — paste
+> in the *new* `apps-script.gs` and redeploy (**Deploy → Manage
+> deployments → ✏️ edit → New version → Deploy**). This adds the new
+> `Quotes` tab (your custom/edited quotes from Settings > Quotes >
+> Manage my quotes now back up here too), adds Fat Quality/Meal Tag
+> columns to `Diet`, and fixes `Goals` showing a blank Current for
+> Debt/Weight/Habit-streak goals and auto-tracked Savings goals (those
+> were never stored as a plain number — the sheet just didn't know how
+> to ask for them until now).
 
 > **Already on v9.5.1 and just upgrading to v9.5.2?** Same deal — paste
 > in the *new* `apps-script.gs` and redeploy (**Deploy → Manage
@@ -218,6 +234,31 @@ to it:
    **Day timer**. Time of day: **Midnight to 1am**. Save.
 4. That's a second, separate trigger from `checkReminders` — you'll end up
    with two triggers listed, which is correct.
+5. This now sends whatever quote is currently in rotation from **your own**
+   quote list (Settings → Quotes → Manage my quotes), not a fixed built-in
+   one — keep Syncing so the Sheet has your latest list and rotation
+   position to read from.
+
+### In-app reminder sounds — and what's Telegram-backed vs. local-only
+**Settings → Communication → Reminder sounds** gives Habit, Finance
+(EMI due / subscription renewal), Health (appointment today), Documents
+(expiring within 7 days), and Goals (deadline today) each their own tone,
+plus a **Notification history** to see everything that's fired.
+
+Only **Habit** reminders had this treatment before; **Finance/Health/
+Documents/Goals now also send to Telegram** on the same `checkReminders`
+trigger you already set up — no second trigger needed, just redeploy
+`apps-script.gs` (now v9.6.1). One difference: Goals sends a same-day
+nudge on the deadline regardless of whether it's already met (the in-app
+popup only fires if it isn't — replicating that exact check server-side
+wasn't worth the duplication for one extra condition).
+
+The first time you open the app it'll ask permission to show
+notifications — allow it, or the reminder still pops up and plays its
+sound inside the app, but won't also show as a phone notification banner
+outside it. On iPhone this only works once the app is **installed to your
+Home Screen** (step 2) — Safari itself won't show notifications for a
+site that's just open in a browser tab.
 
 ## 5. The app icon
 
@@ -317,17 +358,23 @@ labeled e.g. **"Aug - Paid"**.
 **More → Goals → + Add**. Five types:
 - **Pay off a debt** — pick one of your loans; progress tracks automatically
   as its balance drops (no separate updating needed).
-- **Save an amount** — set a target and update your current progress
-  manually whenever you like.
+- **Save an amount** — set a target. By default you update your current
+  progress manually, or flip on **"Auto-track from a Finance category"**
+  and pick a category (e.g. "Savings") — progress then becomes money-in
+  minus money-out tagged with that category since the goal was created,
+  so logging a transfer as usual is all you need to do.
 - **Reach a weight** — set a starting and target weight; progress pulls
   automatically from whatever you log in **Health → today's vitals**.
 - **Habit streak** — pick a habit and a number of days (e.g. "hit Read for
   20 of the last 30 days"); tracks automatically from that habit's log.
 - **Custom** — anything else (steps, books, whatever) with a manual target
-  and current value you update yourself.
+  and current value you update yourself — always manual, since there's no
+  single data source in the app to link a truly custom goal to.
 
-Add an optional deadline and the goal will flag itself **"behind pace"**
-if your actual progress is trailing what the calendar would suggest.
+Every goal card shows **🔄 Auto-tracked** or **✋ Manual** so it's clear at
+a glance which kind you're looking at. Add an optional deadline and the
+goal will flag itself **"behind pace"** if your actual progress is
+trailing what the calendar would suggest.
 
 ## 9. Calendar & Global Search
 
@@ -338,16 +385,22 @@ see everything logged that date in one popup.
 **🔍 icon** (top-right of the header, next to Save & Sync, on every
 screen): type anything — a habit name, a transaction note, a word from a
 journal entry, a meal name, a loan name, a goal title, a subscription, a
-medicine, an appointment, a document title — and it searches across every
-module at once. Tap a result to jump straight to it.
+medicine, an appointment, a document title, an asset, or a budget
+category — and it searches across every module at once. Multi-word
+searches match across any field, not just one exact phrase, and results
+are ranked so the closest match shows first. Tap a result to jump
+straight to it.
 
 ## 10. Budgets
 
-Inside the **Finance** tab, above the ledger: **+ Add** a category (e.g.
-"Food") and a monthly ₹ limit. A progress bar shows spend vs. limit for
-the current month and turns red once you go over. This is separate from
-Subscriptions (recurring bills) and Debts (loan EMI) — it's for everyday
-spending caps.
+Inside the **Finance** tab, above the ledger: **+ Add** a category and a
+monthly ₹ limit. A progress bar shows spend vs. limit for the current
+month and turns red once you go over. Budget categories and Transaction
+categories now share one list — pick from the dropdown or "+ Add new
+category…" inline, and **Manage categories** (in either Add Transaction
+or Add Budget) lets you rename or delete one everywhere at once. This is
+separate from Subscriptions (recurring bills) and Debts (loan EMI) — it's
+for everyday spending caps.
 
 ## 11. Subscriptions
 
@@ -417,19 +470,25 @@ to a `Journal` tab in your Google Sheet.
    [aistudio.google.com](https://aistudio.google.com), paste it into
    **Settings → Diet & body stats → Gemini API key**. This same key also
    powers the AI Coach (step 15). With a key saved, attaching a photo
-   shows an **"✨ Estimate nutrition from photo"** button. v9's prompt is
-   more rigorous than before — it identifies each food item separately,
-   reasons about portion size against things visible in the photo (plate
-   size, cutlery, hand size), flags likely hidden calories (oil, sauce,
-   sugar) it can't directly see, and shows a confidence level plus its
-   assumptions right under the meal once saved. Review and adjust before
-   saving either way — it's a much better estimate, still not a lab
-   measurement. Without a key, just fill the fields in yourself.
-4. View totals against your targets by Day/Week/Month, and export the log
-   to Excel or PDF from the Diet tab. Meal nutrition numbers sync to a
-   `Diet` tab in your Google Sheet — the photo itself stays on this device
-   only and is never uploaded to the Sheet (a single Sheet cell can't hold
-   an image's worth of data; see Troubleshooting if you're on a version
+   shows an **"✨ Estimate nutrition from photo"** button. The prompt
+   identifies each food item separately, reasons about portion size
+   against things visible in the photo (plate size, cutlery, hand size),
+   flags likely hidden calories (oil, sauce, sugar) it can't directly see,
+   and shows a confidence level plus its assumptions right under the meal
+   once saved. It now also suggests the predominant **fat quality**
+   (healthy/mixed/unhealthy) and an overall **✅ Healthy / ⚖️ Balanced /
+   🍔 Junk-ish** tag — both editable via the "Mostly what kind of fat?"
+   picker in the log-meal form for meals entered without a photo.
+   Review and adjust before saving either way — it's a much better
+   estimate, still not a lab measurement. Without a key, just fill the
+   fields in yourself.
+4. View totals against your targets by Day/Week/Month — the totals card
+   also shows a healthy/balanced/junk count for the period — and export
+   the log to Excel or PDF from the Diet tab. Meal nutrition numbers
+   (including the fat-quality/meal-tag classification) sync to a `Diet`
+   tab in your Google Sheet — the photo itself stays on this device only
+   and is never uploaded to the Sheet (a single Sheet cell can't hold an
+   image's worth of data; see Troubleshooting if you're on a version
    older than v9.4.1).
 
 ## 18. Everyday use

@@ -1,3 +1,761 @@
+# Changelog — v13.10.0 (Morning Summary on Home) → history below
+
+## v13.10.0
+
+**Morning Summary.** New compact section at the top of the Home/Dashboard,
+above the existing Daily Progress / Quick Actions / Top Priorities /
+Upcoming stack (all untouched, unchanged, still working exactly as before).
+Answers three things in ~5 seconds: what happened yesterday, what got
+missed, what matters today.
+
+- **Yesterday** — Tasks, Habits, Spent, Sleep, shown ONLY if that metric
+  actually has data for yesterday's calendar date (no empty/fake 0/0
+  states). "Good day 🙂" / "Light day" chip based on task+habit completion.
+- **Carry Forward** — single highest-priority unfinished item, checked in
+  order: overdue task (high-priority first) → overdue debt EMI →
+  subscription due soon → goal behind pace. Tapping it jumps to that
+  module. Omitted entirely if nothing qualifies.
+- **Today — Top 3** — same priority order as Carry Forward, extended with
+  today's due tasks and today's unlogged habits. Never padded to force
+  exactly 3 — shows 0–3 based on what's actually real today.
+- **Insight** — one rule-based sentence (no AI Coach call, no new
+  architecture) combining yesterday's completion rate with whether a
+  carry-forward item exists. Omitted if there's nothing meaningful to say.
+
+**Strictly scoped, per the brief**: reads only existing `S.tasks` /
+`S.habits` / `S.transactions` / `S.debts` / `S.subscriptions` / `S.goals`
+via the same helpers `renderDashboard()` already used (`taskIsOverdue`,
+`taskIsToday`, `debtIsOverdue`, `dueSoonSubscriptions`, `goalProgressCalc`,
+`habitProgress`/`habitValue`, `txForDate`, `sleepHabit`, `addDays`). No new
+data model, no writes, no changes to Finance/Health/Habits/Tasks/Goals/
+Routine/AI Coach/navigation/schema. New function `renderMorningSummary()`
+is called from the top of `renderDashboard()`, so it refreshes on every
+existing state-changing action automatically — no new call sites added
+anywhere else in the app.
+
+**One judgment call**: the reference mockup repeats "Good morning, GP" —
+skipped here since the existing header (`greetName`/`greetSub`) already
+shows that greeting immediately above; repeating it would be the exact
+"unnecessary duplication" the brief asked to avoid. The new section starts
+directly at "Yesterday • [date]".
+
+## v13.9.0
+
+**Nine gaps were raised across two rounds of feedback. Eight got built
+this release; the ninth (true multi-user) is explained below rather
+than faked.**
+
+**1. Trash / Undo.** Every delete in Tasks, Notes, Travel, Learning,
+Content & Ideas, People, and Documents now moves the record to a new
+Trash screen instead of destroying it — 30-day recoverable, restore or
+delete-forever, auto-purged after that. New `softDelete()`/
+`restoreFromTrash()` helpers, reused across all 7. **Scoped
+deliberately**: pre-existing modules (Habits, Transactions, Debts,
+Goals, Subscriptions, Assets, journal entries) still delete
+immediately — rewiring those is a real follow-up, not done here.
+`trash` and `accounts` (see #5) were added to all three sync
+touchpoints *in the same edit*, specifically applying the lesson from
+the v13.7.0 postmortem rather than repeating it.
+
+**2. Calendar.** Month-view dots and the day-detail popup now include
+Task due dates, Trip start/end dates, Learning target dates, and
+birthdays — previously only Habits/Finance/Journal/Diet showed up.
+
+**3. Documents can now hold an actual photo.** Compressed client-side
+(max 1000px, JPEG ~72% quality) before storage. **Explicitly local-only
+— not synced to Sheets, disclosed in the UI itself, not just here**:
+the Sheets "Data" tab has a real ~50,000-character budget, and even one
+photo's base64 would blow it for every other module sharing that same
+sync payload. Attachments are cleaned up automatically when a document
+is permanently removed from Trash (manually or via the 30-day
+auto-purge), so deleted photos don't quietly accumulate in local
+storage forever.
+
+**4. Travel currency.** Trips get an optional currency field (USD,
+EUR, etc.), and expenses tagged to a trip can carry an optional
+"foreign amount" reference (e.g. "$45"). **Not real conversion** — no
+FX rates, nothing calculated — because live exchange rates need an
+external API this app deliberately doesn't depend on. The real ledger
+amount stays in ₹, exactly as before; the foreign amount is a
+side-by-side reference only.
+
+**5. Finance accounts.** Optional `S.accounts` (Cash/Bank/Card/Wallet/
+Other), each with a running balance = opening balance + whatever
+transactions happen to be tagged to it. A thin layer over the existing
+transaction list, not a second ledger — untagged transactions still
+count toward the overall Balance stat exactly as before. Fully
+optional end to end: nothing changes if no account is ever added.
+
+**6. Recurring transactions** (rent, salary, any fixed bill). Reuses
+`nextRecurDate()` — the same clone-forward function Tasks' recurrence
+already used — via a new `processRecurringTransactions()`, checked
+daily alongside reminders. **Caught a real boundary bug during
+testing** before it shipped: a bill due exactly *today* was waiting
+until tomorrow to generate, because the catch-up loop's stop condition
+used `>=` instead of `>`. Fixed and re-verified with an isolated
+Node test (checked in isolation: correct count, and idempotent — 
+running the check twice doesn't create duplicates) before it went into
+the real code.
+
+**7. AI Coach** now reads Tasks (overdue count, recent completions),
+Learning (in-progress items + %), the next upcoming Trip, stuck
+Content ideas, Meal Planner coverage, and People/birthdays into
+`buildCoachDigest()` — the same plain-facts-only digest every other
+module already fed into the Gemini prompt.
+
+**8. Exports for the 6 newest modules** (Tasks, Notes, Travel,
+Learning, Content & Ideas, Meal Planner) plus People. **Scoped down
+from the pre-existing Reports-screen export system deliberately**:
+that system assumes a date-range report shape (Finance, Diet, Routine)
+these list-shaped modules don't really have. Rather than force-fit
+them in or rebuild that pipeline, each new module got its own simple
+"export what's here" Excel button directly on its own screen —
+Excel only, no PDF (six PDF layouts would double the work for no real
+benefit over a spreadsheet for this kind of data).
+
+**9. True multi-user — NOT built, explained instead.** This app has no
+authentication and no backend beyond a single Google Sheet + Apps
+Script per install. Building "real" multi-user (separate logins, per-
+person data, conflict-free simultaneous editing) would mean a genuine
+backend rewrite — an auth system, a multi-tenant data model, and real
+conflict resolution for simultaneous edits. That's a different kind of
+project, not a feature addition, and faking a lightweight version of
+it (e.g. a "switch user" dropdown with no real data separation) would
+be actively worse than not having it — it would look like privacy/
+data-separation that doesn't actually exist. **The honest middle
+ground, if this comes up again**: this app already has zero auth, so
+multiple people CAN already use the same deployed URL + same Google
+Sheet today, on their own phones, and see each other's synced data —
+with the same last-write-wins caveat every manual sync always had.
+That's the realistic answer, not a code change.
+
+# Changelog — v13.8.0 (Search actually covers everything now; Tasks fires reminders) → history below
+
+## v13.8.0
+
+**Asked a second time whether everything was really wired everywhere —
+did another full corner-to-corner pass rather than re-asserting
+confidence, and found two more real gaps.**
+
+**1. Search's empty state says "Search everything" / "search across
+every module at once" — that was false.** All 7 modules built this
+session (Tasks, Notes, Travel, Learning, Content & Ideas, Meal
+Planner, People) were never indexed. Fixed: `renderSearchResults()`
+now adds all 7, following the exact same `searchScore()`/`add()`
+pattern as every pre-existing module — tasks by title/category/notes,
+notes by title/content, trips by name/destination, learning items by
+title/type, ideas by title/topic/platform, people by name/relation,
+and meal plan entries by the meal text itself (with the "(~NNN kcal)"
+suffix stripped for a cleaner search-result title).
+
+**2. Tasks had due dates and due times since v13.2.0 but never
+actually reminded you of anything** — a due task only ever showed up
+if you happened to open the Tasks screen and looked at the Today/
+Overdue filter. Fixed: `checkTaskReminders()` added, following the
+exact `lastNotified`-on-the-record pattern every other reminder here
+uses (Health appointments, Document expiry, Goal deadlines). Fires
+once per task on its due date, wired into the same `checkDailyReminders()`
+loop. Tasks also added to `REMINDER_MODULE_LABELS`, so it automatically
+got its own tone picker in Settings → Reminder sounds — that list is
+fully generic over the object, so no separate UI work was needed.
+
+**Audited and confirmed as legitimately-deferred scope, not broken
+wiring (different category from the two bugs above — these were never
+claimed to work, so nothing is silently broken):**
+- **AI Coach** (`buildCoachDigest()`) doesn't reference any of the 7
+  new modules. This matches the original brief's own phasing — Pulse/
+  Coach integration was always meant to come after every module's
+  "reliable data and functionality" existed, which is now. Real next
+  step, not a bug.
+- **Report exports** (the Excel/PDF buttons Finance, Goals, Debts,
+  Subscriptions, Assets, Health, Journal, Diet, and Routine each have)
+  don't exist for any of the 7 new modules. Consistent gap across all
+  7 — none of them have an export feature yet, not an oversight on
+  one specific module.
+- **No app-wide "reset/wipe all data" feature exists at all** —
+  checked for one specifically; it isn't a new-module gap, the app
+  has never had this feature.
+
+# Changelog — v13.7.0 (real bug fix: data restore was silently dropping all 7 new modules) → history below
+
+## v13.7.0
+
+**You asked "are you sure nothing's missing or not wired perfectly" — did a real audit rather than just reassuring, and found a genuine bug.**
+
+`syncNow()` was correctly updated across v13.2.0–v13.5.0 to send Tasks,
+Notes, Trips, Learning, Ideas, Meal Plan, and People data OUT to Google
+Sheets. But the two paths that bring data back IN were never updated:
+
+- **"Load from Google Sheet"** (Settings → the button that pulls your
+  saved snapshot back down — used on a fresh install or a new device)
+  explicitly whitelists which fields it reads back from the response,
+  field by field. All 7 new modules were missing from that whitelist.
+  The data was sitting right there in the Sheet's JSON snapshot; it
+  just silently never made it back into the app.
+- **Local JSON backup restore** (Settings → Import backup file) had a
+  quieter version of the same gap: it uses `Object.assign(defaults,
+  data)`, and since the exported backup file (which just dumps the
+  live `S` object wholesale) already contains the new fields, a
+  same-version restore actually worked fine — but the *defaults*
+  object was missing them, so restoring an **older** backup (from
+  before a given module existed) would leave e.g. `S.tasks` as
+  `undefined` rather than `[]`, which would throw as soon as any
+  Tasks/Notes/etc. screen tried to `.filter()` or `.map()` over it.
+
+Both fixed — same `Array.isArray(d.x)`/`typeof d.x==='object'` guard
+style as every pre-existing field in that function, and all 8 missing
+keys added to the local-restore defaults object.
+
+**Also audited and confirmed clean, no changes needed:**
+- `apps-script.gs`'s `handleLoad()` does a blind `JSON.parse` and
+  returns the whole snapshot — no server-side whitelist, so the
+  backend was never part of this bug.
+- Settings → Modules toggle list (`drawModuleToggleList()`) is fully
+  generic over `MODULE_DEFS` — all 7 new modules were already correctly
+  toggleable, nothing missing there.
+- `renderAll()` (called after a bulk restore) doesn't refresh Goals,
+  Subscriptions, Assets, Documents, Health, or any of the 7 new
+  modules' screens — but this turned out to be a **pre-existing
+  pattern**, not a regression: those 5 older modules already worked
+  this way before any of this session's changes. Screens render
+  on-demand via `goToScreen()`'s dispatch when you navigate to them,
+  which is why this was never actually visible as a bug — just noting
+  it for the record rather than silently "fixing" long-standing
+  behavior that wasn't part of what was asked.
+- One harmless leftover found: `MOTIVATION_CARDS.habits` (9 quotes)
+  has existed since before this session's changes and is genuinely
+  unused — Habits shows its daily quote via the separate general-pool
+  `renderQuote()`/`#habitQuoteCard` system, not the per-module
+  motivation-card system. Left in place (adding a second, redundant
+  quote card to the Habits screen would be a worse fix than just
+  leaving unused data alone) — flagging it here so it doesn't look
+  like a broken reference if noticed later.
+
+# Changelog — v13.5.0 & v13.6.0 (logo everywhere, Dashboard Today/Upcoming, People, Nudges, calorie-aware Meal Planner) → history below
+
+## v13.6.0
+
+**Meal Planner now suggests actual meals against your real calorie
+target**, per request. Built entirely on top of what Diet already
+computes — `dietTargets()` (the TDEE calculation from your height/
+weight/age/activity/goal in Diet → Settings) — rather than a second
+calorie engine. A new "✨ Auto-fill empty meals" button splits your
+daily target across Breakfast/Lunch/Dinner/Snacks (25/35/30/10%) and
+picks the closest-matching option from a small curated food library
+for each empty slot, writing it in as plain text with the estimate
+attached, e.g. "Oats with banana (~320 kcal)". Each day now also shows
+a running "~X / Y kcal" total, parsed back out of whatever's typed in
+that day's four slots.
+
+Three things worth knowing about how this was built:
+- **Never overwrites anything you've typed** — only fills slots that
+  are empty. Existing meal names already there (from you or from
+  "Repeat last week") are left alone.
+- **The food library is curated, not a nutrition database** — same
+  "rough approximation, sanity-check it" spirit as Diet's own AI
+  photo-estimate feature. ~44 common meals across the four slots, each
+  with a rough calorie figure.
+- **No data-model change.** `S.mealPlan[date][slot]` is still a plain
+  string, exactly as before — the calorie figure is parsed back out of
+  the text with a regex (`mpParseCalories`) rather than the plan
+  switching to `{text, calories}` objects. Keeps the plain-text input
+  fully hand-editable and avoids migrating anyone's existing plan.
+- **Falls back to a general 2,000 kcal/day target** or if you haven't
+  filled in body stats in Diet → Settings yet, with a visible hint
+  pointing you there — never silently wrong, never blocks the feature
+  from working.
+
+## v13.5.0
+
+**New logo, everywhere.** Turned out the app icons (manifest/PWA)
+weren't the only place the old branding lived — a single embedded
+`LOGO_DATA_URI` (base64 PNG) was reused in three places: the Dashboard
+header badge, the onboarding screen, and the About/splash screen. One
+swap (using `icon-192.png`, sized right for how small this renders)
+updated all three at once, since they all read from the same constant.
+
+**Dashboard "Today"/"Upcoming" integration (Phase 14)** — the thing
+flagged as the biggest gap last time. "Top priorities" now also pulls
+in overdue/due-today Tasks, a pinned Note, today's Meal Plan, and a
+Learning item's next action. A new "Upcoming" section mirrors it
+forward-looking: next trip countdown, nearest Learning deadline, a
+Content idea that's ready to publish, the next upcoming Task, and
+(once People existed) upcoming birthdays. Every module built across
+this whole session now actually shows up on the one screen a normal
+day starts on, instead of needing 12 separate taps to check.
+
+**People module** — the second gap flagged. Deliberately not a CRM:
+name, relation (Family/Friend/Colleague/Other), phone, birthday,
+notes. Real integration, not just another isolated list: Finance
+transactions gained an optional "Person" tag (same pattern as Travel's
+Trip tag), Tasks gained an optional "For" person, and birthdays within
+14 days surface on the Dashboard's new Upcoming section.
+
+**Nudges — proactive insights, the third gap.** Three conditions,
+checked once a day alongside the existing habit/finance/health/
+documents/goals reminders: no Journal entry in 7+ days, 3+ overdue
+Tasks, and subscriptions renewing this week while a Finance budget
+category is already over its limit. Fires through the same
+`openGenericReminderPopup()` every other reminder uses, so it shares
+sound/history/notification behavior automatically.
+**Honesty note:** this only fires while the app is open (same as most
+reminders here) — it is NOT yet wired into the Apps Script + Telegram
+path that some other reminders use for delivery when the app is
+closed. That's a real, doable next step, just not done in this pass.
+
+# Changelog — v13.4.0 (Notes, Travel, Learning, Content & Ideas, Meal Planner + per-quote images) → history below
+
+## v13.4.0
+
+**All five remaining new modules shipped**, following the exact
+9-point checklist v13.2.0's changelog laid out. All six new modules
+(Tasks included) are now fully built and standalone-usable.
+
+- **Notes** — quick capture, kept deliberately distinct from Journal:
+  title + freeform text + category (Personal/Work/Ideas/Important/
+  Reference), pin, archive, search. No dates, no prompts, no mood —
+  fast in, fast to find again.
+- **Travel** — trip list (name, destination, dates, status) → trip
+  detail with Itinerary / Bookings / Checklist tabs. Expenses
+  deliberately do NOT get a second ledger: `openTxModal()` (Finance →
+  Add Expense) now has an optional "Trip" field when trips exist, and
+  the trip detail screen's "Linked expenses" section is a read-only
+  filter over the existing `S.transactions`, totaled — not a parallel
+  data structure.
+- **Learning** — course/book/video/practice/other, status (Planned/
+  Learning/Completed), 0–100 progress bar, next action. "Action +
+  progress", not a bookmark list.
+- **Content & Ideas** — idea → planned → draft → ready → published
+  pipeline. Title/platform/topic capture in seconds; script notes,
+  thumbnail idea, and published link only matter once an idea moves
+  past the Idea stage.
+- **Meal Planner** — a 7-day week grid (breakfast/lunch/dinner/snacks
+  as plain text per day), "Repeat last week" button, prev/next week
+  nav. Deliberately the mirror image of Diet: Diet logs what you
+  actually ate with full nutrition; this plans what you intend to
+  cook, with no nutrition data and no separate meal-id space — dates
+  are the only key, so there's nothing to keep in sync with Diet.
+
+**Per-quote background images, wired honestly.** The `img` field on
+every quote had existed since the Quote Engine release but was never
+actually connected to anything — the photo behind a motivation card
+was seeded from `module + today's date` only, completely independent
+of which quote was showing. Worth being upfront about what changed and
+what didn't: **picsum.photos has no keyword/content search** — there's
+no free, no-API-key way to guarantee a photo actually depicts "diet"
+or "finance". What this release fixes is real but narrower: the photo
+seed is now derived from the *specific quote's* own id/img keyword, so
+changing the quote (shuffle, rotation, or just a different day) now
+also changes the photo, and the same quote reliably brings back the
+same photo. That's "this quote's own picture" — not "a picture
+guaranteed to match this quote's subject", which isn't achievable
+without a paid image-search API this app deliberately doesn't depend
+on. Applied to both the per-module motivation cards
+(`motivationCardHtml()`) and the Habits/Home daily quote card
+(`renderQuote()`).
+
+**Wiring completed for all six new modules** (Tasks + these five):
+`MODULE_DEFS`, icon entries in all three packs (geometric/Sticker/
+emoji-via-MODULE_DEFS) plus `VIVID_COLORS`, `FAB_ACTIONS`/
+`CREATE_ACTIONS`, `MODULE_QUOTE_KEYS`/`MOTIVATION_MODULE_LABELS`/
+`MOTIVATION_TARGETS`+elId map, and `FUTURE_MODULE_QUOTES` merged into
+`MOTIVATION_CARDS` via `Object.assign()`. Every one of the "don't
+duplicate existing functionality" boundaries from the original brief
+held: Notes≠Journal, Meal Planner≠Diet, Travel expenses reuse Finance.
+
+**Not done in this pass, by design (Phase 14–15, after all modules
+exist — which is now):** Dashboard "Today" widget showing tasks due /
+trip countdown / learning next-action, and Search integration across
+all six new modules. Both are the natural next step.
+
+# Changelog — v13.3.0 (sound library, deeper per-module quotes, icon refresh) → history below
+
+## v13.3.0
+
+**Notification sounds: 3 → 23.** All still pure Web Audio synthesis
+(oscillator note sequences) — no sound files were added, nothing new
+to load or cache. `TONE_LIBRARY` replaces the old inline 3-entry map;
+the Settings → Reminder sounds dropdown now builds its option list
+from `TONE_LIBRARY` automatically, so adding tone #24 later is a
+one-entry addition, not a UI edit.
+
+**Per-module quote pools deepened.** Every existing module's
+`MOTIVATION_CARDS` pool grew — the thinnest ones most: Subscriptions
+1→6, Assets 1→6, Documents 1→5. Habits, Routine, Diet, Finance, Debts,
+Goals, Health, Journal, Tasks all grew too (5–9 quotes each now, up
+from 1–5). Every quote stays genuinely on-theme for its module (diet
+quotes are about food/health, finance quotes about money, etc.) rather
+than generic filler, per the request. Same `{text, img, src}` shape
+and legendary/original sourcing discipline as the Quote Engine release.
+The five not-yet-built modules' `FUTURE_MODULE_QUOTES` pools were
+deepened the same way (Notes 2→5, Travel 3→6, Learning 3→6, Content
+3→6, Meal Planner 2→4) so they're ready with real depth whenever each
+module ships.
+
+**New app icon set (round 2)**, replacing v13.0.0's icons across all
+four PWA surfaces. The new source files had two problems worse than
+the first batch, both fixed before shipping: a faint checkerboard/
+transparency-preview pattern baked into every "white" pixel across the
+whole canvas (despeckled — any near-white, low-saturation pixel
+flattened to pure white, logo pixels untouched), and filename
+watermark labels ("512x512.png", "512x512 (Maskable).png",
+"1024x1024.png", plus a stray cut-off label sliver at the top of
+icon-512) baked into the image (patched out the same way as v13.0.0 —
+painted over with the surrounding flat background). `apple-touch-icon.png`
+was again 1024×1024; downsampled to 180×180 per iOS convention.
+`icon-192.png` needed only the despeckle — no watermark text was
+present on that one.
+
+**`sw.js` `CACHE_NAME` bumped** to `gp-ledger-v13-3-0` (icons +
+index.html both changed — installed copies need this to actually pick
+up either).
+
+**Not changed:** `apps-script.gs` (no backend/sync-shape change this
+release), `manifest.json` (icon filenames unchanged, so no manifest
+edit needed — same as the v13.0.0 icon swap).
+
+# Changelog — v13.2.0 (Tasks module) → history below
+
+## v13.2.0
+
+**Tasks module** — the first of the six new modules from the project
+brief, and the simplest by design ("do NOT turn Tasks into a
+complicated project-management system").
+
+- Quick add: title, priority (Low/Medium/High), due date, optional due
+  time, category (free text), notes, optional repeat (daily/weekly/
+  monthly).
+- Four views — Today / Upcoming / Overdue / Completed — as a `.seg`
+  filter bar (same control already used for Trends/Reports/Routine/
+  Diet period switches, not a new UI pattern).
+- Tap the checkbox to complete/reopen without opening the edit modal;
+  tap the row for the full editor.
+- **Recurrence, kept deliberately simple:** completing a recurring task
+  doesn't maintain a separate template — it clones itself with the due
+  date advanced by the interval. No new data structure, no second
+  system to keep in sync.
+- Registry-driven, same as every other module: one `MODULE_DEFS` entry
+  gets Tasks into the nav/More screen/Settings→Modules toggle for
+  free — confirmed working exactly as the Phase 0 architecture audit
+  predicted, zero extra plumbing needed there.
+- Motivation card wired in (`FUTURE_MODULE_QUOTES.tasks` → activated
+  into `MOTIVATION_CARDS.tasks`, `MODULE_QUOTE_KEYS`, and
+  `MOTIVATION_MODULE_LABELS` — same 4-step activation the Quote Engine
+  release documented in advance).
+- New icon (`tasks`) added to all four icon packs (geometric/Sticker/
+  Vivid/iOS) plus the emoji pack (auto-derived from `MODULE_DEFS.icon`,
+  no separate edit needed).
+
+**Data model:** `S.tasks` (array), synced via `localStorage['gpl_tasks']`
+and included in the `syncNow()` payload. Rides the existing full-JSON
+snapshot in the Sheets "Data" tab automatically — **no `apps-script.gs`
+change was needed** for backup/restore to work; a dedicated
+human-readable "Tasks" tab (like Habits/Subscriptions get) was
+deliberately left for a later pass rather than bundling a backend
+change into this step.
+
+**Not done in this pass, by design (matches the brief's own phase
+order):** Dashboard "Tasks due today" widget (Phase 14, after all six
+modules exist), Search integration (Phase 15), Goals/Calendar linking.
+Tasks works completely standalone today.
+
+# Changelog — v13.1.0 (Quote Engine) → history below
+
+## v13.1.0
+
+**Quote Engine** — the centralized quote system called for in the project
+brief (Phases 4–5), built additively on top of the existing rotation
+system rather than replacing it, so every current call site keeps
+working unchanged.
+
+- **General pool nearly doubled**: 62 → 117 quotes. Every entry now
+  carries `cat` (life-area tag) and `src` (`'legendary'` for real,
+  correctly-attributed people; `'original'` for GP Ledger's own
+  taglines — nothing AI-generated, nothing invented, nothing knowingly
+  misattributed). 103 legendary : 14 original — legendary quotes stay
+  the backbone, per the source-priority rule.
+- **Module quote pools expanded**: every existing module (Habits,
+  Routine, Diet, Finance, Debts, Subscriptions, Assets, Documents,
+  Goals) got 1–3 more curated quotes.
+- **Health and Journal now have motivation cards** — previously the
+  only two enabled modules without one. Same pattern as every other
+  module: a `<div id="xMotivationCard">` at the top of the screen, one
+  `renderTopMotivation()` call in that screen's render function, wired
+  into `MODULE_QUOTE_KEYS`/`MOTIVATION_MODULE_LABELS` so they also show
+  up in Settings → Quotes → Manage and Settings → Motivation on/off.
+- **`FUTURE_MODULE_QUOTES` added** — ready-to-go quote pools for the
+  six planned modules (Tasks, Notes, Travel, Learning, Content & Ideas,
+  Meal Planner), deliberately *not* wired into `MODULE_QUOTE_KEYS` yet
+  (would surface a quote category in Settings for a screen that
+  doesn't exist). Activating one when its module ships is a 4-line
+  change — documented inline above the constant.
+- **Recency-avoidance**: random-order rotation could repeat a quote
+  within a handful of shuffles. Now keeps a short rolling history
+  (last ≤6) per pool and skips those on the next random pick.
+  **Stored in its own `gpl_quoteRecent` localStorage key, deliberately
+  outside `S.settings`** — `S.settings` syncs to Sheets wholesale, and
+  quote-shown history is exactly the low-value display state the brief
+  says to keep off the sync path.
+- **`getDailyQuote()` / `getModuleQuote(key)`** added as the documented
+  public entry points for future code (new modules, dashboard widgets)
+  — thin wrappers around the existing `todaysQuote()` /
+  `currentModuleQuoteText()`, not a rewrite.
+
+**Not changed:** daily-quote stability behavior (still one quote per
+day, deterministic, unchanged from before), the Manage Quotes editor
+UI/flow, `apps-script.gs` (no backend or sync-shape change — quote
+data was already synced the same way; only the new recency cache,
+explicitly local, was added).
+
+**Sheets sync impact: none.** No new field was added to the sync
+payload. `S.quotes` and `S.moduleQuotes` were already synced before
+this release; they're simply longer lists now.
+
+# Changelog — v13.0.0 (new app icon set / branding replacement) → history below
+
+## v13.0.0
+
+**New GP Ledger app icon**, replacing the old icon across every PWA
+surface — home-screen icon (Android/`icon-192.png`, `icon-512.png`),
+maskable adaptive icon (`icon-512-maskable.png`), and iOS home-screen
+icon (`apple-touch-icon.png`). No filenames changed, so `manifest.json`
+and the `<link>` tags in `index.html` needed no edits — only the image
+bytes themselves.
+
+Two real problems found in the icon files as provided, fixed before
+shipping rather than passed through:
+
+- **All four exports had a "COLOR VARIATIONS" label baked into the
+  bottom-right corner** — a leftover from whatever icon-generation tool
+  produced them. Left in, that text would have shown up on every
+  device's home screen. Patched out (painted over with the same flat
+  background the label sat on, in the empty margin outside the icon's
+  rounded card — no logo artwork was touched).
+- **`apple-touch-icon.png` was 1024×1024 and 524 KB** — far larger than
+  iOS ever uses (it displays at ~180×180 on-device) and needlessly
+  bloating the service-worker's precache. Downsampled to the
+  conventional 180×180, dropping it to ~36 KB.
+
+`icon-192.png`, `icon-512.png`, and `icon-512-maskable.png` were left at
+their provided pixel dimensions (correct per `manifest.json`) with just
+the watermark removed.
+
+**`sw.js` `CACHE_NAME` bumped** to `gp-ledger-v13-0-0`. This is the part
+that actually matters for icons specifically: the old icons were cached
+under the same filenames, so without a cache-name bump, phones with GP
+Ledger already installed would keep the stale icon indefinitely even
+after this deploy. **Redeploy + reinstall/refresh required** — see
+Setup Guide's update steps; on some Android launchers the home-screen
+icon only refreshes after the app is removed and re-added.
+
+**Not changed:** `apps-script.gs` / `SCRIPT_VERSION` (untouched — no
+backend logic changed, so no redeploy of the Apps Script side is
+needed for this release, only the static files).
+
+**Known cosmetic note, not fixed:** the maskable icon's actual artwork
+(the rounded white card) occupies roughly the center 75–80% of the
+1024-unit safe canvas with light padding around it, rather than being
+edge-to-edge per the strict maskable-icon spec (which expects full-bleed
+art with no self-rounding, letting the OS apply the mask shape). In
+practice this renders fine on every launcher tested — it just means the
+icon sits very slightly smaller/more padded than a from-scratch
+maskable icon would. Flagging it rather than silently redesigning the
+icon, since a proper fix means regenerating the source art, not
+patching this export.
+
+# Changelog — v12.9.2 / apps-script v9.6.1 (Finance/Health/Documents/Goals reminders now reach Telegram) → history below
+
+## v12.9.2 / apps-script v9.6.1
+
+Closes the gap flagged at the end of the last session: Finance (EMI due,
+subscription renewal), Health (appointment today), Documents (expiring
+within 7 days), and Goals (deadline today) reminders were local-only —
+they fired with sound + a logged entry, but only while the app was open
+in the foreground, unlike Habit reminders which also reach Telegram in
+the background.
+
+`checkReminders` (apps-script.gs) now covers all five reminder types, on
+the **same 5-minute trigger** already set up for habits — no new trigger
+to add. One intentional simplification: the Telegram version of a Goal
+deadline reminder fires regardless of whether the goal is already met
+(the in-app popup only fires if it isn't) — replicating that exact
+progress check server-side wasn't worth duplicating for one condition.
+
+**Redeploy required** — paste the new `apps-script.gs` in, Deploy →
+Manage deployments → ✏️ → New version → Deploy.
+
+# Changelog — v12.9.1 / apps-script v9.6.0 (backup/sync completeness gaps closed) → history below
+
+## v12.9.1 / apps-script v9.6.0
+
+A gap-analysis pass, prompted by reviewing everything together (icons,
+setup guide, apps-script.gs) against the app as it stands after v12.6–v12.9.
+Found and fixed real gaps — the client-side data model had outrun what
+actually got backed up:
+
+- **Diet sync was missing the Fat Quality / Meal Tag columns** (added in
+  v12.8.0) — the Sheet's Diet tab now includes both, resolved the same way
+  the app displays them (AI suggestion if there was one, otherwise the
+  same heuristic), not left blank.
+- **Goals sync showed a blank "Current" for anything auto-tracked** (Debt,
+  Weight, Habit-streak, and auto-tracked Savings goals) — these were never
+  stored as a plain number client-side, they're computed live for display,
+  so the old sync payload had nothing to send. Now sends the resolved
+  current/target for every goal type, plus a new "Auto-tracked From"
+  column showing the linked Finance category where relevant.
+- **Custom quotes (Settings > Quotes > Manage my quotes, added v12.6)
+  were never backed up to the Sheet at all** — only the separate local
+  JSON export included them. Added a `Quotes` tab, and both Sync and
+  Load-from-Sheet now carry your quote list and each module's themed
+  quotes.
+- **The Telegram midnight quote (`sendDailyQuote`) still pulled from a
+  hardcoded list on a fixed formula**, completely disconnected from your
+  actual editable quotes since v12.6. It now sends your real current
+  quote (same rotation position shown in-app), falling back to the old
+  list only if a sync from before this version hasn't sent quotes yet.
+- Bumped apps-script.gs to v9.6.0 to match — **redeploy required** (paste
+  the new file in, Deploy → Manage deployments → ✏️ → New version →
+  Deploy), same as any apps-script.gs update.
+
+**Also verified clean, no changes needed:** all four icon files (correct
+sizes; the maskable icon already has proper safe-zone padding — content
+sits at ~69% of the canvas with ~15% margin on every side, well inside
+Android's crop-safe zone; apple-touch-icon is correctly a plain opaque
+square with no baked-in rounding, which is what iOS expects), manifest.json,
+and BLUEPRINT.md all match the current app exactly.
+
+**Known gap, not yet built:** the four new local reminder types (Finance,
+Health, Documents, Goals — added in v12.9.0) only fire while the app is
+open in the foreground. Unlike Habit reminders, they don't have a
+Telegram/background counterpart yet (`checkReminders` server-side only
+knows about habits). Flagging this rather than silently leaving it — happy
+to build it next if wanted.
+
+# Changelog — v12.9.0 (reminders for every module + history, smarter/consistent reports) → history below
+
+## v12.9.0
+
+**1. Reminder sounds now cover every module, not just Habit/Finance.**
+Settings > Communication > Reminder sounds lists a tone (Chime/Bell/
+Beep/None) for each: Habit, Finance, **Health** (new — appointment-day
+reminder), **Documents** (new — fires within 7 days of an expiry date),
+and **Goals** (new — fires on the deadline day if not yet met). All the
+new ones check once a day at 9 AM, same as Finance.
+
+**2. Notification history.** Every reminder that fires — any module —
+now gets logged. Settings > Communication > Reminder sounds > "View"
+shows the full history (module, title, and when it fired), even after
+you've dismissed the popup. Kept to the most recent 200.
+
+**3. Reports are smarter and consistent.** Every report (Finance,
+Routine, Diet, and every individual habit) now shows the same "Day by
+day" breakdown in the same bar style — including **hours vs. days for
+any habit**, e.g. Sleep hours per day, not just a period total. Finance
+also got its missing Export buttons back (Excel/PDF — this was silently
+absent before), and every individual habit report can now be exported
+too (previously only whole-module reports could be).
+
+# Changelog — v12.8.0 (shared categories, time reports, junk/healthy meals, pull-bounce, reminder sounds, smarter search, goal auto-track) → history below
+
+## v12.8.0
+
+**1. Shared Finance categories.** Add Transaction and Add/Edit Budget now
+both use one shared, editable category dropdown instead of two free-text
+fields that could drift apart. Pick from the list or "+ Add new category…"
+inline; "Manage categories" (in either modal) lets you rename or delete —
+renaming updates every transaction/budget already using that name.
+
+**2. Time breakdown in Reports.** The Routine report now shows hours by
+category, not just one lump total. Any habit linked to a routine category
+(Meditation, Sleep, etc.) now shows its actual hours spent in its own
+per-habit report, not just days-on-target.
+
+**3. Diet: junk vs healthy, good fat vs bad fat.** Logging a meal now has
+a "Mostly what kind of fat?" picker (healthy — nuts/fish/olive oil,
+mixed — cooking oil/ghee/dairy, unhealthy — fried/processed). Photo
+analysis now suggests this automatically, along with an overall
+✅ Healthy / ⚖️ Balanced / 🍔 Junk-ish tag per meal, plus a healthy/
+balanced/junk count for the day at the top of Diet. All approximate —
+not lab measurements — same disclaimer as the calorie estimates.
+
+**4. Pull-to-bounce feel everywhere.** Every screen now springs when you
+pull down at the top or up at the bottom, even short ones (like Settings)
+that don't have enough content to scroll natively — previously those felt
+"stuck" since there was nothing to scroll.
+
+**5. Reminder sounds.** Settings > Communication > Reminder sounds:
+sound on/off, and separate tones (Chime/Bell/Beep/None) for Habit
+reminders vs Finance reminders, with a Test button for each. Finance
+reminders are new — a daily 9 AM check now nudges you when a debt/EMI
+is due today or a monthly subscription renews today, tagged with the
+Finance tone so it's distinguishable from a habit alert without looking.
+
+**6. Smarter search.** Multi-word queries now match across any field
+(not just one exact substring), results are ranked by relevance
+(title match > other-field match), and Assets, Budgets, and Routine
+categories are now searchable (previously missing).
+
+**7. Goals — clarified + auto-tracked Savings.** Pay-off-debt, weight,
+and habit-streak goals were already auto-calculated from your real data
+(no manual updates needed) — this wasn't stated anywhere, so each now
+says so directly in the goal form. Savings goals can now optionally
+"Auto-track from a Finance category": pick a category (e.g. "Savings")
+and progress becomes money-in minus money-out tagged with it, since the
+goal was created — no more manually typing in "current progress" every
+time. Custom goals stay fully manual by design (there's no single data
+source to link to), and now say so explicitly too. Each goal card shows
+🔄 Auto-tracked or ✋ Manual so it's clear at a glance.
+
+**Also fixed:** a JSON-backup restore (Settings > Backup & Restore >
+Import) was missing the quotes/module-quotes fields added in v12.6/12.7,
+which could leave those blank after restoring an old backup — fixed.
+
+# Changelog — v12.7.0 (per-module quote rotation) → history below
+
+## v12.7.0
+
+**Every module now rotates its own themed quotes, not just Home/Habits.**
+Previously Finance, Routine, Diet, Debts, Subscriptions, Assets,
+Documents, and Goals each showed a motivation quote, but it only ever
+changed once a day on a fixed formula and wasn't editable.
+
+- Each of those 8 modules now has its own quote list (Diet quotes are
+  food/health-themed, Finance quotes are money-themed, etc — seeded
+  from the existing built-in lines) and rotates on the **same** schedule
+  as the Home/Habits quote (Settings > Quotes: auto on/off, interval,
+  Sequential/Random, "Change quote now").
+- **Manage my quotes** now has a **Category** dropdown at the top —
+  switch between Home & Habits and any module to add, edit, or delete
+  that module's quotes, or restore just that category's built-in
+  defaults, without touching the others.
+- "Change quote now" and the auto-rotation timer now advance the
+  visible quote everywhere at once — the general quote card AND
+  whichever module screen you're currently on. Screens you're not on
+  pick up their new quote the next time you open them, same as the
+  photo behind them always has.
+
+# Changelog — v12.6.0 (quote rotation + editable quotes) → history below
+
+## v12.6.0
+
+**Quote text now rotates independently of the photo behind it, and is
+fully editable.** Previously the photo/quote card's picture could be
+auto-rotated (Settings > Appearance) but the quote *text* only ever
+changed once a day, on a fixed formula, from a hardcoded list.
+
+- Settings > Appearance now has a separate **"Quotes"** group (the old
+  "Quote & photo cards" group is renamed **"Photo cards"** and now only
+  covers the picture, to avoid the two being confused): Rotate
+  automatically on/off, Rotate every (15 min / 30 min / 1 hr / 3 hr /
+  once a day / custom minutes), Order (In order / Random), a
+  "Change quote now" button, and a "Manage my quotes" button.
+- **Manage my quotes**: add, edit, or delete quotes, or restore the
+  original built-in list. Your list is now the source of truth — the
+  old QUOTES constant is only used to seed it on first run.
+- Quote text still guarantees at least one change per day whenever
+  auto-rotate is on, even if you set a longer custom interval — same
+  baseline behavior as before, now with the extra control on top.
+
 # Changelog — v12.5.2 / apps-script v9.5.2 (the actual sync-crash fix) → history below
 
 ## apps-script v9.5.2

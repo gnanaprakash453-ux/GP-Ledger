@@ -753,3 +753,327 @@ discipline as every prior apps-script fix (§15). App version bumped to
 per the SW's own header comment, a redeploy without a `CACHE_NAME`
 bump can leave installed/home-screen copies on stale cached JS, so any
 release that touches `index.html` should bump `CACHE_NAME` too.
+
+## 19. v13.0.0 — new icon set, and a lesson on inspecting provided assets
+
+New GP Ledger icon (all four files: `icon-192.png`, `icon-512.png`,
+`icon-512-maskable.png`, `apple-touch-icon.png`) replaced the old
+branding. Filenames were unchanged, so no `manifest.json` or
+`index.html` edits were needed — only the image bytes.
+
+**Worth remembering for any future asset drop (icons, images, anything
+supplied as a finished binary rather than generated in-session): open
+and actually look at it before wiring it in.** All four provided icon
+files turned out to be raw exports from whatever tool generated them,
+with a "COLOR VARIATIONS" label baked into the bottom-right corner of
+every one — invisible until you actually view the file, easy to ship
+by accident if you only check the filename/dimensions match what
+`manifest.json` expects. Patched out by painting over the label with
+the surrounding flat background (safe because it sat in plain margin
+outside the icon's rounded card, not on top of any artwork). Also
+`apple-touch-icon.png` came in at 1024×1024 (524 KB) — no functional
+problem, but iOS only ever renders it at ~180×180, and it's one of the
+files `sw.js` precaches on install, so it was downsampled to the
+conventional 180×180 (~36 KB) to keep the SW install-time cache lean.
+
+**`CACHE_NAME` in `sw.js` bumped to `gp-ledger-v13-0-0`.** This is the
+part that actually delivers new icons to phones with GP Ledger already
+installed — same filenames means the old cached copies would otherwise
+persist indefinitely post-deploy (see §18's note on this).
+
+`apps-script.gs` / `SCRIPT_VERSION` untouched — this release is
+static-file-only, no backend logic changed, so no redeploy of the Apps
+Script side is required.
+
+## 20. v13.1.0 — Quote Engine
+
+Built on top of the existing rotation system (`QUOTES`, `MOTIVATION_CARDS`,
+`activeQuoteList`/`activeModuleQuoteList`, `advanceQuote`/
+`advanceModuleQuote`) rather than replacing it — every pre-existing call
+site (`todaysQuote()`, `currentModuleQuoteText()`, the Manage Quotes
+editor) works unchanged. New code should call the two new public
+entry points instead: `getDailyQuote()` and `getModuleQuote(key)`.
+
+**Data model change, backward compatible:** `QUOTES` entries went from
+`[text, author]` tuples to `{text, author, cat, src}` objects. Anything
+reading `.text`/`.author` (which is everything) is unaffected;
+`defaultQuotes()` and `defaultModuleQuotes()` now also carry `cat`/`src`
+through onto the runtime editable quote objects, for a future
+filter-by-category/source view in Manage Quotes — not built yet, just
+the data is there.
+
+**`FUTURE_MODULE_QUOTES`** — quote pools for Tasks/Notes/Travel/
+Learning/Content & Ideas/Meal Planner exist now, pre-written, but are
+NOT wired into `MODULE_QUOTE_KEYS` — see the comment above that
+constant for the exact 4-step activation checklist when each module is
+actually built. Worth remembering: don't add a module's key to
+`MODULE_QUOTE_KEYS` before the module's screen exists, or Settings →
+Quotes → Manage shows a category with nowhere to display it.
+
+**Recency-avoidance lives outside `S` entirely** (`gpl_quoteRecent` in
+its own localStorage key, via `loadQuoteRecentCache()`/
+`saveQuoteRecentCache()`) — not `S.settings`, because `S.settings`
+syncs to Sheets wholesale (`payload.settings = S.settings` in
+`syncNow()`). This is the pattern to follow for any future "local
+display state that shouldn't ride along with a Sheets sync" — a
+sibling localStorage key, never a field bolted onto `S.settings`.
+
+## 21. v13.2.0 — Tasks module (first of the six new modules)
+
+Confirms the Phase 0 audit's read on `MODULE_DEFS`: adding
+`{key:'tasks', ...}` was genuinely all that was needed for nav/More
+screen/Settings→Modules — `renderMoreCards()`, `enabledModules()`, and
+the module-enable backfill in `loadState()` are 100% data-driven, no
+special-casing required anywhere in that layer.
+
+**New touchpoints for the next module (Notes, most likely next):**
+1. `S` state key + `loadState()`/`saveState()` pair (`gpl_<key>`)
+2. `syncNow()` payload entry — rides the full-JSON Data-tab snapshot
+   automatically, no `apps-script.gs` change required unless you also
+   want a dedicated readable tab
+3. `MODULE_DEFS` entry (nav/More/Settings free after this)
+4. Icon: one entry each in `ICONS`, `STICKER_ICONS`, `VIVID_COLORS`
+   (`EMOJI_MAP` auto-derives from `MODULE_DEFS.icon`)
+5. Screen HTML section + CSS for its list rows
+6. `render<Module>()` / `open<Module>Modal()` following the
+   Subscriptions/Assets pattern (openModal→onclick handlers→
+   saveState()→re-render→closeModal())
+7. `goToScreen()` dispatch line
+8. `FAB_ACTIONS` + `CREATE_ACTIONS` entries
+9. Activate its `FUTURE_MODULE_QUOTES` pool into `MOTIVATION_CARDS`/
+   `MODULE_QUOTE_KEYS`/`MOTIVATION_MODULE_LABELS`/`MOTIVATION_TARGETS`+elId
+
+**Recurrence pattern established:** completing a recurring task clones
+itself forward (`nextRecurDate()`) rather than maintaining a template/
+instance split. Cheap, no new data shape — reuse this for any future
+module that needs "repeats" (Meal Planner's weekly repeat, per the
+brief, is the next place this will come up).
+
+**Deliberately deferred, not forgotten:** Dashboard widget (Phase 14),
+Search integration (Phase 15), a dedicated readable "Tasks" Sheets tab.
+None of these block Tasks from being fully usable today.
+
+## 22. v13.3.0 — sound library, deeper quotes, icon refresh round 2
+
+**`TONE_LIBRARY`** replaces the old 3-entry inline `notesFor` map in
+`playAlertTone()`. Pattern worth reusing for future additions: each
+entry is `{label, wave, notes:[[freq,delay,dur],...]}`, and the
+Settings dropdown (`drawAlertToneList()`) builds its `<option>` list
+from `Object.entries(TONE_LIBRARY)` — adding tone #24 is purely a data
+addition, no template/UI edit needed.
+
+**Quote depth is now genuinely uneven-fixed** — the brief's complaint
+was accurate: Subscriptions/Assets/Documents had exactly 1 quote each
+before this release, which is why they were the priority. Worth
+remembering for the next module built: give it 5+ quotes at launch,
+not 1–2, or it'll need this same catch-up pass later.
+
+**Icon watermark issue, round 2 — same lesson as §19, reinforced:**
+this batch had a *worse* problem than the first (a pattern baked
+across the entire canvas, not just a corner label) — reinforces that
+"open and look at every provided asset before wiring it in" needs to
+happen on *every* asset drop, not just the first one. A despeckle
+pass (near-white/low-saturation pixels → pure white) was added to the
+toolkit alongside the existing watermark-patch approach; keep both
+techniques in mind for any future icon/image asset review.
+
+## 23. v13.4.0 — all six new modules complete + honest per-quote images
+
+Every module from the original brief now exists: Tasks (v13.2.0) plus
+Notes, Travel, Learning, Content & Ideas, Meal Planner (this release).
+The registry-driven architecture held up across all six with zero
+special-casing — same `MODULE_DEFS` entry → nav/More/Settings pattern,
+same modal CRUD pattern, same quote-pool activation checklist.
+
+**Travel's expense integration is the one cross-module wire actually
+built**: `openTxModal()` gained an optional Trip `<select>` (only
+rendered when `S.trips.length>0`), and `renderTripDetail()`'s "Linked
+expenses" section filters `S.transactions` by `tripId` — genuinely
+read-only, no new ledger. This is the template for any future
+module-to-Finance link: tag the existing transaction, filter-and-total
+on the other end, never fork the data.
+
+**Per-quote images — the honest version.** `motivationCardHtml()` and
+`renderQuote()` both now derive their picsum seed from the active
+quote's own `id`/`img` field (via new `currentModuleQuoteObj()`
+helper) instead of `module+date`. Worth remembering if this comes up
+again: picsum.photos seeds are for *reproducibility*, not content
+matching — there is no keyword search happening. True subject-matched
+images would need a real photo-search API (Unsplash/Pexels), which
+this app deliberately doesn't depend on (offline-first, no API-key
+requirement for core function). If that trade-off is ever revisited,
+it's a bigger architectural conversation, not a quick wiring change.
+
+**Next natural step:** Dashboard "Today" integration (tasks due, trip
+countdown, learning next-action — Phase 14) and Search across all six
+new modules (Phase 15). Both were deliberately deferred, same as
+Tasks' were in v13.2.0, now that every module they'd surface actually
+exists.
+
+## 24. v13.5.0 — logo everywhere, Dashboard Today/Upcoming, People, Nudges
+
+**The embedded logo lives in exactly one place**: `LOGO_DATA_URI`, a
+base64 PNG constant, reused by the Dashboard badge, onboarding screen,
+and About/splash screen. Worth remembering for any future branding
+update: this constant is the only thing that needs to change — don't
+go hunting for three separate `<img>` tags.
+
+**Dashboard Today/Upcoming (Phase 14) landed as an extension of the
+existing `pr` (priorities) array and a new parallel `up` array**, not
+a rewrite — same `.priority-row` styling reused for both, capped at 5
+and 3 items respectively so the Dashboard doesn't bloat. Every module
+built this session (Tasks, Notes, Travel, Learning, Content, Meal
+Planner, People) feeds one or two lines in here rather than getting
+its own Dashboard section — this is the pattern for any future module
+too.
+
+**People's Finance/Task integration follows Travel's exact template**:
+an optional foreign-key-style field on the *other* module
+(`transaction.personId`, `task.personId`), never a second data
+structure. Any future "tag this to a person" need should follow the
+same shape.
+
+**Nudges (`checkNudges()`) share the existing reminder plumbing**
+(`openGenericReminderPopup`, the dedupe-by-date pattern every other
+`checkXReminders()` function already uses) rather than inventing a
+parallel notification system. Dedupe state lives in
+`S.settings.nudgeLastShown` — small, meaningful, low-volume, so unlike
+`gpl_quoteRecent` it's fine for this one to live inside the
+already-synced `S.settings` rather than getting its own localStorage
+key. **Known limitation, not yet addressed:** these three conditions
+only get checked client-side while the app is open. Real background
+delivery (app closed) would mean adding the same three checks
+server-side in `apps-script.gs`, alongside its existing Telegram
+reminder path — a real next step, scoped out of this release.
+
+## 25. v13.6.0 — calorie-aware Meal Planner
+
+`mealSlotTargets()` calls the existing `dietTargets()` — no second
+TDEE calculation was written. `FOOD_SUGGESTIONS` is a curated ~44-item
+library (not sourced from anywhere external, hand-picked common
+meals with rough calorie figures), matched to each slot's share of
+the daily target via nearest-calorie search
+(`suggestFoodForSlot`), with a per-week "don't repeat while other
+options exist" rule (falls back to allowing repeats once every option
+in a slot's pool has been used that week, rather than leaving a slot
+empty).
+
+**Deliberately stayed a plain string, not a data-model change**:
+`S.mealPlan[date][slot]` is still exactly the free-text string it always
+was. The calorie figure is embedded in the text itself
+(`"...(~320 kcal)"`) and parsed back out with a regex
+(`mpParseCalories`) purely for display (the day's running total). This
+was the one design decision in this feature actually worth deliberating
+— an object-shaped `{text, calories}` would be more "correct" but would
+require migrating every existing plan and touching the input's read/
+write path; the regex approach cost nothing and broke nothing.
+
+## 26. v13.7.0 — the audit lesson: outbound wiring ≠ inbound wiring
+
+**Real bug, found by actually auditing rather than re-asserting
+confidence.** Every new module's data got added to `syncNow()`'s
+OUTBOUND payload as each module shipped (v13.2.0 onward) — but the two
+INBOUND restore paths (`loadFromSheetBtn`'s handler, and local JSON
+backup import) were never touched. Data flowed to Sheets fine; pulling
+it back down on a fresh install silently dropped it. Neither path
+errored — they just quietly ignored fields they didn't know to look
+for, which is exactly why this kind of bug survives casual testing
+("sync works, no errors shown") and only shows up on the one flow
+nobody tries mid-session: fresh install → restore.
+
+**The lesson for every future module**: adding sync support is a
+**two-sided change**, not one. `syncNow()`'s payload is the outbound
+half; `loadFromSheetBtn`'s click handler AND the local-JSON-restore
+`Object.assign()` defaults are the inbound half. All three need the
+new field, or data silently doesn't round-trip. Going forward, treat
+"add to syncNow()" as an incomplete edit until both restore paths are
+also checked in the same sitting — not a separate later pass.
+
+## 27. v13.8.0 — Search and Tasks-reminders were also incomplete
+
+Two more gaps found the same way as v13.7.0's: the user asked a second
+time whether everything was actually wired, which prompted an actual
+corner-to-corner pass instead of re-asserting confidence. Worth noting
+as a pattern — both this and v13.7.0's bug were silent, not erroring,
+which is exactly why "no console errors" isn't sufficient evidence
+that a feature genuinely covers what it claims to.
+
+**Search** (`renderSearchResults()`) — its own empty-state copy claims
+full coverage ("search across every module at once"); it wasn't true
+for any of the 7 modules built this session. Fixed by extending the
+same flat `add(searchScore(...), {...})` calls already used for every
+pre-existing module — no architecture change, just 7 missing entries.
+**Lesson for the next module**: Search is a manually-maintained list,
+not automatically derived from `MODULE_DEFS` — a new module's data
+needs an explicit line here too, same as the sync payload needed one.
+
+**Tasks reminders** — Tasks has had `dueDate`/`dueTime` fields since
+it shipped (v13.2.0), but nothing ever read them proactively;
+`checkDailyReminders()` never gained a Tasks check when Tasks itself
+was built. `checkTaskReminders()` now follows the exact
+`lastNotified`-on-the-record pattern of every other check in that
+function. **Lesson**: a module that has date-based fields conceptually
+"due" for reminders needs its own `checkXReminders()` added to
+`checkDailyReminders()` explicitly, at the time it's built — it's not
+automatic just because the data field exists.
+
+**Confirmed NOT bugs, just scope not yet reached** (worth stating
+plainly so a future pass doesn't waste time "fixing" something that
+was never broken): AI Coach integration for the 7 new modules (Phase
+16 in the original brief, deliberately after all modules exist — which
+is now, so it's a reasonable next step, just not a defect). Report/
+Excel exports for the 7 new modules (every pre-existing module has
+one; none of the 7 new ones do — consistent absence, not a
+per-module oversight). No app-wide data-wipe feature (never existed,
+checked specifically, not something this session removed or missed).
+
+## 28. v13.10.0 — Morning Summary on Home
+
+A scoped brief this time: improve *only* the Home/Dashboard, using a
+reference image for visual direction without redesigning anything else.
+Worth documenting the pattern since it's the first tightly-scoped visual
+brief since the module-building sessions above.
+
+**What was added.** One new function, `renderMorningSummary()`, called
+as the first line of the existing `renderDashboard()`. Renders into a
+new empty `<div id="morningSummaryWrap">` placed above the existing
+`.focus-tabs` in `#screen-dashboard` — everything below it (Daily
+Progress ring, Quick Actions, Top priorities, Upcoming) is byte-for-byte
+unchanged. Four pieces, in order: Yesterday metrics → Carry Forward →
+Today Top 3 → one rule-based Insight.
+
+**Zero new data model — this was the actual constraint to hold.** Every
+value is read through helpers `renderDashboard()` already calls:
+`taskIsOverdue`/`taskIsToday`, `debtIsOverdue`, `dueSoonSubscriptions()`,
+`goalProgressCalc()`, `habitProgress()`/`habitValue()`, `txForDate()`,
+`sleepHabit()`, plus `addDays()` for yesterday's date. No new fields on
+`S`, no new localStorage keys, no new sync payload entries — this
+section literally cannot drift out of sync with the modules it reads
+from, because it doesn't hold its own copy of anything.
+
+**Carry Forward / Today Top 3 share one priority ladder** (overdue
+task, high-priority first → overdue debt EMI → subscription due soon →
+goal behind pace → today's due tasks → today's unlogged habits for the
+Top 3 only). Carry Forward takes the #1 result; Top 3 walks the same
+ladder and takes up to 3. Intentional overlap — the brief's own
+reference image shows the carry-forward item appearing again as Today's
+#1, so this isn't a bug to dedupe later.
+
+**Insight is deliberately NOT an AI Coach call.** The brief said don't
+touch AI Coach, and "max 1 sentence, no generic AI advice" reads like a
+rule-based line is actually the more correct choice here, not a
+shortcut — a fixed 4-branch sentence keyed off yesterday's completion
+rate and whether a carry-forward item exists.
+
+**One deviation from the reference image, noted rather than silently
+applied**: the mockup repeats "Good morning, GP" inside the new section,
+but the existing header (`greetName`/`greetSub`) already shows that
+greeting immediately above it — repeating it would be exactly the
+"unnecessary duplication" the brief's own visual-design section warned
+against. New section starts at "Yesterday • [date]" instead.
+
+**Empty-state discipline**: every one of the four pieces independently
+checks whether it has real data before rendering, and the whole
+`morningSummaryWrap` collapses to nothing if all four are empty (new
+install, no data yet) — no wall of "0/0" placeholder cards, per the
+brief's explicit empty-data section.

@@ -96,7 +96,7 @@ const SS = SpreadsheetApp.getActiveSpreadsheet();
 // Bump this every time you paste updated code, so the app's "Test connection"
 // and sync-failure messages can tell you when a deployment is stale (i.e. you
 // edited/pasted new code but forgot Deploy > Manage deployments > New version).
-const SCRIPT_VERSION = 'v9.5.2';
+const SCRIPT_VERSION = 'v9.6.1';
 
 function doGet(e) {
   const action = (e && e.parameter && e.parameter.action) || 'status';
@@ -292,23 +292,25 @@ function handleSync(body) {
 
   // 9) Diet tab — one row per logged meal
   const dietSheet = getOrCreateSheet('Diet');
-  const dietRows = [['Date', 'Time', 'Meal', 'Calories', 'Protein', 'Carbs', 'Fat', 'Fiber']];
+  const dietRows = [['Date', 'Time', 'Meal', 'Calories', 'Protein', 'Carbs', 'Fat', 'Fiber', 'Fat Quality', 'Meal Tag']];
   const dietMeals = (body.diet && body.diet.meals) || {};
   let dietTotal = 0;
   Object.keys(dietMeals).sort().forEach(ds => {
     (dietMeals[ds] || []).forEach(m => {
-      dietRows.push([ds, m.time || '', m.name, m.calories || 0, m.protein || 0, m.carbs || 0, m.fat || 0, m.fiber || 0]);
+      dietRows.push([ds, m.time || '', m.name, m.calories || 0, m.protein || 0, m.carbs || 0, m.fat || 0, m.fiber || 0, m.fatQuality || '', m.mealTag || '']);
       dietTotal++;
     });
   });
   writeSheet(dietSheet, dietRows);
   rows.diet = dietTotal;
 
-  // 10) Goals tab
+  // 10) Goals tab — Current is the resolved progress (matches the Goals
+  // screen), sent pre-computed by the client since it's derived on the fly
+  // for Debt/Weight/Habit-streak/auto-tracked Savings goals, not stored.
   const goalsSheet = getOrCreateSheet('Goals');
-  const goalRows = [['Title', 'Type', 'Target', 'Current/Progress', 'Deadline']];
+  const goalRows = [['Title', 'Type', 'Target', 'Current/Progress', 'Auto-tracked From', 'Deadline']];
   (body.goals || []).forEach(g => {
-    goalRows.push([g.title, g.mode, g.target, g.current !== undefined ? g.current : '', g.deadline || '']);
+    goalRows.push([g.title, g.mode, g.target, g.current !== undefined ? g.current : '', g.autoTrackCategory || '', g.deadline || '']);
   });
   writeSheet(goalsSheet, goalRows);
   rows.goals = (body.goals || []).length;
@@ -388,6 +390,21 @@ function handleSync(body) {
   writeSheet(tplSheet, tplRows);
   rows.routineTemplates = rtplTotal;
 
+  // 17) Quotes tab — your custom/edited quotes (Settings > Quotes > Manage
+  // my quotes), so they survive a phone loss/reinstall even if you're
+  // relying on the Sheet as your only backup and never used the separate
+  // local JSON export. General = the Home/Habits quote card; the rest are
+  // each module's own themed quotes.
+  const quotesSheet = getOrCreateSheet('Quotes');
+  const quotesRows = [['Category', 'Quote', 'Author']];
+  (body.quotes || []).forEach(q => { quotesRows.push(['General (Home & Habits)', q.text, q.author || '']); });
+  const moduleQuotes = body.moduleQuotes || {};
+  Object.keys(moduleQuotes).forEach(cat => {
+    (moduleQuotes[cat] || []).forEach(q => { quotesRows.push([cat, q.text, '']); });
+  });
+  writeSheet(quotesSheet, quotesRows);
+  rows.quotes = quotesRows.length - 1;
+
   return { ok: true, source: 'handleSync', version: SCRIPT_VERSION, rows: rows, syncedAt: new Date().toISOString() };
 }
 
@@ -432,12 +449,15 @@ function checkReminders() {
   const tz = Session.getScriptTimeZone();
   const now = new Date();
   const today = Utilities.formatDate(now, tz, 'yyyy-MM-dd');
+  const ym = today.slice(0, 7);
   const nowMin = now.getHours() * 60 + now.getMinutes();
 
   const logSheet = getOrCreateSheet('ReminderLog');
   const sentKeys = logSheet.getLastRow() > 0
     ? logSheet.getRange(1, 1, logSheet.getLastRow(), 1).getValues().flat()
     : [];
+  const alreadySent = function (key) { return sentKeys.indexOf(key) !== -1; };
+  const markSent = function (key) { logSheet.appendRow([key]); sentKeys.push(key); };
 
   (payload.habits || []).forEach(h => {
     (h.times || []).forEach(t => {
@@ -446,10 +466,74 @@ function checkReminders() {
       const targetMin = th * 60 + tm;
       if (Math.abs(nowMin - targetMin) > 2) return;
       const key = h.id + '_' + today + '_' + t;
-      if (sentKeys.indexOf(key) !== -1) return;
+      if (alreadySent(key)) return;
       sendTelegram(settings.tgToken, settings.tgChatId, `⏰ Reminder: ${h.name} ${h.icon || ''}`);
-      logSheet.appendRow([key]);
+      markSent(key);
     });
+  });
+
+  // v9.6.1 — Finance/Health/Documents/Goals reminders were local-only
+  // (in-app, foreground-only — see index.html checkFinanceReminders /
+  // checkHealthReminders / checkDocumentReminders / checkGoalReminders).
+  // This mirrors that same logic here so they also reach Telegram when
+  // the app is closed, on the SAME 5-minute trigger you already set up —
+  // no second trigger needed. Runs once per day per item (checked every
+  // 5 minutes, but the ReminderLog key is date-scoped so it only sends
+  // once), rather than at a specific time like habits.
+
+  // Finance — EMI due today, not yet marked paid this month
+  (payload.debts || []).forEach(d => {
+    if (Number(d.dueDay) !== now.getDate()) return;
+    const pm = d.paidMonths && d.paidMonths[ym];
+    if (pm) return;
+    const key = 'debt_' + d.id + '_' + ym;
+    if (alreadySent(key)) return;
+    sendTelegram(settings.tgToken, settings.tgChatId, `💰 ${d.name} EMI is due today (₹${d.emiAmount || 0})`);
+    markSent(key);
+  });
+
+  // Finance — subscription renews today
+  (payload.subscriptions || []).forEach(s => {
+    if (s.cycle !== 'monthly' || Number(s.renewDay) !== now.getDate()) return;
+    const key = 'sub_' + s.id + '_' + ym;
+    if (alreadySent(key)) return;
+    sendTelegram(settings.tgToken, settings.tgChatId, `💰 ${s.name} renews today (₹${s.amount || 0})`);
+    markSent(key);
+  });
+
+  // Health — appointment today
+  ((payload.health && payload.health.appts) || []).forEach(a => {
+    if (a.date !== today) return;
+    const key = 'health_' + a.id + '_' + today;
+    if (alreadySent(key)) return;
+    sendTelegram(settings.tgToken, settings.tgChatId, `🩺 ${a.title} today${a.notes ? ' — ' + a.notes : ''}`);
+    markSent(key);
+  });
+
+  // Documents — expiring within 7 days (fires once, the first day it enters that window)
+  (payload.documents || []).forEach(d => {
+    if (!d.expiryDate) return;
+    const daysLeft = Math.round((new Date(d.expiryDate) - new Date(today)) / 86400000);
+    if (daysLeft < 0 || daysLeft > 7) return;
+    const key = 'doc_' + d.id + '_' + today;
+    if (alreadySent(key)) return;
+    const when = daysLeft === 0 ? 'expires today' : ('expires in ' + daysLeft + ' day' + (daysLeft === 1 ? '' : 's'));
+    sendTelegram(settings.tgToken, settings.tgChatId, `🗂️ ${d.title} ${when}`);
+    markSent(key);
+  });
+
+  // Goals — deadline is today. Kept simple on purpose: sends a same-day
+  // nudge regardless of whether the goal is already met (unlike the
+  // in-app popup, which only fires if it isn't) — replicating the exact
+  // Debt/Weight/Habit-streak progress math here would duplicate a lot of
+  // client-side logic for one extra condition. A deadline-day ping either
+  // way is still useful.
+  (payload.goals || []).forEach(g => {
+    if (!g.deadline || g.deadline !== today) return;
+    const key = 'goal_' + g.id + '_' + today;
+    if (alreadySent(key)) return;
+    sendTelegram(settings.tgToken, settings.tgChatId, `🎯 "${g.title}" deadline is today`);
+    markSent(key);
   });
 }
 
@@ -543,8 +627,27 @@ function sendDailyQuote() {
   const todayStr = Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd');
   const epoch = new Date('2020-01-01T00:00:00');
   const dayIndex = Math.floor((new Date(todayStr + 'T00:00:00') - epoch) / 86400000);
-  const idx = ((dayIndex % QUOTES.length) + QUOTES.length) % QUOTES.length;
-  const [text, author] = QUOTES[idx];
+
+  // v9.6.0 — quotes became user-editable in-app back in v12.6 (Settings >
+  // Quotes > Manage my quotes), but this always ignored that and sent
+  // from the hardcoded list below on a fixed daily formula. Now it uses
+  // your own synced quote list, at the same rotation position the app is
+  // currently showing (payload.settings.quoteRotIdx, synced every Sync
+  // now) — so the midnight text actually matches what you see in-app.
+  // Falls back to the old hardcoded list only if a sync from before this
+  // version hasn't sent quotes yet.
+  const userQuotes = payload.quotes;
+  let text, author;
+  if (Array.isArray(userQuotes) && userQuotes.length) {
+    let idx = Number(settings.quoteRotIdx);
+    if (isNaN(idx) || idx < 0 || idx >= userQuotes.length) {
+      idx = ((dayIndex % userQuotes.length) + userQuotes.length) % userQuotes.length;
+    }
+    text = userQuotes[idx].text; author = userQuotes[idx].author || 'GP Ledger';
+  } else {
+    const idx = ((dayIndex % QUOTES.length) + QUOTES.length) % QUOTES.length;
+    text = QUOTES[idx][0]; author = QUOTES[idx][1];
+  }
   sendTelegram(settings.tgToken, settings.tgChatId, `🌅 Quote of the day\n\n"${text}"\n— ${author}\n\nGP Ledger`);
 }
 

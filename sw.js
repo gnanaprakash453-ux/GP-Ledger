@@ -1,7 +1,30 @@
-// GP Ledger service worker — v12.5.2
+// GP Ledger service worker — v13.1.0
 // Bumping CACHE_NAME forces old caches to be dropped on next install,
 // so a re-deploy (e.g. after this update) actually reaches phones.
-const CACHE_NAME = 'gp-ledger-v12-5-2';
+// v13.0.0: new app icon set (all 4 files replaced) — bumping the cache
+// name here is what makes phones actually pick up the new icons/splash,
+// since CORE_ASSETS caches them by filename and a same-name overwrite
+// alone wouldn't invalidate an old cached copy.
+// v13.1.0: index.html changed (Quote Engine) — same reasoning, bump so
+// installed copies actually receive the new JS instead of serving a
+// cached v13.0.0 index.html indefinitely.
+// v13.2.0: index.html changed again (Tasks module) — same reasoning.
+// v13.3.0: new icon set (round 2) + notification sound library expansion
+// + per-module quote pool expansion — bump so installed copies pick up
+// both the new icons and the new JS.
+// v13.4.0: the five remaining new modules (Notes, Travel, Learning,
+// Content & Ideas, Meal Planner) + per-quote images — same reasoning.
+// v13.5.0: new logo everywhere (embedded LOGO_DATA_URI swapped), Dashboard
+// Today/Upcoming integration, People module, proactive Nudges.
+// v13.6.0: calorie-aware Meal Planner suggestions.
+// v13.7.0: fixed a real restore-path bug — see CHANGELOG. Data-only fix,
+// but bumping anyway since index.html changed.
+// v13.8.0: Search now indexes the 7 new modules, Tasks now fires a
+// due-today reminder — see CHANGELOG for both.
+// v13.9.0: Trash/undo, Calendar integration, Documents photo attachments,
+// Travel currency, Finance accounts + recurring transactions, AI Coach +
+// exports for the 6 newest modules. See CHANGELOG.
+const CACHE_NAME = 'gp-ledger-v13-9-0';
 const IMG_CACHE_NAME = 'gp-ledger-images-v1';
 const CORE_ASSETS = [
   './index.html',

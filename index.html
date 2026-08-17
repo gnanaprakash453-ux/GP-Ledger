@@ -83,7 +83,14 @@ header.top{
 .badge img{ width:100%; height:100%; object-fit:cover; }
 .greet-text h1{ font-size:18px; font-weight:700; }
 .greet-text .sub{ font-size:12px; color:var(--sub); margin-top:1px; }
-.header-actions{ display:flex; gap:8px; align-items:center; }
+/* v13.12.0 — small live Day/Date/Time indicator, added between the existing
+   greeting and the existing Search/Save&Sync controls. Deliberately does
+   NOT touch .greet/.greet-text/.header-actions — it only sits between them.
+   Hidden on very narrow screens (rather than wrapping/crowding the header)
+   so it never affects the greeting, per the brief. */
+.header-datetime{ font-size:10.5px; font-weight:700; color:var(--sub); white-space:nowrap; flex-shrink:1; min-width:0; overflow:hidden; text-overflow:ellipsis; margin:0 2px; }
+@media (max-width:380px){ .header-datetime{ display:none; } }
+.header-actions{ display:flex; gap:8px; align-items:center; flex-shrink:0; }
 .icon-btn{
   width:38px; height:38px; border-radius:12px; border:1px solid var(--line);
   background:var(--card); display:flex; align-items:center; justify-content:center;
@@ -609,26 +616,38 @@ body{ background:var(--bg-gradient); }
 .insight-card{ background:linear-gradient(135deg, rgba(99,102,241,.14), rgba(34,197,94,.10)); border:1px solid var(--line); border-radius:var(--radius); padding:14px 16px; margin-bottom:10px; font-size:13px; line-height:1.5; }
 .insight-card .ic-tag{ font-size:10.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--accent); font-weight:800; margin-bottom:5px; }
 
-/* ---- v13.10.0: Morning Summary — Home dashboard addition. Sits above the
-   existing Daily Progress/Quick Actions/Priorities/Upcoming stack (untouched
-   below). Answers "what happened / what did I miss / what matters today" in
-   ~5s. All values are read from existing S.tasks/S.habits/S.transactions/
-   S.debts/S.subscriptions/S.goals — no new data model. ---------------------- */
+/* ---- v13.10.0: Morning Summary — Home dashboard addition. Sits below the
+   existing Dashboard Image/Quote (moved there in v13.12.0 — see markup),
+   above the existing Daily Progress/Quick Actions/Priorities/Upcoming stack
+   (untouched below). Answers "what happened / what did I miss / what
+   matters today" in ~5s. All values are read from existing S.tasks/
+   S.habits/S.transactions/S.debts/S.subscriptions/S.goals — no new data
+   model.
+   v13.12.0 — Yesterday is now collapsed by default (tap the row to expand/
+   collapse in place, no navigation); a "Main achievement" row was added
+   next to the existing Carry-forward row inside the expanded panel; Today
+   Top 3 and the Insight line render below the Yesterday card regardless of
+   its collapsed state, per the new layout spec. ---------------------------- */
 .msum-card{ background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:14px 16px; margin-bottom:12px; }
-.msum-top{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px; }
+.msum-top{ display:flex; align-items:center; justify-content:space-between; gap:10px; cursor:pointer; -webkit-user-select:none; user-select:none; }
 .msum-label{ font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:var(--sub); }
+.msum-chevron{ font-size:12px; font-weight:800; color:var(--sub); flex-shrink:0; }
 .msum-chip{ font-size:11px; font-weight:700; padding:4px 10px; border-radius:20px; flex-shrink:0; }
 .msum-chip.good{ background:rgba(34,197,94,.14); color:var(--good); }
 .msum-chip.warn{ background:rgba(245,158,11,.14); color:var(--warn); }
-.msum-grid{ display:flex; gap:16px; flex-wrap:wrap; }
+.msum-grid{ display:flex; gap:16px; flex-wrap:wrap; margin-top:12px; }
 .msum-metric{ flex:1 1 68px; min-width:68px; }
 .msum-m-lbl{ font-size:10px; color:var(--sub); text-transform:uppercase; letter-spacing:.04em; margin-bottom:3px; }
 .msum-m-val{ font-size:17px; font-weight:800; font-family:var(--font-mono); }
-.carry-card{ display:flex; align-items:center; gap:10px; background:rgba(245,158,11,.10); border:1px solid rgba(245,158,11,.35); border-radius:var(--radius); padding:12px 14px; margin-bottom:12px; cursor:pointer; }
-.carry-card .cf-ic{ font-size:17px; flex-shrink:0; }
-.carry-card .cf-body{ flex:1; min-width:0; }
-.carry-card .cf-lbl{ font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; color:var(--warn); margin-bottom:2px; }
-.carry-card .cf-text{ font-size:13.5px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.carry-card, .ach-card{ display:flex; align-items:center; gap:10px; border-radius:var(--radius); padding:12px 14px; margin-top:8px; }
+.carry-card{ background:rgba(245,158,11,.10); border:1px solid rgba(245,158,11,.35); cursor:pointer; }
+.ach-card{ background:rgba(34,197,94,.10); border:1px solid rgba(34,197,94,.35); }
+.carry-card .cf-ic, .ach-card .cf-ic{ font-size:15px; flex-shrink:0; }
+.carry-card .cf-body, .ach-card .cf-body{ flex:1; min-width:0; }
+.carry-card .cf-lbl, .ach-card .cf-lbl{ font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; margin-bottom:2px; }
+.carry-card .cf-lbl{ color:var(--warn); }
+.ach-card .cf-lbl{ color:var(--good); }
+.carry-card .cf-text, .ach-card .cf-text{ font-size:13.5px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .carry-card .cf-arrow{ font-size:16px; color:var(--warn); flex-shrink:0; }
 .t3-row{ display:flex; align-items:center; gap:10px; background:var(--card); border:1px solid var(--line); border-radius:var(--radius-sm); padding:11px 12px; margin-bottom:8px; }
 .t3-num{ width:22px; height:22px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; color:#fff; }
@@ -908,6 +927,7 @@ nav.bottom, .fab{ transition:transform .18s ease; }
         <div class="sub" id="greetSub">Let's make today count</div>
       </div>
     </div>
+    <div class="header-datetime" id="headerDateTime"></div>
     <div class="header-actions">
       <button class="icon-btn" id="headerSearchBtn" title="Search everything">🔍</button>
       <button class="sync-btn" id="syncBtn" title="Save & Sync"><span class="sync-dot"></span><span id="syncBtnLabel">Save &amp; Sync</span></button>
@@ -917,9 +937,10 @@ nav.bottom, .fab{ transition:transform .18s ease; }
   <main>
     <!-- ===================== DASHBOARD ===================== -->
     <section class="screen active" id="screen-dashboard">
-      <!-- v13.10.0: Morning Summary — Yesterday → Carry Forward → Today Top 3 → Insight.
-           Rendered by renderMorningSummary(), called from renderDashboard(). -->
-      <div id="morningSummaryWrap"></div>
+      <!-- v13.12.0: Dashboard Image/Quote stays first on Home (unchanged).
+           Morning Summary — Yesterday (collapsible) → Today Top 3 → Insight —
+           now sits directly below it. Rendered by renderMorningSummary(),
+           called from renderDashboard(). -->
       <div class="focus-tabs" id="focusTabs">
         <button class="ft-tab active" data-tab="focus">Focus</button>
         <button class="ft-tab" data-tab="health">Health</button>
@@ -930,6 +951,7 @@ nav.bottom, .fab{ transition:transform .18s ease; }
         <div class="hf-eyebrow" id="hfEyebrow">Today's Focus</div>
         <div class="hf-quote" id="hfQuote">—</div>
       </div>
+      <div id="morningSummaryWrap"></div>
       <div class="progress-card">
         <div class="pc-head">
           <div class="pc-label">Daily Progress</div>
@@ -1670,7 +1692,7 @@ nav.bottom, .fab{ transition:transform .18s ease; }
    change it here only; both the photo estimator and the AI Coach read
    from this constant. */
 const GEMINI_MODEL = 'gemini-3.5-flash';
-const APP_VERSION = 'v13.9.0'; // single source of truth for About screen & Settings row
+const APP_VERSION = 'v13.12.0'; // single source of truth for About screen & Settings row
 
 /* ---------- v9.5: module registry (drives bottom nav, Home, More, Settings toggles) ---------- */
 /* core:true = one of the 4 primary tabs when enabled; group = header used in the More screen. */
@@ -6362,6 +6384,23 @@ function updateGreeting(){
   document.getElementById('greetSub').textContent = hr<12?'Good morning ☀️': hr<17?'Good afternoon':'Good evening 🌙';
 }
 
+/* v13.12.0 — small live Day/Date/Time indicator in the header, sitting
+   between the existing greeting and the existing Search/Save&Sync controls.
+   Does not touch greetName/greetSub. Uses the browser's local timezone
+   (the app's configured/local timezone — no separate timezone setting
+   exists elsewhere in Settings). Ticks every 30s, which is frequent enough
+   for a minute-resolution display without a per-second timer. */
+function updateHeaderDateTime(){
+  const el = document.getElementById('headerDateTime');
+  if(!el) return;
+  const now = new Date();
+  const datePart = now.toLocaleDateString(undefined,{weekday:'short', month:'short', day:'numeric'});
+  const timePart = now.toLocaleTimeString(undefined,{hour:'numeric', minute:'2-digit'});
+  el.textContent = `${datePart} · ${timePart}`;
+}
+updateHeaderDateTime();
+setInterval(updateHeaderDateTime, 30000);
+
 /* ---------- Telegram ---------- */
 document.getElementById('testTgBtn').addEventListener('click', async ()=>{
   const { tgToken, tgChatId } = S.settings;
@@ -7006,15 +7045,23 @@ function clamp01(n){ return Math.max(0, Math.min(1, isFinite(n)?n:0)); }
 
 /* ---------- DASHBOARD ---------- */
 let activeFocusTab = 'focus';
-/* ---- v13.10.0: Morning Summary ------------------------------------------
-   Compact "Yesterday → Carry Forward → Today Top 3 → Insight" block above
-   the existing dashboard. Strictly read-only: every value below is computed
-   from S.tasks / S.habits / S.transactions / S.debts / S.subscriptions /
-   S.goals via the SAME helpers renderDashboard() already uses (taskIsOverdue,
-   taskIsToday, debtIsOverdue, dueSoonSubscriptions, goalProgressCalc,
-   habitProgress/habitValue, txForDate, sleepHabit). No new data model, no
-   writes, no changes to any other module. Called from renderDashboard() so
-   it refreshes on every existing state-changing action automatically. ---- */
+/* ---- v13.10.0: Morning Summary, revised in v13.12.0 -----------------------
+   "Yesterday" (collapsible, collapsed by default) → "Today — Top 3" →
+   one-line Insight, sitting directly below the existing Dashboard Image/
+   Quote (moved above this block in the markup, see screen-dashboard).
+   Strictly read-only: every value below is computed from S.tasks /
+   S.habits / S.transactions / S.debts / S.subscriptions / S.goals via the
+   SAME helpers renderDashboard() already uses (taskIsOverdue, taskIsToday,
+   debtIsOverdue, dueSoonSubscriptions, goalProgressCalc, habitProgress/
+   habitValue, txForDate, sleepHabit). No new data model, no writes, no
+   changes to any other module. Called from renderDashboard() so it
+   refreshes on every existing state-changing action automatically.
+   v13.12.0: Yesterday is now its own collapsible card (tap the header row
+   to expand/collapse in place — no navigation, no popup); a "Main
+   achievement" row was added alongside the existing Carry-forward row
+   inside the expanded panel; Today Top 3 + Insight now render below the
+   Yesterday card regardless of whether it's expanded. ---------------------- */
+let msumYesterdayOpen = false;
 function renderMorningSummary(){
   const wrap = document.getElementById('morningSummaryWrap');
   if(!wrap) return;
@@ -7025,27 +7072,29 @@ function renderMorningSummary(){
   /* ---- Yesterday metrics — only included if that data actually exists ---- */
   const metrics = [];
   const yTasksDue = (S.tasks||[]).filter(t=>t.dueDate===y);
-  let yTaskPct = null;
+  let yTaskPct = null, doneTasks = 0, totalTasks = 0;
   if(yTasksDue.length){
-    const done = yTasksDue.filter(t=>t.done).length;
-    yTaskPct = done/yTasksDue.length;
-    metrics.push({lbl:'Tasks', val:`${done}/${yTasksDue.length}`});
+    doneTasks = yTasksDue.filter(t=>t.done).length;
+    totalTasks = yTasksDue.length;
+    yTaskPct = doneTasks/totalTasks;
+    metrics.push({lbl:'Tasks', val:`${doneTasks}/${totalTasks}`, ic:'✅'});
   }
-  let yHabitPct = null;
+  let yHabitPct = null, doneHabits = 0, totalHabits = 0;
   if((S.habits||[]).length){
-    const doneY = S.habits.filter(h=>habitProgress(h,y)>=1).length;
-    yHabitPct = doneY/S.habits.length;
-    metrics.push({lbl:'Habits', val:`${doneY}/${S.habits.length}`});
+    doneHabits = S.habits.filter(h=>habitProgress(h,y)>=1).length;
+    totalHabits = S.habits.length;
+    yHabitPct = doneHabits/totalHabits;
+    metrics.push({lbl:'Habits', val:`${doneHabits}/${totalHabits}`, ic:'🔁'});
   }
   const yTx = txForDate(y);
   if(yTx.length){
     const spentY = yTx.filter(t=>t.type==='out').reduce((a,t)=>a+Number(t.amount),0);
-    metrics.push({lbl:'Spent', val:fmtMoney(spentY)});
+    metrics.push({lbl:'Spent', val:fmtMoney(spentY), ic:'💰'});
   }
   const sh = sleepHabit();
   if(sh){
     const sv = habitValue(sh,y);
-    if(sv>0) metrics.push({lbl:'Sleep', val:`${sv}${sh.unit}`});
+    if(sv>0) metrics.push({lbl:'Sleep', val:`${sv}${sh.unit}`, ic:'🌙'});
   }
 
   /* ---- Carry forward — single highest-priority unfinished item ----
@@ -7060,13 +7109,13 @@ function renderMorningSummary(){
   const behindGoal = S.goals.find(g=>goalProgressCalc(g).behind);
   let carry = null;
   if(overdueTasksSorted[0]) carry = {text:overdueTasksSorted[0].title, go:()=>goToScreen('tasks')};
-  else if(overdueDebtsList[0]) carry = {text:`Pay ${overdueDebtsList[0].name} EMI`, go:()=>goToScreen('debts')};
+  else if(overdueDebtsList[0]) carry = {text:`Pay ${overdueDebtsList[0].name} EMI (overdue)`, go:()=>goToScreen('debts')};
   else if(dueSoonSubs[0]) carry = {text:`${dueSoonSubs[0].name} renews soon`, go:()=>goToScreen('subscriptions')};
   else if(behindGoal) carry = {text:behindGoal.title, go:()=>goToScreen('goals')};
 
   /* ---- Today — top 3, data-driven, never padded with invented items ---- */
   const t3 = [];
-  overdueTasksSorted.forEach(t=> t3.push({text:t.title, tag:'Task', color:'#0891b2'}));
+  overdueTasksSorted.forEach(t=> t3.push({text:t.title, tag:'Overdue', color:'#ef4444'}));
   overdueDebtsList.forEach(d=> t3.push({text:`Pay ${d.name} EMI`, tag:'Finance', color:'#ef4444'}));
   (S.tasks||[]).filter(taskIsToday)
     .sort((a,b)=> (PRI_ORDER[a.priority]??3)-(PRI_ORDER[b.priority]??3))
@@ -7081,39 +7130,59 @@ function renderMorningSummary(){
   const hasYData = metrics.length>0;
   const goodDay = hasYData && (yTaskPct===null||yTaskPct>=0.7) && (yHabitPct===null||yHabitPct>=0.7);
   let insight = null;
-  if(hasYData && goodDay && carry) insight = 'Good progress yesterday. Finish the carry-forward item first.';
+  if(hasYData && goodDay && carry) insight = 'Good progress yesterday — finish the carry-forward item first today.';
   else if(hasYData && goodDay && !carry) insight = 'Great day yesterday — keep the momentum going today.';
-  else if(hasYData && !goodDay && carry) insight = 'Yesterday was light — start with the carry-forward item today.';
+  else if(hasYData && !goodDay && carry) insight = `Finish the overdue ${carry.text.length<=28 ? carry.text.toLowerCase() : 'item'} first today.`;
+
+  /* ---- Main achievement — one data-driven positive line, only on a good day ---- */
+  let achievement = null;
+  if(hasYData && goodDay){
+    if(totalHabits>0 && doneHabits===totalHabits) achievement = `Completed all ${totalHabits} habit${totalHabits===1?'':'s'} and stayed consistent.`;
+    else if(totalTasks>0 && yTaskPct>=0.7) achievement = `Completed ${doneTasks} task${doneTasks===1?'':'s'} and stayed consistent.`;
+    else if(totalHabits>0 && yHabitPct>=0.7) achievement = `Kept up ${doneHabits}/${totalHabits} habit${totalHabits===1?'':'s'}.`;
+  }
 
   /* ---- Nothing meaningful anywhere? Don't render an empty shell. ---- */
-  if(!metrics.length && !carry && !t3Final.length){ wrap.innerHTML=''; return; }
+  if(!hasYData && !t3Final.length){ wrap.innerHTML=''; return; }
 
-  let html = '<div class="msum-card">';
-  html += '<div class="msum-top"><span class="msum-label">Yesterday • '+yLabel+'</span>';
-  if(hasYData) html += `<span class="msum-chip ${goodDay?'good':'warn'}">${goodDay?'Good day 🙂':'Light day'}</span>`;
-  html += '</div>';
-  if(metrics.length){
-    html += '<div class="msum-grid">'+metrics.map(m=>`<div class="msum-metric"><div class="msum-m-lbl">${m.lbl}</div><div class="msum-m-val">${m.val}</div></div>`).join('')+'</div>';
-  }
-  html += '</div>';
+  let html = '';
 
-  if(carry){
-    html += `<div class="carry-card" id="msumCarryCard"><span class="cf-ic">⚠️</span><div class="cf-body"><div class="cf-lbl">Carry forward</div><div class="cf-text">${carry.text}</div></div><span class="cf-arrow">›</span></div>`;
+  if(hasYData){
+    html += '<div class="msum-card">';
+    html += `<div class="msum-top" id="msumYesterdayToggle" role="button" tabindex="0" aria-expanded="${msumYesterdayOpen}">`
+          + `<span class="msum-label">📅 Yesterday · ${yLabel}</span>`
+          + `<span class="msum-chevron">${msumYesterdayOpen?'▴':'▾'}</span></div>`;
+    if(msumYesterdayOpen){
+      html += '<div class="msum-grid">'+metrics.map(m=>`<div class="msum-metric"><div class="msum-m-lbl">${m.ic} ${m.lbl}</div><div class="msum-m-val">${m.val}</div></div>`).join('')+'</div>';
+      if(achievement){
+        html += `<div class="ach-card"><span class="cf-ic">✓</span><div class="cf-body"><div class="cf-lbl">Main achievement</div><div class="cf-text">${achievement}</div></div></div>`;
+      }
+      if(carry){
+        html += `<div class="carry-card" id="msumCarryCard"><span class="cf-ic">⚠️</span><div class="cf-body"><div class="cf-lbl">Carry-forward</div><div class="cf-text">${carry.text}</div></div><span class="cf-arrow">›</span></div>`;
+      }
+    }
+    html += '</div>';
   }
 
   if(t3Final.length){
-    html += '<div class="section-head" style="margin-top:6px;"><h2>Today — top '+t3Final.length+'</h2></div>';
+    html += '<div class="section-head" style="margin-top:6px;"><h2>🎯 Today</h2></div>';
     html += t3Final.map((it,i)=>`<div class="t3-row"><span class="t3-num" style="background:${T3_NUM_COLORS[i]}">${i+1}</span><span class="t3-text">${it.text}</span><span class="t3-tag" style="color:${it.color}">${it.tag}</span></div>`).join('');
   }
 
   if(insight){
-    html += `<div class="insight-card"><div class="ic-tag">💡 Insight</div>${insight}</div>`;
+    html += `<div class="insight-card">💡 ${insight}</div>`;
   }
 
   wrap.innerHTML = html;
-  if(carry){
+
+  const toggleEl = document.getElementById('msumYesterdayToggle');
+  if(toggleEl){
+    toggleEl.onclick = ()=>{ msumYesterdayOpen = !msumYesterdayOpen; renderMorningSummary(); };
+    toggleEl.onkeydown = (e)=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); toggleEl.click(); } };
+  }
+  if(carry && msumYesterdayOpen){
     const cc = document.getElementById('msumCarryCard');
-    if(cc) cc.onclick = carry.go;
+    if(cc) cc.onclick = (e)=>{ e.stopPropagation(); carry.go(); };
   }
 }
 function renderDashboard(){

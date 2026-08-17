@@ -1077,3 +1077,63 @@ checks whether it has real data before rendering, and the whole
 `morningSummaryWrap` collapses to nothing if all four are empty (new
 install, no data yet) — no wall of "0/0" placeholder cards, per the
 brief's explicit empty-data section.
+
+**Known gap from this round, fixed in v13.12.0 below**: `APP_VERSION` and
+the Service Worker `CACHE_NAME` were never actually bumped when this
+shipped — About/Settings kept showing v13.9.0 despite the new section
+being live. Root cause: the version bump step was treated as separate
+from the feature work and got dropped. Flagging the pattern explicitly
+so it isn't repeated: bump the version in the *same* edit that ships the
+feature, not as a follow-up.
+
+## 29. v13.12.0 — Morning Summary refined against the reference mockup,
+header clock added
+
+A second, tightly-scoped Home-only brief, this time with both a live
+project export and a target screenshot attached as ground truth. Three
+changes, per the brief's explicit order:
+
+**1. Layout order corrected.** The brief's reference put the existing
+Dashboard Image/Quote (the `.focus-tabs` + `.hero-focus-card` pair) at
+the very top of Home, with Yesterday below it. The previous round had
+actually placed `#morningSummaryWrap` *above* `.focus-tabs` in the
+markup — the opposite order. Fixed by moving the two blocks in
+`#screen-dashboard`; no changes to either block's own internals.
+
+**2. Yesterday made collapsible.** Previously always-expanded; now
+starts collapsed (`Yesterday · Aug 16 ▾`), tap-to-expand/collapse in
+place via a new in-memory flag `msumYesterdayOpen` (module-scoped `let`,
+not persisted — resets to collapsed on reload, matching "collapsed by
+default" literally rather than remembering the user's last state, which
+the brief didn't ask for). Toggling calls `renderMorningSummary()` again
+— cheap and self-contained, no need to run the rest of
+`renderDashboard()`. Added a keyboard handler (`Enter`/`Space`) on the
+toggle row alongside the click handler, since it's a `role="button"`.
+
+**3. Main achievement row added.** The reference mockup's expanded
+Yesterday panel shows both a green "✓ Main achievement" row and the
+existing amber "⚠ Carry-forward" row. Achievement is a new 3-branch
+rule-based line (all habits done → most tasks done → most habits done,
+in that priority order), shown only when `goodDay` is true and only
+alongside real Yesterday data — same "don't invent it" discipline as
+everything else in this section. Today Top 3 and Insight now render
+below the Yesterday card unconditionally (not nested inside it), so they
+stay visible whether or not Yesterday is expanded, per the brief's
+layout diagram.
+
+**4. Header Day/Date/Time indicator.** New `updateHeaderDateTime()`,
+called once on load and every 30s after. Renders into a new
+`#headerDateTime` element placed between the existing `.greet` block and
+`.header-actions` — deliberately not inside either, so `greetName`/
+`greetSub`/the search button/the sync button are all byte-for-byte
+unchanged. Uses `toLocaleDateString`/`toLocaleTimeString` with no
+explicit timezone argument, so it follows the browser's local timezone
+(the app has no separate configured-timezone setting to defer to). Hides
+itself under a 380px viewport media query rather than wrapping or
+shrinking the greeting on small phones — the brief's "only if it fits"
+condition, implemented as a hard breakpoint rather than a runtime
+overflow check, which is simpler and has the same effect in practice.
+
+**Version bump.** `APP_VERSION` and `sw.js`'s `CACHE_NAME` now both
+correctly read v13.12.0, closing the gap noted at the end of the v13.10.0
+section above.

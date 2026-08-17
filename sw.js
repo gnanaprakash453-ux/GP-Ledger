@@ -24,7 +24,13 @@
 // v13.9.0: Trash/undo, Calendar integration, Documents photo attachments,
 // Travel currency, Finance accounts + recurring transactions, AI Coach +
 // exports for the 6 newest modules. See CHANGELOG.
-const CACHE_NAME = 'gp-ledger-v13-9-0';
+// v13.10.0: Morning Summary added to Home (Yesterday/Carry Forward/Today
+// Top 3/Insight) — index.html changed, bump so installed copies pick it up.
+// v13.12.0: Morning Summary revised — Yesterday is now a collapsible card
+// below the existing Dashboard Image/Quote, a Main Achievement row was
+// added, and a small live Day/Date/Time indicator was added to the header
+// — index.html changed again, same reasoning, bump.
+const CACHE_NAME = 'gp-ledger-v13-12-0';
 const IMG_CACHE_NAME = 'gp-ledger-images-v1';
 const CORE_ASSETS = [
   './index.html',

@@ -1,4 +1,45 @@
-# Changelog — v13.10.0 (Morning Summary on Home) → history below
+# Changelog — v13.12.0 (Morning Summary: collapsible Yesterday + header clock) → history below
+
+## v13.12.0
+
+**Home Dashboard update, requested against the attached reference mockup.**
+Three changes, Home-only — Finance/Health/Habits/Tasks/Goals/Routine/AI
+Coach/database/navigation/Search/Save & Sync are all untouched.
+
+- **Layout order fixed.** The existing Dashboard Image/Quote (Focus tabs +
+  hero photo/quote card) now renders first on Home, with the Morning
+  Summary block directly below it — previously Morning Summary rendered
+  above the image/quote. Everything else in the existing Home content
+  (Daily Progress, Quick Actions, Top Priorities, Upcoming) is unchanged
+  and still follows below.
+- **Yesterday is now collapsible**, collapsed by default (`Yesterday · Aug
+  16 ▾`). Tapping the row expands it in place — no navigation, no popup —
+  to show Tasks/Habits/Spent/Sleep (only the metrics that actually have
+  data), a new **Main achievement** row (one data-driven positive line,
+  shown only on a good day, e.g. "Completed 6 tasks and stayed
+  consistent."), and the existing **Carry-forward** row. Tapping again
+  collapses it. State is a simple in-memory flag (`msumYesterdayOpen`),
+  reset to collapsed on reload — no new storage.
+- **Today — Top 3** and the one-line **Insight** now render below the
+  Yesterday card regardless of whether it's expanded or collapsed, exactly
+  as before in terms of data logic (still 0–3 items, never padded, same
+  priority order: overdue task → overdue debt EMI → subscription due soon
+  → goal behind pace → today's tasks/habits).
+- **Header date/time.** A small live `Mon · Aug 17 · 5:42 AM` indicator
+  was added to the header, between the existing greeting and the existing
+  Search/Save & Sync controls. Uses the browser's local timezone, updates
+  every 30s, and hides itself below 380px viewport width rather than
+  crowding or wrapping the existing greeting — the greeting itself
+  (`greetName`/`greetSub`) was not touched.
+- **Version housekeeping.** `APP_VERSION` (and the Service Worker cache
+  name) had not actually been bumped when Morning Summary shipped as
+  v13.10.0 last round — the About screen and Settings were still silently
+  showing v13.9.0. Fixed here: every current-facing version indicator
+  (About screen, Settings row, `sw.js` `CACHE_NAME`) now correctly reads
+  v13.12.0. Historical inline comments documenting *when* past features
+  shipped (e.g. "v13.9.0 — Trash") are left as-is, same convention as the
+  rest of this file — those are changelog annotations, not the live
+  version number.
 
 ## v13.10.0
 

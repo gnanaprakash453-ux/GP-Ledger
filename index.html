@@ -135,15 +135,21 @@ main{ flex:1; overflow:hidden; position:relative; }
   /* v12.1.1 — smoother, less "sticky" mobile scrolling: scroll-behavior
      for JS-triggered scrollTo() calls (e.g. settings category switch),
      touch-action:pan-y so the browser commits to vertical scroll instead
-     of waiting to disambiguate against tap targets, and a transform hint
-     so the browser promotes this layer to its own compositor layer
-     instead of repainting the whole screen on every scroll frame. */
+     of waiting to disambiguate against tap targets. */
   scroll-behavior:smooth;
   touch-action:pan-y;
-  transform:translateZ(0);
-  will-change:scroll-position;
 }
-.screen.active{ display:block; }
+/* v13.17.0 — the compositor-layer hint (transform:translateZ(0) +
+   will-change:scroll-position) used to sit on the base .screen rule, which
+   applies to EVERY screen in the DOM (~25+ of them) even though only one is
+   ever visible at a time. That forced the browser to keep ~25 GPU-composited
+   layers resident simultaneously — real memory/GPU pressure on phones, and
+   the most likely cause of both the navigation lag and the occasional fully
+   black screen after Back (a starved compositor drops a layer's tiles and
+   paints them as blank/black until it catches up). Scoped to .screen.active
+   only: exactly one layer is ever promoted, everything else stays a normal
+   (cheap) paint layer. */
+.screen.active{ display:block; transform:translateZ(0); will-change:scroll-position; }
 /* ============ v12.0.3: sticky back button — was scrolling away with
    content, forcing a scroll-to-top just to leave a screen ============ */
 .screen > [data-back]{
@@ -5965,6 +5971,26 @@ function goToScreen(name, opts){
   // leave nothing shown — fall back to the dashboard instead of crashing.
   const target = document.getElementById('screen-'+name);
   if(!target){ if(name!=='dashboard') return goToScreen('dashboard', opts); return; }
+  // v13.17.0 — real cause of the "black screen" + "buttons stuck" reports:
+  // the focus-timer overlay (#timerFullscreen, z-index:500, covers the
+  // full viewport, background:var(--bg) which is near-black in dark theme)
+  // and the modal backdrop are only ever closed by their own explicit
+  // close/minimize buttons — neither was tied to navigation at all. Back
+  // (hardware/gesture, or the in-app back links, all of which route through
+  // here) swapped the *screen underneath* while the overlay/modal stayed
+  // on top, fully covering the new screen and silently eating every touch
+  // on it — including the FAB and bottom-nav buttons, which sit at a lower
+  // z-index. In dark theme the timer overlay's background made this read
+  // as a plain black screen; in light theme the same bug just looked like
+  // every button had stopped responding. Closing both here, once, before
+  // any screen swap happens, means navigating away always leaves exactly
+  // what's on screen touchable — matches the app's own existing "minimize"
+  // behavior (the running timer itself is untouched; only its full-screen
+  // view is dismissed), so nothing about the feature changes, it just also
+  // triggers on navigation instead of only on its own close button.
+  const timerHost = document.getElementById('timerFullscreen');
+  if(timerHost && timerHost.classList.contains('open')) closeTimerOverlay();
+  if(document.getElementById('modalBackdrop').classList.contains('open')) closeModal();
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   target.classList.add('active');
   try{ localStorage.setItem('gpl_lastScreen', name); }catch(e){} // v12.3 — see init()'s restore logic
@@ -5977,31 +6003,46 @@ function goToScreen(name, opts){
   // (opts.keepCategory), which runs after this and re-opens the right one.
   if(name==='settings' && !opts.keepCategory) closeSettingsCategory();
   renderBottomNav();
-  if(name==='dashboard') renderDashboard();
-  if(name==='finance'){ renderFinance(); renderBudgets(); }
-  if(name==='trends') renderTrends();
-  if(name==='reports') renderReports();
-  if(name==='routine') renderRoutine();
-  if(name==='debts') renderDebts();
-  if(name==='journal') renderJournal();
-  if(name==='diet') renderDiet(); // v12.4 — was missing; Diet relied entirely on renderAll()'s initial render and never refreshed when navigated back to
-  if(name==='goals') renderGoals();
-  if(name==='tasks') renderTasks();
-  if(name==='notes') renderNotes();
-  if(name==='travel') renderTravel();
-  if(name==='travel-detail') renderTripDetail();
-  if(name==='learning') renderLearning();
-  if(name==='content') renderContent();
-  if(name==='mealplanner') renderMealPlanner();
-  if(name==='people') renderPeople();
-  if(name==='trash') renderTrash();
-  if(name==='calendar') renderCalendar();
-  if(name==='search'){ document.getElementById('searchInput').value=''; renderSearchResults(''); setTimeout(()=>document.getElementById('searchInput').focus(), 200); }
-  if(name==='subscriptions') renderSubscriptions();
-  if(name==='assets') renderAssets();
-  if(name==='health') renderHealth();
-  if(name==='documents') renderDocuments();
-  if(name==='coach') renderCoach();
+  // v13.17.0 — this dispatch used to run unguarded: if any one screen's
+  // render function threw (e.g. a stale reference left over from a
+  // previous state, like travel-detail opening without a selected trip),
+  // the exception aborted the rest of goToScreen too — including
+  // updateBackFab() at the very end — leaving that screen half-built
+  // (reads as a black/blank screen on a dark theme) and the back-fab/any
+  // wiring that hadn't run yet stuck in whatever state it was last in.
+  // Wrapping the actual render call means a single broken module can no
+  // longer take navigation itself down with it; the screen still switches,
+  // the nav/back-fab still update, and the specific failure is logged for
+  // debugging instead of silently freezing the UI.
+  try{
+    if(name==='dashboard') renderDashboard();
+    else if(name==='finance'){ renderFinance(); renderBudgets(); }
+    else if(name==='trends') renderTrends();
+    else if(name==='reports') renderReports();
+    else if(name==='routine') renderRoutine();
+    else if(name==='debts') renderDebts();
+    else if(name==='journal') renderJournal();
+    else if(name==='diet') renderDiet(); // v12.4 — was missing; Diet relied entirely on renderAll()'s initial render and never refreshed when navigated back to
+    else if(name==='goals') renderGoals();
+    else if(name==='tasks') renderTasks();
+    else if(name==='notes') renderNotes();
+    else if(name==='travel') renderTravel();
+    else if(name==='travel-detail') renderTripDetail();
+    else if(name==='learning') renderLearning();
+    else if(name==='content') renderContent();
+    else if(name==='mealplanner') renderMealPlanner();
+    else if(name==='people') renderPeople();
+    else if(name==='trash') renderTrash();
+    else if(name==='calendar') renderCalendar();
+    else if(name==='search'){ document.getElementById('searchInput').value=''; renderSearchResults(''); setTimeout(()=>document.getElementById('searchInput').focus(), 200); }
+    else if(name==='subscriptions') renderSubscriptions();
+    else if(name==='assets') renderAssets();
+    else if(name==='health') renderHealth();
+    else if(name==='documents') renderDocuments();
+    else if(name==='coach') renderCoach();
+  }catch(err){
+    console.error('[goToScreen] render failed for', name, err);
+  }
   updateBackFab();
 }
 document.getElementById('headerSearchBtn').addEventListener('click', ()=> goToScreen('search'));

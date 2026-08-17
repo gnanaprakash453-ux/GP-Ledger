@@ -73,7 +73,25 @@
 // strings were already correct; this was purely the client discarding
 // them. index.html changed, so bump so installed copies actually receive
 // this instead of serving a cached v13.15.0.
-const CACHE_NAME = 'gp-ledger-v13-16-0';
+// v13.17.0: UI stability fix, no feature/design changes. (1) The focus-timer
+// full-screen overlay and the modal backdrop were only ever dismissed by
+// their own explicit close buttons, never by navigation — pressing Back
+// while either was open left it covering the new screen and silently
+// swallowing every touch (including the FAB and bottom nav), which is what
+// showed up as a black screen (the timer overlay's background is
+// var(--bg), near-black in dark theme) or "stuck" buttons. goToScreen now
+// closes both before switching screens. (2) Every .screen element carried
+// a permanent GPU-layer promotion hint (transform:translateZ(0) +
+// will-change:scroll-position), so ~25 layers were resident at once instead
+// of just the one visible screen — real memory/GPU pressure that's a
+// likely contributor to both the navigation lag and the black-screen
+// flashes; scoped to .screen.active only. (3) goToScreen's per-screen
+// render dispatch is now wrapped so one module's render error can no
+// longer abort the rest of navigation (which previously could leave
+// updateBackFab()/the back button in a stale state). index.html changed,
+// so bump so installed copies actually receive this instead of serving a
+// cached v13.16.0.
+const CACHE_NAME = 'gp-ledger-v13-17-0';
 const IMG_CACHE_NAME = 'gp-ledger-images-v1';
 const CORE_ASSETS = [
   './index.html',

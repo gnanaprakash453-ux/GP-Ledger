@@ -1,4 +1,51 @@
-# Changelog — v13.16.0 / apps-script v9.7.1 (Load from Sheet error handling + unsynced-changes warning) → history below
+# Changelog — v13.17.0 (UI stability: black screen / lag / stuck buttons) → history below
+
+## v13.17.0 (apps-script.gs unchanged this release)
+
+**Bug-fix release, requested audit: black screen on Back, general UI lag,
+and the Home FAB / other Home buttons becoming unresponsive after
+navigating around.** Only `index.html` and `sw.js` changed. No design,
+structure, or feature changes.
+
+- **Real cause of the black screen + stuck buttons:** the focus-timer
+  full-screen overlay (`#timerFullscreen`) and the modal backdrop were only
+  ever dismissed by their own explicit close/minimize buttons — neither was
+  tied to navigation. Pressing Back (hardware/gesture, the in-app `‹ Back`
+  links, or the floating back button all route through `goToScreen()`)
+  swapped the screen *underneath* whichever of the two was open, while it
+  stayed on top at a high z-index, silently swallowing every touch on the
+  new screen — including the FAB and bottom nav, since those sit at a lower
+  z-index. In dark theme, the timer overlay's background (`var(--bg)`,
+  near-black) is exactly what read as a plain black screen; in light theme
+  the same bug just looked like every button had stopped responding. Fix:
+  `goToScreen()` now closes both, once, before any screen swap — this
+  matches the app's own existing "minimize" behavior (the running timer
+  itself is untouched, only its full-screen view closes), so nothing about
+  the timer or modal system changes, it just now also triggers on
+  navigation instead of solely on its own close button.
+- **Lag / GPU pressure fix:** every `.screen` element (there are 25+)
+  carried a permanent compositor-layer promotion hint
+  (`transform:translateZ(0)` + `will-change:scroll-position`), so the
+  browser was keeping ~25 GPU layers resident at once even though only one
+  screen is ever visible. That's real, constant memory/GPU pressure on a
+  phone, and a likely contributor to both the navigation lag and the
+  black-screen flashes (a starved compositor drops a layer's tiles and
+  paints them blank until it catches up). The hint is now scoped to
+  `.screen.active` only — exactly one layer is ever promoted.
+- **Hardening:** `goToScreen()`'s per-screen render dispatch (the
+  `renderDashboard()` / `renderFinance()` / … chain) is now wrapped in a
+  try/catch. Previously, if any one screen's render function threw, the
+  exception aborted the rest of `goToScreen()` too — including
+  `updateBackFab()` at the very end — which could leave that screen
+  half-built and the back button/FAB in a stale state after an otherwise
+  unrelated edge case. Now the screen switch, nav, and back-fab always
+  complete, and the specific failure is logged to the console instead of
+  silently freezing navigation.
+- **Not changed:** `apps-script.gs` (no sync/backup logic touched), the
+  timer's actual running/elapsed-time tracking (`S.runningTimer` is
+  untouched by this fix — only the full-screen *view* of it closes on
+  navigation), and no screens, modules, or navigation paths were added,
+  removed, or restructured.
 
 ## v13.16.0 / apps-script v9.7.1 (apps-script.gs unchanged this release)
 

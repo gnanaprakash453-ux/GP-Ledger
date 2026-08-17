@@ -44,7 +44,21 @@
 // log doubles as proof the new script is actually deployed (paste ≠
 // publish; a stale deployment was the likely reason v13.14.0's fix didn't
 // visibly take effect yet) — index.html changed again, same reasoning.
-const CACHE_NAME = 'gp-ledger-v13-14-1';
+// v13.15.0: persistence/backup architecture fix — Save & Sync, Export
+// Backup, Load from Sheet, and Import Backup now all go through one
+// canonical buildBackupSnapshot_()/restoreBackupSnapshot_() pair instead of
+// four separate field lists (see index.html's comment above
+// buildBackupSnapshot_ for the full reasoning). Two real gaps fixed along
+// the way: S.aiCoach and S.notifLog were never included in ANY backup or
+// restore path before this (sync, load, AND import), and Import Backup
+// used to have its own restore logic that — unlike Load from Sheet — never
+// ran settings through defaultSettings() and never protected this
+// device's own sheetUrl. apps-script.gs is unchanged: the Data tab already
+// stores whatever object the client sends, so these fields ride along
+// automatically once index.html started sending them, same as every
+// module added since v13.2.0. index.html changed, so bump so installed
+// copies actually receive this instead of serving a cached v13.14.1.
+const CACHE_NAME = 'gp-ledger-v13-15-0';
 const IMG_CACHE_NAME = 'gp-ledger-images-v1';
 const CORE_ASSETS = [
   './index.html',

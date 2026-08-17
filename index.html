@@ -1716,7 +1716,7 @@ nav.bottom, .fab{ transition:transform .18s ease; }
    change it here only; both the photo estimator and the AI Coach read
    from this constant. */
 const GEMINI_MODEL = 'gemini-3.5-flash';
-const APP_VERSION = 'v13.14.1'; // single source of truth for About screen & Settings row
+const APP_VERSION = 'v13.15.0'; // single source of truth for About screen & Settings row
 
 /* ---------- v9.5: module registry (drives bottom nav, Home, More, Settings toggles) ---------- */
 /* core:true = one of the 4 primary tabs when enabled; group = header used in the More screen. */
@@ -6467,43 +6467,96 @@ async function testConnection(){
     }
   }catch(e){ debugLog('Ping failed: '+e.message); alert('Could not reach the Apps Script URL.'); }
 }
+const BACKUP_FORMAT_VERSION = 1; // schema version of the canonical snapshot below — independent of APP_VERSION (that's the app build; this is the backup SHAPE). Bump only if the shape changes in a way old restores need to detect.
+
+/* ---------- v13.15.0: canonical backup snapshot (single source of truth) ----------
+   Save & Sync (Google Sheet), Export Backup, Load from Sheet, and Import
+   Backup used to each keep their OWN separate list of which S fields to
+   read/write. That's exactly how fields go missing: 8 fields were added to
+   syncNow()'s outbound payload across v13.2.0–v13.5.0 but never added to
+   Load-from-Sheet's inbound restore until the v13.7.0 fix below — pulling a
+   backup down had been silently dropping all of them the whole time, while
+   pushing them up worked fine. From here on there is ONE function that
+   decides what a "complete snapshot" contains (buildBackupSnapshot_) and
+   ONE function that restores it back into S (restoreBackupSnapshot_,
+   further down near Load from Sheet) — every save/export/load/import path
+   below calls through these instead of keeping its own field list. When a
+   future module adds a persistent S field, it belongs in exactly one
+   place: here.
+
+   Deliberately NOT part of the snapshot:
+   - S.runningTimer — an in-progress "recording" timer (habit/routine quick
+     log). Genuinely session-local: restoring a timer that was "running"
+     when an old backup was taken would show a wildly wrong elapsed time
+     instead of just not being restored. Stays device-only, same as before.
+   - Documents vault photo attachments (gpl_docAttachments) — already
+     stored outside S entirely; see the comment above getDocAttachment()
+     for why. Untouched by this change.
+   - gpl_lastScreen / gpl_quoteRecent — UI navigation state and the quote
+     anti-repeat cache. Neither is meaningful to back up or restore.
+
+   opts.forSync (bool) — true for the payload sent to the Google Sheet:
+   diet meal photos are stripped (see the old dietForSync comment this
+   replaces) and Goals current/target are pre-resolved via
+   goalProgressCalc() so the Goals tab shows real numbers instead of blanks
+   for auto-tracked goals. False for Export Backup: the snapshot keeps the
+   raw stored values — there's no per-cell size ceiling on a local file, so
+   nothing needs stripping, matching the old plain JSON.stringify(S) export. */
+function buildBackupSnapshot_(opts){
+  opts = opts || {};
+  let diet = S.diet;
+  if(opts.forSync){
+    // v9.4.1 fix, preserved: meal photos are full base64 images in
+    // S.diet.meals[date][].image for the in-app preview/AI estimate — they
+    // must NOT be sent to the Sheet (100-300KB of base64 per photo, unused
+    // in the backup either way).
+    const dietForSync = { settings: S.diet.settings, meals: {} };
+    Object.keys(S.diet.meals || {}).forEach(ds=>{
+      dietForSync.meals[ds] = (S.diet.meals[ds]||[]).map(({image, ...rest})=>{
+        const cls = classifyMeal(rest); // v12.9.1 — resolve the same fat-quality/junk-vs-healthy tag shown in-app, so the Sheet matches what you see, not a blank field
+        return Object.assign({}, rest, { fatQuality: cls.fatQuality, mealTag: cls.tag });
+      });
+    });
+    diet = dietForSync;
+  }
+  let goals = S.goals;
+  if(opts.forSync){
+    // v12.9.1, preserved: send the resolved current/target so auto-tracked goals aren't blank in the Sheet.
+    goals = S.goals.map(g=>{
+      const gp = goalProgressCalc(g);
+      return Object.assign({}, g, { current: gp.current, target: gp.target });
+    });
+  }
+  return {
+    backupVersion: BACKUP_FORMAT_VERSION, appVersion: APP_VERSION, createdAt: new Date().toISOString(),
+    habits:S.habits, transactions:S.transactions, settings:S.settings, routineLogs:S.routineLogs, routineCats:S.routineCats, routineTemplates:S.routineTemplates,
+    debts:S.debts, journal:S.journal, diet:diet, goals:goals, subscriptions:S.subscriptions, assets:S.assets, health:S.health, documents:S.documents,
+    aiCoach:S.aiCoach, // v13.15.0 — was missing from every backup/restore path (sync, load, import); cached AI Coach insights simply reset after a restore before this
+    budgets:S.budgets,
+    quotes:S.quotes, moduleQuotes:S.moduleQuotes, // v12.9.1 — your custom/edited quotes back up to the Sheet too, not just the local JSON export
+    notifLog:S.notifLog, // v13.15.0 — same gap as aiCoach: notification history was never actually included in any backup
+    tasks:S.tasks, notes:S.notes, trips:S.trips, learningItems:S.learningItems, ideas:S.ideas, mealPlan:S.mealPlan, mealFavorites:S.mealFavorites,
+    people:S.people, trash:S.trash, accounts:S.accounts
+  };
+}
+
+/** Shape check BEFORE we touch any live state. A snapshot that fails this is rejected untouched — S is never partially modified (see restoreBackupSnapshot_). */
+function isValidBackupSnapshot_(d){
+  if(!d || typeof d!=='object') return false;
+  // A real GP Ledger snapshot always has a habits array and a settings object — every export/sync payload includes both even on a brand-new install (defaultHabits()/defaultSettings() seed them before the very first save). Anything else isn't ours.
+  return Array.isArray(d.habits) && !!d.settings && typeof d.settings==='object';
+}
+
 async function syncNow(silent, extra){
   const url = S.settings.sheetUrl;
   const btn = document.getElementById('syncBtn'), label = document.getElementById('syncBtnLabel');
   if(!url){ if(!silent) alert('Add your Google Apps Script Web App URL in Settings first.'); return; }
   btn.classList.add('syncing'); label.textContent='Syncing…';
-  // v9.4.1 fix: meal photos are stored as full base64 images in S.diet.meals[date][].image
-  // for the in-app preview and the one-time AI estimate — they must NOT be sent to the Sheet.
-  // Even with the Data tab's snapshot now chunked across rows instead of one cell (Apps
-  // Script v9.7.0), there's no good reason to ship 100-300KB of base64 per photo through
-  // Sync just to sit unused in a backup — so this stays excluded regardless. Only the
-  // nutrition numbers (already extracted from the photo) are synced; the photo itself stays
-  // on-device only.
-  const dietForSync = { settings: S.diet.settings, meals: {} };
-  Object.keys(S.diet.meals || {}).forEach(ds=>{
-    dietForSync.meals[ds] = (S.diet.meals[ds]||[]).map(({image, ...rest})=>{
-      const cls = classifyMeal(rest); // v12.9.1 — resolve the same fat-quality/junk-vs-healthy tag shown in-app, so the Sheet matches what you see, not a blank field
-      return Object.assign({}, rest, { fatQuality: cls.fatQuality, mealTag: cls.tag });
-    });
-  });
-  // v12.9.1 — goals: send the resolved current/target from goalProgressCalc()
-  // (same numbers shown on the Goals screen) instead of the raw stored
-  // fields, which are blank for anything auto-tracked (Debt/Weight/Habit
-  // streak/auto-tracked Savings) since those are computed on the fly, not
-  // stored. Previously the Goals sheet tab showed an empty "Current" for
-  // every auto-tracked goal.
-  const goalsForSync = S.goals.map(g=>{
-    const gp = goalProgressCalc(g);
-    return Object.assign({}, g, { current: gp.current, target: gp.target });
-  });
-  const payload = { action:'sync', habits:S.habits, transactions:S.transactions, settings:S.settings, routineLogs:S.routineLogs, routineCats:S.routineCats, routineTemplates:S.routineTemplates, debts:S.debts, journal:S.journal, diet:dietForSync,
-    goals:goalsForSync, subscriptions:S.subscriptions, assets:S.assets, health:S.health, documents:S.documents, budgets:S.budgets,
-    quotes:S.quotes, moduleQuotes:S.moduleQuotes, // v12.9.1 — your custom/edited quotes now back up to the Sheet too, not just the local JSON export
-    tasks:S.tasks, // v13.2.0 — Tasks module; rides the existing full-JSON snapshot tab automatically, no apps-script.gs change needed for backup/restore to work
-    notes:S.notes, trips:S.trips, learningItems:S.learningItems, ideas:S.ideas, mealPlan:S.mealPlan, mealFavorites:S.mealFavorites, // v13.4.0 — the remaining five new modules, same rides-the-snapshot approach
-    people:S.people, // v13.5.0 — People, same approach
-    trash:S.trash, accounts:S.accounts, // v13.9.0 — Trash and Accounts, same approach
-    extra: extra||null, clientTime: new Date().toISOString() };
+  // v13.15.0 — payload now comes from the same canonical buildBackupSnapshot_()
+  // that Export Backup uses (forSync:true here strips diet photos and
+  // resolves goal progress, same as before — see that function's comment).
+  const snapshot = buildBackupSnapshot_({ forSync:true });
+  const payload = Object.assign({ action:'sync' }, snapshot, { extra: extra||null, clientTime: new Date().toISOString() });
   try{
     const res = await fetch(url, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify(payload) });
     const text = await res.text();
@@ -6559,6 +6612,56 @@ async function syncNow(silent, extra){
   }
 }
 
+/* Canonical restore — replaces (never merges/accumulates) each field that
+   IS present and validly-typed in the snapshot `d`; a field the snapshot
+   doesn't have (older backup, from before that module existed) is simply
+   left as whatever loadState()/the current in-memory value already had,
+   so an old backup can't wipe a newer field to blank (see item 11 of the
+   architecture notes above buildBackupSnapshot_). This is a REPLACE of
+   each field's value, not a per-record merge — a habit/task/etc. that
+   exists on this device but not in the snapshot does not survive a
+   restore, by design (that's what makes this a real restore instead of an
+   accumulating import). Used by BOTH Load from Sheet and Import Backup —
+   previously each had its own separate restore logic that had already
+   drifted apart once (v13.7.0) and would again.
+   Caller must check isValidBackupSnapshot_(d) first — this function
+   assumes it's already been validated and does not itself guard against a
+   completely malformed `d`. */
+function restoreBackupSnapshot_(d){
+  const keepSheetUrl = S.settings && S.settings.sheetUrl; // never let a restore silently change which Google Sheet this device talks to
+  if(Array.isArray(d.habits)) S.habits = d.habits;
+  if(Array.isArray(d.transactions)) S.transactions = d.transactions;
+  if(d.settings && typeof d.settings==='object') S.settings = Object.assign(defaultSettings(), d.settings, keepSheetUrl ? { sheetUrl:keepSheetUrl } : {});
+  if(d.routineLogs && typeof d.routineLogs==='object') S.routineLogs = d.routineLogs;
+  if(Array.isArray(d.routineCats)) S.routineCats = d.routineCats;
+  if(d.routineTemplates && typeof d.routineTemplates==='object') S.routineTemplates = d.routineTemplates;
+  if(Array.isArray(d.debts)) S.debts = d.debts;
+  if(d.journal && typeof d.journal==='object') S.journal = d.journal;
+  if(d.diet && typeof d.diet==='object') S.diet = Object.assign({meals:{},settings:defaultDietSettings()}, d.diet);
+  if(Array.isArray(d.goals)) S.goals = d.goals;
+  if(Array.isArray(d.subscriptions)) S.subscriptions = d.subscriptions;
+  if(Array.isArray(d.assets)) S.assets = d.assets;
+  if(d.health && typeof d.health==='object') S.health = Object.assign(defaultHealth(), d.health);
+  if(Array.isArray(d.documents)) S.documents = d.documents;
+  if(d.aiCoach && typeof d.aiCoach==='object') S.aiCoach = d.aiCoach; // v13.15.0 — was never restored before (see buildBackupSnapshot_ comment)
+  if(Array.isArray(d.budgets)) S.budgets = d.budgets;
+  if(Array.isArray(d.quotes) && d.quotes.length) S.quotes = d.quotes;
+  if(d.moduleQuotes && typeof d.moduleQuotes==='object') S.moduleQuotes = d.moduleQuotes;
+  if(Array.isArray(d.notifLog)) S.notifLog = d.notifLog; // v13.15.0 — was never restored before
+  if(Array.isArray(d.tasks)) S.tasks = d.tasks;
+  if(Array.isArray(d.notes)) S.notes = d.notes;
+  if(Array.isArray(d.trips)) S.trips = d.trips;
+  if(Array.isArray(d.learningItems)) S.learningItems = d.learningItems;
+  if(Array.isArray(d.ideas)) S.ideas = d.ideas;
+  if(d.mealPlan && typeof d.mealPlan==='object') S.mealPlan = d.mealPlan;
+  if(Array.isArray(d.mealFavorites)) S.mealFavorites = d.mealFavorites;
+  if(Array.isArray(d.people)) S.people = d.people;
+  if(Array.isArray(d.trash)) S.trash = d.trash;
+  if(Array.isArray(d.accounts)) S.accounts = d.accounts;
+  MODULE_QUOTE_KEYS.forEach(key=>{ if(!Array.isArray(S.moduleQuotes[key]) || !S.moduleQuotes[key].length) S.moduleQuotes[key] = defaultModuleQuotes(key); });
+  if(!Array.isArray(S.quotes) || !S.quotes.length) S.quotes = defaultQuotes();
+}
+
 document.getElementById('loadFromSheetBtn').addEventListener('click', async ()=>{
   const url = S.settings.sheetUrl;
   if(!url){ alert('Add your Google Apps Script Web App URL first.'); return; }
@@ -6567,57 +6670,30 @@ document.getElementById('loadFromSheetBtn').addEventListener('click', async ()=>
     const res = await fetch(url+(url.includes('?')?'&':'?')+'action=load', { method:'GET' });
     const text = await res.text();
     let data; try{ data = JSON.parse(text); }catch{ data=null; }
-    if(data && data.ok && data.data){
-      const d = data.data;
-      if(Array.isArray(d.habits)) S.habits = d.habits;
-      if(Array.isArray(d.transactions)) S.transactions = d.transactions;
-      if(d.settings) S.settings = Object.assign(defaultSettings(), d.settings, { sheetUrl:url });
-      if(d.routineLogs) S.routineLogs = d.routineLogs;
-      if(Array.isArray(d.routineCats)) S.routineCats = d.routineCats;
-      if(d.routineTemplates) S.routineTemplates = d.routineTemplates;
-      if(Array.isArray(d.debts)) S.debts = d.debts;
-      if(d.journal) S.journal = d.journal;
-      if(d.diet) S.diet = Object.assign({meals:{},settings:defaultDietSettings()}, d.diet);
-      if(Array.isArray(d.goals)) S.goals = d.goals;
-      if(Array.isArray(d.subscriptions)) S.subscriptions = d.subscriptions;
-      if(Array.isArray(d.assets)) S.assets = d.assets;
-      if(d.health) S.health = Object.assign(defaultHealth(), d.health);
-      if(Array.isArray(d.documents)) S.documents = d.documents;
-      if(Array.isArray(d.budgets)) S.budgets = d.budgets;
-      if(Array.isArray(d.quotes) && d.quotes.length) S.quotes = d.quotes;
-      if(d.moduleQuotes && typeof d.moduleQuotes==='object') S.moduleQuotes = d.moduleQuotes;
-      // v13.7.0 fix — these 8 fields were added to syncNow()'s outbound
-      // payload back in v13.2.0–v13.5.0 but never added here on the way
-      // back IN. Data synced to the Sheet fine; pulling it back down (e.g.
-      // a fresh install, or a new device) silently dropped all of it. Same
-      // Array.isArray/typeof guards as every field above, for consistency.
-      if(Array.isArray(d.tasks)) S.tasks = d.tasks;
-      if(Array.isArray(d.notes)) S.notes = d.notes;
-      if(Array.isArray(d.trips)) S.trips = d.trips;
-      if(Array.isArray(d.learningItems)) S.learningItems = d.learningItems;
-      if(Array.isArray(d.ideas)) S.ideas = d.ideas;
-      if(d.mealPlan && typeof d.mealPlan==='object') S.mealPlan = d.mealPlan;
-      if(Array.isArray(d.mealFavorites)) S.mealFavorites = d.mealFavorites;
-      if(Array.isArray(d.people)) S.people = d.people;
-      // v13.9.0 — added at the SAME time as the outbound payload field
-      // (see the v13.7.0 postmortem above: that bug happened specifically
-      // because this step got skipped and done later, separately).
-      if(Array.isArray(d.trash)) S.trash = d.trash;
-      if(Array.isArray(d.accounts)) S.accounts = d.accounts;
-      MODULE_QUOTE_KEYS.forEach(key=>{ if(!Array.isArray(S.moduleQuotes[key]) || !S.moduleQuotes[key].length) S.moduleQuotes[key] = defaultModuleQuotes(key); });
+    // v13.15.0 — validated with isValidBackupSnapshot_ BEFORE anything in S
+    // is touched, and restored through the same restoreBackupSnapshot_()
+    // Import Backup uses. An invalid/corrupt snapshot now leaves the
+    // current on-device data completely untouched instead of partially
+    // overwriting it.
+    if(data && data.ok && data.data && isValidBackupSnapshot_(data.data)){
+      restoreBackupSnapshot_(data.data);
       saveState(); loadSettingsForm(); applyTheme(); applyExperiencePack(S.settings.experiencePack || 'glass', {skipBg:true}); renderAll();
       showToast('Loaded from Google Sheet ✓', '⬇️');
       debugLog('Load OK — pulled saved snapshot from Sheet.');
     } else {
       debugLog('Load FAILED — response:\n'+text.slice(0,400));
-      alert('Could not load a valid snapshot. Make sure the Apps Script is redeployed to the latest version.');
+      alert((data && data.ok) ? 'That Sheet snapshot does not look like a valid GP Ledger backup — current data on this device was not changed.' : 'Could not load a valid snapshot. Make sure the Apps Script is redeployed to the latest version.');
     }
   }catch(e){ debugLog('Load error: '+e.message); alert('Load failed: '+e.message); }
 });
 
 /* ---------- backup ---------- */
 document.getElementById('exportBackupBtn').addEventListener('click', ()=>{
-  const blob = new Blob([JSON.stringify(S,null,2)], {type:'application/json'});
+  // v13.15.0 — same canonical snapshot Save & Sync builds (forSync:false
+  // here, so meal photos and raw goal values are kept as-is — no per-cell
+  // size ceiling on a local file, unlike the Google Sheet).
+  const snapshot = buildBackupSnapshot_({ forSync:false });
+  const blob = new Blob([JSON.stringify(snapshot,null,2)], {type:'application/json'});
   const url = URL.createObjectURL(blob); const a=document.createElement('a');
   a.href=url; a.download=`gp-ledger-backup-${todayStr()}.json`; a.click(); URL.revokeObjectURL(url);
 });
@@ -6628,15 +6704,19 @@ document.getElementById('importBackupFile').addEventListener('change', (e)=>{
   reader.onload = ()=>{
     try{
       const data = JSON.parse(reader.result);
-      if(data.habits && data.settings){
-        S = Object.assign({ habits:[], transactions:[], settings:{}, routineLogs:{}, routineCats:[], routineTemplates:defaultRoutineTemplates(), debts:[], journal:{}, diet:{meals:{},settings:defaultDietSettings()},
-          goals:[], subscriptions:[], assets:[], health:defaultHealth(), documents:[], aiCoach:{lastInsights:[],lastRun:''}, budgets:[], quotes:[], moduleQuotes:{}, notifLog:[],
-          tasks:[], notes:[], trips:[], learningItems:[], ideas:[], mealPlan:{}, mealFavorites:[], people:[], trash:[], accounts:[] }, data);
-        MODULE_QUOTE_KEYS.forEach(key=>{ if(!Array.isArray(S.moduleQuotes[key]) || !S.moduleQuotes[key].length) S.moduleQuotes[key] = defaultModuleQuotes(key); });
-        if(!Array.isArray(S.quotes) || !S.quotes.length) S.quotes = defaultQuotes();
+      // v13.15.0 — now goes through the SAME isValidBackupSnapshot_() /
+      // restoreBackupSnapshot_() as Load from Sheet. Previously this had
+      // its own separate Object.assign restore that, unlike Load from
+      // Sheet, never ran settings through defaultSettings() (so an older
+      // JSON backup missing newer settings fields left them undefined
+      // instead of defaulted) and never protected this device's own
+      // sheetUrl — two restore paths that had already drifted apart once
+      // and would again. See the comment above buildBackupSnapshot_().
+      if(isValidBackupSnapshot_(data)){
+        restoreBackupSnapshot_(data);
         saveState(); loadSettingsForm(); applyTheme(); applyExperiencePack(S.settings.experiencePack || 'glass', {skipBg:true}); renderAll();
         showToast('Backup restored', '✅');
-      } else { alert('That file does not look like a GP Ledger backup.'); }
+      } else { alert('That file does not look like a GP Ledger backup. Current data on this device was not changed.'); }
     }catch(err){ alert('Could not read that file: '+err.message); }
   };
   reader.readAsText(file);

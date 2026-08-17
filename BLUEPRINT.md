@@ -44,6 +44,9 @@ S = {
   debts: [...], journal: { 'YYYY-MM-DD': {text,font,color} },
   diet: { meals: { 'YYYY-MM-DD': [...] }, settings: {...} },
   goals, subscriptions, assets, health, documents, aiCoach, budgets,
+  quotes, moduleQuotes, notifLog, tasks, notes, trips, learningItems,
+  ideas, mealPlan, mealFavorites, people, trash, accounts,
+  runningTimer,   // session-only — see §31, deliberately NOT backed up
 }
 ```
 Everything persists to `localStorage` under `gpl_<key>` (see
@@ -52,6 +55,19 @@ Everything persists to `localStorage` under `gpl_<key>` (see
 **when adding a new top-level `S` field, add its default-guard line there
 too**, and add it to `Object.assign(defaultSettings(), S.settings)` if it
 lives under `settings`.
+
+**Backup/restore (v13.15.0, see §31): don't hand-list fields anywhere
+else.** `buildBackupSnapshot_()`/`restoreBackupSnapshot_()`/
+`isValidBackupSnapshot_()` (defined just above `syncNow()`) are the one
+place that knows the full shape of a "complete snapshot" — Save & Sync,
+Export Backup, Load from Sheet, and Import Backup all call through them.
+**A new persistent top-level `S` field needs exactly one more line, in
+`buildBackupSnapshot_()`'s return object and the matching guard in
+`restoreBackupSnapshot_()`** — not four separate edits across four
+handlers like before v13.15.0. The only fields excluded on purpose are
+`S.runningTimer` (session-only) and whatever's device-local outside `S`
+entirely (`gpl_docAttachments`, `gpl_lastScreen`, `gpl_quoteRecent`) — see
+§31 for why each one is excluded.
 
 ## 4. Module system (added v9.5.0)
 
@@ -141,11 +157,15 @@ of the original v10.0 spec (curated per-pack imagery vs. random seeds).
   `saveState()`. Grep for `getElementById` mismatches after editing (a
   referenced id with no matching `id="..."` in the HTML is the most
   common self-inflicted bug in this file).
-- **Sync payload** (`payload` object built for `action:'sync'`) sends
-  `S.settings` wholesale, so `experiencePack`/`themeId`/new settings
-  fields sync automatically — don't add per-field plumbing on the Apps
-  Script side unless a field needs its own Sheet tab (like
-  habits/transactions/debts do).
+- **Sync payload** (built by `buildBackupSnapshot_({forSync:true})`, see
+  §31) sends `S.settings` wholesale, so `experiencePack`/`themeId`/new
+  settings fields sync automatically — don't add per-field plumbing on
+  the Apps Script side unless a field needs its own readable Sheet tab
+  (like habits/transactions/debts do). The Data tab's full JSON snapshot
+  (used by Load from Sheet) needs zero Apps Script changes for a new
+  field to be backed up — it's `JSON.stringify(body)` of whatever
+  `index.html` sends, so a field just needs to exist in
+  `buildBackupSnapshot_()`'s return object (see §3) to ride along.
 - **Version bump discipline:** bump the display version (About row +
   Settings hint) every session. Only bump `APP_SCRIPT_VERSION` +
   `SCRIPT_VERSION` together, and only when `apps-script.gs` itself
@@ -1164,3 +1184,88 @@ outright rather than left dead in the CSS.
 
 **Version bump.** `APP_VERSION` and `sw.js`'s `CACHE_NAME` now read
 v13.13.0.
+
+## 31. v13.15.0 — one canonical backup snapshot (closing the loop on §26)
+
+**§26 diagnosed the disease correctly but only treated that one
+outbreak.** The v13.7.0 fix added the 8 missing fields to Load from
+Sheet's restore, but left the underlying shape unchanged: `syncNow()`,
+`exportBackupBtn`, `loadFromSheetBtn`, and `importBackupFile` each still
+kept their own separate hand-written list of which `S` fields to
+read/write. §26's own "lesson" section said as much ("adding sync
+support is a two-sided change... all three need the new field") but a
+lesson that has to be manually remembered on every future module is
+exactly the kind of thing that lapses again eventually — it isn't a fix,
+it's a note to be more careful next time.
+
+**The actual fix:** two new functions are now the ONLY place that knows
+the shape of a complete GP Ledger snapshot.
+
+- **`buildBackupSnapshot_(opts)`** — builds the snapshot from live `S`.
+  `syncNow()` calls it with `{forSync:true}` (strips diet meal photos,
+  pre-resolves Goals progress — same special-casing v9.4.1/v12.9.1
+  always did, just centralized instead of duplicated). Export Backup
+  calls it with `{forSync:false}` (raw values, no stripping — a local
+  file has no per-cell size ceiling).
+- **`isValidBackupSnapshot_(d)`** — a shape gate (`Array.isArray(d.habits)
+  && d.settings`) every restore path checks BEFORE touching `S`. Fails →
+  nothing in `S` changes, current on-device data stays exactly as it was
+  (closes acceptance-criteria item "a failed/malformed snapshot must not
+  corrupt current local state" — previously Import Backup's `data.habits
+  && data.settings` truthy check existed, but Load from Sheet had no
+  equivalent gate at all before assigning fields one by one).
+- **`restoreBackupSnapshot_(d)`** — the one restore function. Same
+  per-field `Array.isArray`/`typeof` guards §26/§27 already established
+  (so an older snapshot missing a newer field leaves the current value
+  alone instead of wiping it), but now there is exactly one copy of this
+  logic. Both Load from Sheet and Import Backup call it.
+
+**Two more gaps this surfaced, same silent-drift pattern as §26/§27:**
+`S.aiCoach` and `S.notifLog` existed in `S`, in `loadState()`/
+`saveState()` (full local persistence), but had never once been added to
+`syncNow()`'s payload OR either restore path — a true "existed since it
+was built, never actually backed up" gap, not a regression. Both are
+small/bounded fields (`notifLog` self-caps at 200 entries), so this was a
+pure omission with no size-risk reason behind it, unlike the deliberate
+photo/attachment exclusions below. Both now flow through
+`buildBackupSnapshot_`/`restoreBackupSnapshot_` like everything else.
+
+**Also found while unifying:** Import Backup's old restore was a raw
+`Object.assign({defaults...}, data)` — it never ran `data.settings`
+through `defaultSettings()` the way Load from Sheet's restore always did,
+so an older local `.json` export missing a settings field added since
+then would leave that field `undefined` after import instead of properly
+defaulted. It also never protected this device's configured `sheetUrl`
+the way Load from Sheet did, so importing an old backup could silently
+repoint the device at a different (or blank) Google Sheet. Both fixed
+now that both paths share one restore function.
+
+**Deliberately still excluded from the snapshot** (unchanged by this
+release, now explicitly documented in one place instead of implicitly):
+`S.runningTimer` (an in-progress "recording" timer — restoring a
+timer that was "running" when an old backup was taken would show a
+wildly wrong elapsed time; this is genuinely session-local, not an
+oversight), the Documents vault's `gpl_docAttachments` (already stored
+outside `S` entirely — see the comment above `getDocAttachment()`; still
+too large for the Sheet, still device-only), and `gpl_lastScreen`/
+`gpl_quoteRecent` (UI navigation state and the quote anti-repeat cache —
+neither is meaningful to a "backup").
+
+**`apps-script.gs` did not need to change.** The Data tab snapshot has
+always been `JSON.stringify(body)` of whatever the client's sync payload
+contains — `aiCoach`/`notifLog` started riding along automatically the
+moment `index.html`'s payload included them, the same way Tasks (v13.2.0)
+and every module since needed zero backend changes to be backed up.
+`SCRIPT_VERSION`/`APP_SCRIPT_VERSION` stay at `v9.7.1`.
+
+**Export Backup's file format is backward- and forward-compatible.** The
+downloaded `.json` now has a small `backupVersion`/`appVersion`/
+`createdAt` header (schema version, tracked separately from the app
+version per the architecture notes above `buildBackupSnapshot_` in
+`index.html`) but every field an older version of the app wrote is still
+exactly where `isValidBackupSnapshot_`/`restoreBackupSnapshot_` expect
+it, so old exported backups remain importable.
+
+**Version bump.** `APP_VERSION` and `sw.js`'s `CACHE_NAME` now read
+v13.15.0. No UI change — same Backup & Restore screen, buttons, confirm
+dialog, toasts, and debug log as before.

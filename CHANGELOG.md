@@ -1,4 +1,62 @@
-# Changelog — v13.14.1 / apps-script v9.7.1 (Data tab fix now self-verifying) → history below
+# Changelog — v13.15.0 / apps-script v9.7.1 (canonical backup snapshot — one save/restore mechanism) → history below
+
+## v13.15.0 / apps-script v9.7.1 (apps-script.gs unchanged this release)
+
+**Architecture fix, not just a bug fix — Save & Sync, Export Backup, Load
+from Sheet, and Import Backup now share ONE canonical snapshot builder and
+ONE canonical restorer instead of four separate field lists.** `index.html`
+and `sw.js` changed; `apps-script.gs` did not (see why below).
+
+- **Why:** `v13.7.0` fixed 8 fields that were added to `syncNow()`'s
+  outbound payload across `v13.2.0`–`v13.5.0` but never added to Load from
+  Sheet's inbound restore — pulling a backup down had been silently
+  dropping all of them the whole time sync itself worked fine. That was a
+  symptom of the real problem: four independent code paths each hand-listed
+  which `S` fields they cared about, so it was only a matter of time before
+  they drifted apart again.
+- **Fix:** new `buildBackupSnapshot_(opts)` builds the complete, current
+  snapshot from `S` (used by both Save & Sync and Export Backup —
+  `opts.forSync` controls whether diet meal photos are stripped and Goals
+  progress is pre-resolved, same behavior as before, just centralized), and
+  new `restoreBackupSnapshot_(d)` restores one back into `S` (used by both
+  Load from Sheet and Import Backup). A new `isValidBackupSnapshot_(d)`
+  gate runs first on every restore path — if a snapshot doesn't look like a
+  real GP Ledger backup (missing `habits`/`settings`), **nothing in `S` is
+  touched and the current on-device data is left exactly as it was**,
+  instead of a partial/corrupted overwrite.
+- **Two real gaps closed by centralizing this:** `S.aiCoach` (cached AI
+  Coach insights) and `S.notifLog` (notification history) were never
+  actually part of ANY backup or restore path before this — not sync, not
+  load, not import. They're both small, bounded fields (notifLog is
+  already capped at 200 entries) and now ride the snapshot like every
+  other module.
+- **Import Backup was quietly worse than Load from Sheet before this:** its
+  old restore logic did a raw `Object.assign` that never ran the imported
+  `settings` through `defaultSettings()` (so an older local `.json` backup
+  missing newer settings fields left them `undefined` instead of properly
+  defaulted) and never protected this device's own configured `sheetUrl`
+  (importing an old backup could silently repoint this device at a
+  different/blank Google Sheet). Both are fixed now that it shares the same
+  restore function as Load from Sheet.
+- `S.runningTimer` is deliberately still excluded from the snapshot (see
+  the comment above `buildBackupSnapshot_` in `index.html`) — it's an
+  in-progress "recording" timer, genuinely session-local; restoring a
+  "running" timer from an old backup would show a wildly wrong elapsed
+  time rather than just correctly not being restored. Documents vault
+  photo attachments (`gpl_docAttachments`) remain device-only exactly as
+  before, unaffected by this change.
+- **`apps-script.gs` needs no changes and no redeploy for this release** —
+  the Data tab's snapshot is `JSON.stringify(body)` of whatever the client
+  sends, so `aiCoach`/`notifLog` ride along automatically now that
+  `index.html` sends them, the same way Tasks/Notes/Trips/etc. did when
+  those modules shipped. `SCRIPT_VERSION`/`APP_SCRIPT_VERSION` stay at
+  `v9.7.1`.
+- `CACHE_NAME` bumped to `gp-ledger-v13-15-0` (index.html changed).
+- **Nothing in the UI changed** — same Backup & Restore buttons, same
+  confirm dialog, same toasts/debug log. Export Backup's downloaded
+  `.json` now includes a `backupVersion`/`appVersion`/`createdAt` header
+  (schema-version metadata, independent of the app version) but is
+  otherwise the same shape older versions of the app can still read back.
 
 ## v13.14.1 / apps-script v9.7.1
 

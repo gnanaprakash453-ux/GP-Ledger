@@ -722,32 +722,27 @@ body{ background:var(--bg-gradient); }
 .habit-diet-insight .hdi-trend{ font-weight:800; }
 .habit-diet-insight.compact{ margin-top:4px; padding:3px 0 0; background:transparent; font-size:11px; color:var(--sub); }
 
-/* ============ v14.2.0: universal screen-transition ============
-   A one-shot "page settle" (fade + slight rise), NOT a permanent
-   will-change/transform on every screen — v13.17.0 already root-caused a
-   real black-screen bug from too many resident GPU layers, so this stays
-   opacity+translateY only, is applied via a class that JS removes right
-   after it plays, and is skipped entirely under prefers-reduced-motion. */
-@keyframes screenSettle{ from{ opacity:0; transform:translateY(8px); } to{ opacity:1; transform:translateY(0); } }
-.screen.active.screen-enter{ animation:screenSettle .28s cubic-bezier(.22,.68,.36,1); }
-@media (prefers-reduced-motion: reduce){ .screen.active.screen-enter{ animation:none; } }
+/* v14.2.3 — the universal screenSettle transition (v14.2.0) was removed
+   after being reported as flickery/odd even once correctly re-timed
+   (v14.2.1). See the comment above goToScreen()'s updateBackFab() call
+   for the full reasoning. Screen switches are instant again. */
 
 /* ============ v14.2.0: FINANCE — ledger-book presentation (spec: "make
    other modules feel appropriate", and this app is literally called GP
    Ledger) ============ */
 .ledger-sheet{
   position:relative; overflow:hidden; border-radius:var(--radius);
+  /* v14.2.2 — lightened per feedback: was mixing in 10%/4% of the accent
+     tint, now 5%/2%, so the paper reads as a subtle tint rather than a
+     visibly darker/greener card. */
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--card) 90%, #dff2e4 10%), color-mix(in srgb, var(--card) 96%, #dff2e4 4%));
-  border:1px solid color-mix(in srgb, var(--line) 60%, #4c8c66 40%);
-  padding:4px 14px 4px 26px;
-}
-.ledger-sheet::before{ /* red ledger margin rule */
-  content:''; position:absolute; left:16px; top:0; bottom:0; width:1px; background:color-mix(in srgb, #ef4444 55%, transparent); pointer-events:none;
+    linear-gradient(180deg, color-mix(in srgb, var(--card) 95%, #dff2e4 5%), color-mix(in srgb, var(--card) 98%, #dff2e4 2%));
+  border:1px solid color-mix(in srgb, var(--line) 75%, #4c8c66 25%);
+  padding:4px 14px 4px 18px;
 }
 .ledger-sheet::after{ /* faint horizontal ledger ruling */
   content:''; position:absolute; inset:0; pointer-events:none;
-  background-image:repeating-linear-gradient(180deg, transparent 0, transparent 43px, color-mix(in srgb, #4c8c66 22%, transparent) 44px);
+  background-image:repeating-linear-gradient(180deg, transparent 0, transparent 43px, color-mix(in srgb, #4c8c66 18%, transparent) 44px);
 }
 .ledger-sheet .tx-row{ position:relative; z-index:1; }
 .ledger-sheet .tx-amt.in{ color:#2f8a55; }
@@ -2148,7 +2143,32 @@ nav.bottom, .fab{ transition:transform .18s ease; }
    change it here only; both the photo estimator and the AI Coach read
    from this constant. */
 const GEMINI_MODEL = 'gemini-3.5-flash';
-const APP_VERSION = 'v14.2.1'; // single source of truth for About screen & Settings row
+const APP_VERSION = 'v14.2.3'; // single source of truth for About screen & Settings row
+// v14.2.3 — removed the universal screen-transition entirely. It was
+// retimed in v14.2.1 to fix the stale-content-swap flicker, but was still
+// reported as flickery/odd on real devices afterward — most likely
+// compounded by motivation-card photos (picsum.photos) loading async
+// after the fade already finished, plus general repaint cost on lower-end
+// hardware, neither of which is fixable by retiming alone. Rather than
+// keep iterating blind on a purely cosmetic feature, screen switches are
+// instant again, matching pre-v14.2.0 behavior and the v13.17.0 lesson
+// about staying conservative with screen-level animation. The Journal's
+// own page-turn effect is untouched (it's scoped to one inner element
+// within Journal only, not an app-wide transition, and was never reported
+// as an issue).
+
+// v14.2.2 — two fixes from feedback. (1) The Habit↔Diet insight
+// (dietHabitInsight/dietHabitInsightHtml) was always comparing "this
+// week vs last week" regardless of which day was actually open on the
+// Habit screen's date strip (`selectedDate`) — showing a week-wide number
+// under a single day's row was misleading. Now scoped to the exact date
+// being viewed, compared to the day immediately before it, on both the
+// compact row line and the fuller Habit-detail-modal line. (2) The
+// Finance ledger-sheet styling: removed the red vertical margin rule
+// (looked odd, wasn't a real ledger convention here) and lightened the
+// parchment-green background tint from 10%/4% to 5%/2% so it reads as a
+// subtle paper tone instead of a visibly darker/greener card.
+
 // v14.2.1 — bugfix: the screen-transition added in v14.2.0 was visibly
 // flickering. Root cause: goToScreen() triggered the fade-in animation
 // immediately after marking the screen active, but BEFORE calling that
@@ -4369,7 +4389,7 @@ function renderHabits(){
         <div class="h-name">${h.name}${streakBadgeHtml(h)}</div>
         <div class="h-progress-track"><div class="h-progress-fill" style="width:${Math.round(pct*100)}%; background:${h.color}"></div></div>
         <div class="h-val">${valLabel}</div>
-        ${dietHabitInsightHtml(h, true)}
+        ${dietHabitInsightHtml(h, true, selectedDate)}
       </div>
       <div class="h-actions">
         ${h.kind==='check' ? `<button class="h-check${doneClass}" data-act="toggle">✓</button>` :
@@ -4503,7 +4523,7 @@ function openHabitDetail(id){
       <div class="stat"><div class="num">${streakEmoji(streak)} ${streak}d</div><div class="lbl">Current streak</div></div>
       <div class="stat"><div class="num">${best}d</div><div class="lbl">Best streak</div></div>
     </div>
-    ${dietHabitInsightHtml(h, false)}
+    ${dietHabitInsightHtml(h, false, selectedDate)}
     <label class="fl">Target</label>
     <div style="display:flex; gap:8px;">
       <input type="number" id="detTarget" value="${h.target}" style="flex:1;">
@@ -6569,27 +6589,35 @@ const HABIT_DIET_CATEGORY_MAP = [
   { cat:'processed', words:['processed'] },
   { cat:'healthy', words:['healthy eating','clean eating','healthy food'] },
 ];
-function dietHabitInsight(h){
+/* v14.2.2 — habits are viewed one day at a time (via the Habit screen's
+   date strip / `selectedDate`), but this insight was always computing a
+   whole week's worth of meals regardless of which day was on screen —
+   showing "this week" numbers under a specific day's row was misleading.
+   Now scoped to the exact date being viewed, compared to the day before
+   it, instead of week-vs-last-week. */
+function dietHabitInsight(h, ds){
+  ds = ds || selectedDate || todayStr();
   const name = ' '+(h.name||'').toLowerCase()+' ';
   const match = HABIT_DIET_CATEGORY_MAP.find(x=>x.words.some(w=>name.includes(w)));
   if(!match) return null;
   const avoid = /avoid|less |reduce|limit|cut down|cut back|no more|stop /.test(name);
-  const [ws,we] = weekRange(0), [lws,lwe] = weekRange(-1);
-  const thisWeek = foodCategoryCounts(ws,we).counts[match.cat];
-  const lastWeek = foodCategoryCounts(lws,lwe).counts[match.cat];
-  const improving = thisWeek===lastWeek ? null : (avoid ? thisWeek<lastWeek : thisWeek>lastWeek);
+  const prevDs = addDays(ds, -1);
+  const dayCount = foodCategoryCounts(ds, ds).counts[match.cat];
+  const prevCount = foodCategoryCounts(prevDs, prevDs).counts[match.cat];
+  const improving = dayCount===prevCount ? null : (avoid ? dayCount<prevCount : dayCount>prevCount);
   const d = FOOD_CATEGORY_DEFS[match.cat];
-  return { catLabel:d.label, emoji:d.emoji, thisWeek, lastWeek, improving };
+  return { catLabel:d.label, emoji:d.emoji, dayCount, prevCount, improving, ds };
 }
-function dietHabitInsightHtml(h, compact){
-  const ins = dietHabitInsight(h); if(!ins) return '';
-  const rawArrow = ins.thisWeek>ins.lastWeek ? '↑' : ins.thisWeek<ins.lastWeek ? '↓' : '→';
-  const trendTxt = ins.improving===null ? 'Same as last week' : ins.improving ? 'Improving' : 'Needs attention';
+function dietHabitInsightHtml(h, compact, ds){
+  const ins = dietHabitInsight(h, ds); if(!ins) return '';
+  const rawArrow = ins.dayCount>ins.prevCount ? '↑' : ins.dayCount<ins.prevCount ? '↓' : '→';
+  const trendTxt = ins.improving===null ? 'Same as the day before' : ins.improving ? 'Improving' : 'Needs attention';
   const color = ins.improving===null ? 'var(--sub)' : ins.improving ? 'var(--good)' : 'var(--danger)';
+  const dayWord = ins.ds===todayStr() ? 'today' : 'that day';
   if(compact){
-    return `<div class="habit-diet-insight compact">${ins.emoji} ${ins.catLabel}: ${ins.thisWeek}× this week (was ${ins.lastWeek}×) · <span class="hdi-trend" style="color:${color}">${trendTxt} ${rawArrow}</span></div>`;
+    return `<div class="habit-diet-insight compact">${ins.emoji} ${ins.catLabel}: ${ins.dayCount}× ${dayWord} (day before: ${ins.prevCount}×) · <span class="hdi-trend" style="color:${color}">${trendTxt} ${rawArrow}</span></div>`;
   }
-  return `<div class="habit-diet-insight">${ins.emoji} ${ins.catLabel}: <b>${ins.thisWeek}×</b> this week · Last week: ${ins.lastWeek}× · <span class="hdi-trend" style="color:${color}">${trendTxt} ${rawArrow}</span></div>`;
+  return `<div class="habit-diet-insight">${ins.emoji} ${ins.catLabel}: <b>${ins.dayCount}×</b> ${dayWord} · Day before: ${ins.prevCount}× · <span class="hdi-trend" style="color:${color}">${trendTxt} ${rawArrow}</span></div>`;
 }
 function openMealModal(){
   openModal(`
@@ -7000,7 +7028,6 @@ function goToScreen(name, opts){
   document.body.classList.remove('kb-open');
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   target.classList.add('active');
-  target.addEventListener('animationend', ()=> target.classList.remove('screen-enter'), { once:true });
   try{ localStorage.setItem('gpl_lastScreen', name); }catch(e){} // v12.3 — see init()'s restore logic
   if(!opts.fromPopstate){
     try{ history.pushState({ screen:name }, '', '#'+name); }catch(e){}
@@ -7060,17 +7087,18 @@ function goToScreen(name, opts){
   }catch(err){
     console.error('[goToScreen] render failed for', name, err);
   }
-  // v14.2.1 — moved from before the render dispatch to after it. The
-  // animation used to start the instant the screen became active, which
-  // meant it faded in whatever STALE content that screen still had from
-  // its last visit (or nothing, on a first visit) — then, mid-fade, the
-  // render call above swapped in the real content all at once. That
-  // instant swap happening in the middle of a smooth fade is what read
-  // as a flicker. Triggering the animation here instead means the fresh
-  // content is already in the DOM before the fade starts, so what
-  // animates in is the real screen, not a stale placeholder that gets
-  // yanked out from under it.
-  target.classList.remove('screen-enter'); void target.offsetWidth; target.classList.add('screen-enter');
+  // v14.2.3 — the universal fade/rise transition (added v14.2.0, retimed
+  // v14.2.1) is removed. Even correctly ordered after the render call, it
+  // was still reported as flickery/odd on real devices — likely compounded
+  // by motivation-card images (picsum.photos) that load asynchronously
+  // AFTER the fade already finished and pop in on top of it, plus general
+  // repaint cost on lower-end hardware. Rather than keep chasing device-
+  // specific edge cases on a purely cosmetic feature, screen switches go
+  // back to instant, matching the app's behavior before v14.2.0 and the
+  // v13.17.0 lesson about being conservative with screen-level animation.
+  // The Journal's own page-turn effect is untouched — it's scoped to one
+  // small inner element within a single screen, not a app-wide transition,
+  // and hasn't been reported as an issue.
   updateBackFab();
 }
 document.getElementById('headerSearchBtn').addEventListener('click', ()=> goToScreen('search'));

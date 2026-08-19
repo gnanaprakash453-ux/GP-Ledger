@@ -1,4 +1,76 @@
-# Changelog — v14.2.0 (visual pass extended + Sync rename) → history below
+# Changelog — v14.2.3 (universal screen-transition removed) → history below
+
+## v14.2.3
+
+**Removed the universal screen-transition.** It was retimed in v14.2.1 to
+fix a stale-content-swap flicker, but was still reported as flickery/odd
+during normal navigation and scrolling afterward. Most likely cause:
+motivation-card photos (from picsum.photos) load asynchronously and can
+pop in after the fade-in has already finished, plus general repaint cost
+on lower-end hardware — neither of which retiming alone can fix.
+
+Rather than keep iterating blind on a purely cosmetic feature, screen
+switches go back to instant, exactly like before v14.2.0. This is a pure
+subtraction — no other v14.2.x visual or functional change (ledger
+styling, Habit↔Diet day-scoping, Routine/Goals/Subscriptions/Documents/
+Health treatments) is affected.
+
+The Journal's own page-turn effect when you switch dates or entries is
+untouched — it's a self-contained animation on one inner element within
+the Journal screen only, not an app-wide transition, and hasn't been
+reported as an issue.
+
+index.html and sw.js changed (CACHE_NAME bumped to `gp-ledger-v14-2-3`)
+so installed copies actually receive this instead of serving a cached
+v14.2.2.
+
+## v14.2.2
+
+Two fixes from feedback.
+
+**Habit↔Diet insight now scoped to the actual day viewed.** The line
+under a diet-related habit ("Vegetables: 3× this week…") was always
+computed as this-week-vs-last-week, regardless of which day was open on
+the Habit screen's date strip. Viewing a single day's habit row but
+seeing a week-wide number was misleading. It now shows that exact day's
+count compared to the day before it — e.g. "Vegetables: 2× today (day
+before: 1×) · Improving ↑" — on both the compact line under the habit
+row and the fuller line in the Habit detail modal. The Home Dashboard's
+Food Insights card is unaffected and still shows weekly trends, which is
+the right scope for a whole-week overview.
+
+**Finance ledger styling toned down.** Removed the red vertical margin
+rule (didn't read as intended, just looked like a stray line) and
+lightened the parchment-green background tint (was mixing in 10%/4% of
+the accent color, now 5%/2%) so the ledger sheet reads as a subtle paper
+tone rather than a visibly darker/greener card.
+
+index.html and sw.js changed (CACHE_NAME bumped to `gp-ledger-v14-2-2`)
+so installed copies actually receive this instead of serving a cached
+v14.2.1.
+
+## v14.2.1
+
+**Bugfix.** The screen-transition animation added in v14.2.0 was visibly
+flickering on navigation.
+
+Root cause: `goToScreen()` triggered the fade-in animation right after
+marking the new screen active, but *before* calling that screen's render
+function. So the animation started by fading in whatever stale content
+the screen still had from its last visit — then, partway through that
+fade, the render call swapped in the real content all at once. An
+instant content-swap happening in the middle of a smooth fade is what
+read as a flicker.
+
+Fix: moved the animation trigger to after the render dispatch, so the
+fresh content is already in the DOM before anything starts fading.
+Same visual effect (the settle-in), just playing over the real screen
+instead of a stale placeholder that gets yanked out from under it partway
+through.
+
+index.html and sw.js changed (CACHE_NAME bumped to `gp-ledger-v14-2-1`)
+so installed copies actually receive this instead of serving a cached
+v14.2.0.
 
 ## v14.2.0
 

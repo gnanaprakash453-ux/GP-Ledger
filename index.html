@@ -722,6 +722,101 @@ body{ background:var(--bg-gradient); }
 .habit-diet-insight .hdi-trend{ font-weight:800; }
 .habit-diet-insight.compact{ margin-top:4px; padding:3px 0 0; background:transparent; font-size:11px; color:var(--sub); }
 
+/* ============ v14.2.0: universal screen-transition ============
+   A one-shot "page settle" (fade + slight rise), NOT a permanent
+   will-change/transform on every screen — v13.17.0 already root-caused a
+   real black-screen bug from too many resident GPU layers, so this stays
+   opacity+translateY only, is applied via a class that JS removes right
+   after it plays, and is skipped entirely under prefers-reduced-motion. */
+@keyframes screenSettle{ from{ opacity:0; transform:translateY(8px); } to{ opacity:1; transform:translateY(0); } }
+.screen.active.screen-enter{ animation:screenSettle .28s cubic-bezier(.22,.68,.36,1); }
+@media (prefers-reduced-motion: reduce){ .screen.active.screen-enter{ animation:none; } }
+
+/* ============ v14.2.0: FINANCE — ledger-book presentation (spec: "make
+   other modules feel appropriate", and this app is literally called GP
+   Ledger) ============ */
+.ledger-sheet{
+  position:relative; overflow:hidden; border-radius:var(--radius);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--card) 90%, #dff2e4 10%), color-mix(in srgb, var(--card) 96%, #dff2e4 4%));
+  border:1px solid color-mix(in srgb, var(--line) 60%, #4c8c66 40%);
+  padding:4px 14px 4px 26px;
+}
+.ledger-sheet::before{ /* red ledger margin rule */
+  content:''; position:absolute; left:16px; top:0; bottom:0; width:1px; background:color-mix(in srgb, #ef4444 55%, transparent); pointer-events:none;
+}
+.ledger-sheet::after{ /* faint horizontal ledger ruling */
+  content:''; position:absolute; inset:0; pointer-events:none;
+  background-image:repeating-linear-gradient(180deg, transparent 0, transparent 43px, color-mix(in srgb, #4c8c66 22%, transparent) 44px);
+}
+.ledger-sheet .tx-row{ position:relative; z-index:1; }
+.ledger-sheet .tx-amt.in{ color:#2f8a55; }
+.ledger-sheet .tx-amt.out{ color:#c0392b; }
+
+/* ============ v14.2.0: ROUTINE — day-planner presentation ============ */
+.planner-sheet{
+  position:relative; border-radius:var(--radius); overflow:hidden;
+  background:linear-gradient(180deg, color-mix(in srgb, var(--card) 92%, #eef2fb 8%), color-mix(in srgb, var(--card) 97%, #eef2fb 3%));
+  border:1px solid color-mix(in srgb, var(--line) 65%, #6b7fb0 35%);
+}
+.planner-sheet::before{ /* faint agenda ruling */
+  content:''; position:absolute; inset:0; top:40px; pointer-events:none;
+  background-image:repeating-linear-gradient(180deg, transparent 0, transparent 47px, color-mix(in srgb, #6b7fb0 16%, transparent) 48px);
+}
+.planner-letterhead{
+  position:relative; z-index:1; display:flex; align-items:center; justify-content:space-between;
+  padding:10px 14px; border-bottom:1px dashed color-mix(in srgb, var(--line) 50%, #6b7fb0 50%);
+  font-family:var(--font-head); font-weight:800; font-size:13px; letter-spacing:.04em; color:var(--sub);
+}
+.planner-sheet .routine-block-card, .planner-sheet .routine-group-label{ position:relative; z-index:1; }
+
+/* ============ v14.2.0: GOALS — milestone-trail presentation ============ */
+.goal-trail{ position:relative; height:34px; margin:12px 2px 4px; }
+.goal-trail svg{ width:100%; height:100%; display:block; overflow:visible; }
+.goal-trail-marker{ font-size:15px; }
+.goal-card.goal-complete{ border-color:color-mix(in srgb, var(--good) 55%, var(--line) 45%); }
+
+/* ============ v14.2.0: SUBSCRIPTIONS — membership-card wallet ============ */
+.sub-card.wallet-card{
+  position:relative; overflow:hidden; border:none; border-radius:16px; padding:14px 14px 12px;
+  color:#fff; box-shadow:0 8px 18px rgba(0,0,0,.22);
+}
+.sub-card.wallet-card::before{ /* diagonal sheen */
+  content:''; position:absolute; top:-60%; left:-20%; width:70%; height:220%; pointer-events:none;
+  background:linear-gradient(75deg, rgba(255,255,255,.16), transparent 55%); transform:rotate(8deg);
+}
+.sub-card.wallet-card .sub-icon{ background:rgba(255,255,255,.18); color:#fff; }
+.sub-card.wallet-card .sub-name{ color:#fff; }
+.sub-card.wallet-card .sub-meta{ color:rgba(255,255,255,.78); }
+.sub-card.wallet-card .sub-amt{ color:#fff; }
+.sub-card.wallet-card.due-soon{ box-shadow:0 8px 18px rgba(0,0,0,.22), 0 0 0 2px var(--warn); }
+
+/* ============ v14.2.0: DOCUMENTS — manila-folder presentation ============ */
+.doc-card.folder-card{
+  position:relative; overflow:visible;
+  background:linear-gradient(180deg, color-mix(in srgb, var(--card) 90%, #e8c98a 10%), color-mix(in srgb, var(--card) 96%, #e8c98a 4%));
+  border:1px solid color-mix(in srgb, var(--line) 55%, #c9a45e 45%); border-top:none;
+  margin-top:14px;
+}
+.doc-card.folder-card::before{ /* folder tab */
+  content:attr(data-tab); position:absolute; top:-13px; left:12px; padding:2px 10px 3px; font-size:9.5px; font-weight:800;
+  letter-spacing:.04em; text-transform:uppercase; color:#6b4f22; border-radius:6px 6px 0 0;
+  background:color-mix(in srgb, var(--card) 88%, #e8c98a 12%); border:1px solid color-mix(in srgb, var(--line) 55%, #c9a45e 45%); border-bottom:none;
+}
+
+/* ============ v14.2.0: HEALTH — clipboard/chart presentation ============ */
+.chart-clipboard{ position:relative; padding-top:20px !important; }
+.chart-clipboard::before{ /* clipboard clip */
+  content:''; position:absolute; top:-9px; left:50%; transform:translateX(-50%); width:56px; height:16px; border-radius:6px;
+  background:linear-gradient(180deg, #94a3b8, #64748b); box-shadow:0 2px 4px rgba(0,0,0,.25);
+}
+.chart-clipboard::after{ /* heartbeat rule under the header */
+  content:''; position:absolute; left:16px; right:16px; top:38px; height:1px;
+  background-image:linear-gradient(90deg, color-mix(in srgb, var(--line) 60%, #ef4444 40%) 50%, transparent 0);
+  background-size:6px 1px;
+}
+.med-card, .appt-card{ position:relative; }
+
 /* ============ v8: DIET ============ */
 .meal-card{ display:flex; gap:10px; background:var(--card); border:1px solid var(--line); border-radius:var(--radius-sm); padding:10px 12px; margin-bottom:8px; align-items:center; }
 .meal-thumb{ width:44px; height:44px; border-radius:10px; object-fit:cover; background:var(--card2); flex-shrink:0; }
@@ -1150,7 +1245,7 @@ nav.bottom, .fab{ transition:transform .18s ease; }
              data gets current. -->
         <button class="icon-btn" id="headerRefreshBtn" title="Refresh this screen">↻</button>
         <button class="icon-btn" id="headerSearchBtn" title="Search everything">🔍</button>
-        <button class="sync-btn" id="syncBtn" title="Save & Sync"><span class="sync-dot"></span><span id="syncBtnLabel">Save &amp; Sync</span></button>
+        <button class="sync-btn" id="syncBtn" title="Sync"><span class="sync-dot"></span><span id="syncBtnLabel">Sync</span></button>
       </div>
     </div>
   </header>
@@ -1237,9 +1332,13 @@ nav.bottom, .fab{ transition:transform .18s ease; }
       <!-- v14.0.0 — spec §22: clean summary by default (recent-3 preview),
            full log behind an explicit "View Log" toggle instead of the
            full transaction history rendering by default. -->
-      <div class="card" id="txPreviewCard"><div id="txPreview"></div></div>
+      <!-- v14.2.0 — ledger-book paper treatment: this app is called GP
+           Ledger, so its own transaction list is the one place a literal
+           ledger-page look fits best (spec: "make the visual environment
+           feel appropriate to what the module represents"). -->
+      <div class="card ledger-sheet" id="txPreviewCard"><div id="txPreview"></div></div>
       <button class="btn secondary" id="txViewLogBtn" style="margin-bottom:12px;">📜 View full log</button>
-      <div class="card" id="txListCard" style="display:none;"><div id="txList"></div></div>
+      <div class="card ledger-sheet" id="txListCard" style="display:none;"><div id="txList"></div></div>
     </section>
 
     <!-- ===================== TRENDS ===================== -->
@@ -1321,7 +1420,14 @@ nav.bottom, .fab{ transition:transform .18s ease; }
       </div>
       <div class="card" id="routineTotals"></div>
       <div class="section-head"><h2>Blocks</h2><span><button class="link-btn" id="manageTemplatesBtn" style="margin-right:14px;">Templates</button><button class="link-btn" id="manageCatsBtn">Categories</button></span></div>
-      <div class="card" id="routineBlocks"></div>
+      <!-- v14.2.0 — day-planner paper treatment: agenda ruling + a
+           letterhead date band, since Routine is literally a daily
+           schedule (spec: module visuals should fit what the module
+           represents). -->
+      <div class="card planner-sheet">
+        <div class="planner-letterhead" id="plannerLetterhead">Today</div>
+        <div style="padding:10px 14px 12px;" id="routineBlocks"></div>
+      </div>
     </section>
 
     <!-- ===================== MORE (menu) ===================== -->
@@ -1619,7 +1725,7 @@ nav.bottom, .fab{ transition:transform .18s ease; }
       <button class="link-btn" data-back="more" style="margin-bottom:8px;">‹ More</button>
       <div id="healthMotivationCard"></div>
       <div class="section-head" style="margin-top:2px;"><h2>Today's vitals</h2></div>
-      <div class="card">
+      <div class="card chart-clipboard">
         <div class="vital-grid">
           <div><label class="fl" style="margin-top:0;">BP</label><input type="text" id="vitalBp" placeholder="120/80"></div>
           <div><label class="fl" style="margin-top:0;">Sugar</label><input type="text" id="vitalSugar" placeholder="mg/dL"></div>
@@ -2042,7 +2148,33 @@ nav.bottom, .fab{ transition:transform .18s ease; }
    change it here only; both the photo estimator and the AI Coach read
    from this constant. */
 const GEMINI_MODEL = 'gemini-3.5-flash';
-const APP_VERSION = 'v14.1.0'; // single source of truth for About screen & Settings row
+const APP_VERSION = 'v14.2.0'; // single source of truth for About screen & Settings row
+// v14.2.0 — extends v14.1.0's visual pass to more modules, each treatment
+// fitted to what that module actually represents rather than a generic
+// reskin, plus a global navigation polish and one label rename. (1) A
+// universal "page settle" transition on every screen switch (see the
+// screenSettle keyframe) — deliberately lightweight (opacity+translateY,
+// one-shot class, respects prefers-reduced-motion) after v13.17.0's
+// black-screen lesson about permanent GPU-layer promotion; NOT a literal
+// paper flip on every screen — that stays a Journal-specific treatment
+// since it's the one module that's actually a diary. (2) FINANCE: a
+// ledger-book paper treatment (green ruling, red margin rule, red/green
+// ink amounts) on the transaction list — this app is literally named GP
+// Ledger, so its own ledger is the most natural fit for the look. (3)
+// ROUTINE: a day-planner sheet (agenda ruling + a date letterhead) behind
+// the Now/Upcoming/Completed blocks. (4) GOALS: a milestone-trail SVG
+// (checkpoint dots at 25/50/75/100%, a marker at the goal's real progress)
+// added alongside — not replacing — the existing progress bar, reading
+// the exact same pct so the two can never disagree. (5) SUBSCRIPTIONS:
+// each recurring bill renders as a membership/wallet card with a
+// category-matched gradient (fixed palette for common categories, a
+// stable hash-based fallback for custom ones, so a category always gets
+// the same card color without a color picker). (6) DOCUMENTS: a
+// manila-folder tab per document, labeled with its category. (7) HEALTH:
+// today's vitals card gets a clipboard clip + a heartbeat-dashed rule
+// under the header. (8) Renamed the header button from "Save & Sync" to
+// "Sync" (label, tooltip, and the matching confirm-dialog wording) — no
+// behavior change, it still writes to the Google Sheet exactly as before.
 // v14.1.0 — visual + intelligence pass, architecture unchanged (per this
 // session's brief: same modules/nav/functionality, richer presentation +
 // smarter use of existing data). (1) JOURNAL: physical-diary presentation —
@@ -5439,6 +5571,8 @@ function renderRoutine(){
   renderTopMotivation('routine','routineMotivationCard');
   renderQuickLogChips();
   const today = todayStr();
+  const lh = document.getElementById('plannerLetterhead');
+  if(lh) lh.textContent = new Date(today+'T00:00:00').toLocaleDateString(undefined,{weekday:'long', month:'long', day:'numeric'});
   const blocks = S.routineLogs[today]||[];
   const tl = document.getElementById('routineTimeline'); tl.innerHTML='';
   const legend = document.getElementById('routineLegend'); legend.innerHTML='';
@@ -6855,6 +6989,13 @@ function goToScreen(name, opts){
   document.body.classList.remove('kb-open');
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   target.classList.add('active');
+  // v14.2.0 — universal "page settle" transition (see the screenSettle
+  // keyframe comment above for why this stays lightweight and one-shot
+  // rather than a permanent transform, after v13.17.0's black-screen
+  // lesson). Class is removed once the animation finishes so it never
+  // lingers or re-fires from an unrelated re-render.
+  target.classList.remove('screen-enter'); void target.offsetWidth; target.classList.add('screen-enter');
+  target.addEventListener('animationend', ()=> target.classList.remove('screen-enter'), { once:true });
   try{ localStorage.setItem('gpl_lastScreen', name); }catch(e){} // v12.3 — see init()'s restore logic
   if(!opts.fromPopstate){
     try{ history.pushState({ screen:name }, '', '#'+name); }catch(e){}
@@ -7730,7 +7871,7 @@ async function syncNow(silent, extra){
     debugLog('Sync error: '+e.message);
     if(!silent) alert('Sync failed: '+e.message);
   }finally{
-    btn.classList.remove('syncing'); label.textContent='Save & Sync';
+    btn.classList.remove('syncing'); label.textContent='Sync';
   }
 }
 
@@ -7830,7 +7971,7 @@ document.getElementById('loadFromSheetBtn').addEventListener('click', async ()=>
     // via "Save & Sync" (syncDirty), warn specifically about that before
     // overwriting, so they can go Save & Sync first instead of losing them.
     const proceed = syncDirty
-      ? confirm('This device has local changes that have not been saved to the Google Sheet yet (Save & Sync). Loading now will overwrite them with what\'s on the Sheet and they will be lost.\n\nPress Cancel and use "Save & Sync" first to keep them — or OK to load anyway and discard the local changes.')
+      ? confirm('This device has local changes that have not been saved to the Google Sheet yet (Sync). Loading now will overwrite them with what\'s on the Sheet and they will be lost.\n\nPress Cancel and use "Sync" first to keep them — or OK to load anyway and discard the local changes.')
       : confirm('This replaces everything currently on this device with what is saved in your Google Sheet. Continue?');
     if(!proceed) return;
 
@@ -8817,19 +8958,39 @@ function renderGoals(){
   if(S.goals.length===0){ list.innerHTML = `<div class="empty-state"><div class="em-icon">🎯</div><div class="em-title">No goals yet</div>Tap + to set your first goal — debt-free, savings, weight, a habit streak, or anything custom.</div>`; return; }
   list.innerHTML = S.goals.map(g=>{
     const gp = goalProgressCalc(g);
+    const pct = Math.max(0, Math.min(1, gp.pct||0));
     const unit = g.unit || (g.mode==='debt'||g.mode==='savings' ? '₹' : g.mode==='weight' ? 'kg' : (g.mode==='habit'||g.mode==='diet') ? 'days' : '');
-    return `<div class="goal-card" data-gid="${g.id}">
+    return `<div class="goal-card ${pct>=1?'goal-complete':''}" data-gid="${g.id}">
       <div class="goal-top">
         <div class="goal-icon">${GOAL_ICONS[g.mode]||'⭐'}</div>
         <div class="goal-title">${g.title}</div>
-        <div class="goal-pct">${Math.round(gp.pct*100)}%</div>
+        <div class="goal-pct">${Math.round(pct*100)}%</div>
       </div>
-      <div class="goal-track"><div class="goal-fill" style="width:${Math.round(gp.pct*100)}%"></div></div>
+      <div class="goal-track"><div class="goal-fill" style="width:${Math.round(pct*100)}%"></div></div>
+      ${goalTrailHtml(pct)}
       <div class="goal-meta"><span>${unit==='₹'?fmtMoney(gp.current):Math.round(gp.current*100)/100+' '+unit} of ${unit==='₹'?fmtMoney(gp.target):Math.round(gp.target*100)/100+' '+unit}</span><span>${g.deadline? (gp.behind?'⚠️ behind pace':'on pace') : ''}</span></div>
       <div class="hint" style="margin-top:2px;">${g.mode==='custom' ? '✋ Manual — update progress yourself' : (g.mode==='savings' && !g.autoTrackCategory) ? '✋ Manual — update progress yourself, or turn on auto-track from a Finance category' : '🔄 Auto-tracked'}</div>
     </div>`;
   }).join('');
   list.querySelectorAll('[data-gid]').forEach(el=> el.addEventListener('click', ()=> openGoalModal(el.dataset.gid)));
+}
+/* v14.2.0 — GOALS: milestone-trail presentation (spec: "vision-board"/
+   journey feel where it genuinely helps). A dotted path with checkpoint
+   flags at 25/50/75/100% and a marker sitting at the goal's real progress
+   — the same `pct` the existing bar already uses, so the two can never
+   disagree. Kept as a small addition alongside the bar, not a replacement,
+   since the bar remains the more precise readout. */
+function goalTrailHtml(pct){
+  const x = 6 + pct*88;
+  const checkpoints = [25,50,75,100];
+  return `<div class="goal-trail"><svg viewBox="0 0 100 24" preserveAspectRatio="none">
+    <line x1="6" y1="14" x2="94" y2="14" stroke="var(--line)" stroke-width="1.5" stroke-dasharray="1.5,3" />
+    ${checkpoints.map(cp=>{ const cx=6+cp/100*88; const hit = pct*100>=cp-0.5;
+      return `<circle cx="${cx}" cy="14" r="${cp===100?2.6:2}" fill="${hit?'var(--good)':'var(--card2)'}" stroke="var(--line)" stroke-width="0.6" />`;
+    }).join('')}
+    <text x="94" y="7" font-size="7" text-anchor="middle">${pct>=1?'🏆':'🚩'}</text>
+    <circle cx="${x}" cy="14" r="3.4" fill="var(--accent)" stroke="var(--card)" stroke-width="1.2" />
+  </svg></div>`;
 }
 function openGoalModal(id){
   const g = id ? S.goals.find(x=>x.id===id) : null;
@@ -9065,13 +9226,45 @@ function renderSubscriptions(){
   const sorted = [...S.subscriptions].sort((a,b)=> subNextRenewDaysAway(a)-subNextRenewDaysAway(b));
   list.innerHTML = sorted.map(s=>{
     const daysAway = subNextRenewDaysAway(s);
-    return `<div class="sub-card ${daysAway<=3?'due-soon':''}" data-sid="${s.id}">
-      <div class="sub-icon">🔁</div>
+    const grad = subCardGradient(s.category);
+    return `<div class="sub-card wallet-card ${daysAway<=3?'due-soon':''}" data-sid="${s.id}" style="background:${grad}">
+      <div class="sub-icon">${subCategoryEmoji(s.category)}</div>
       <div class="sub-mid"><div class="sub-name">${s.name}</div><div class="sub-meta">${s.category||'Subscription'} · renews in ${daysAway}d</div></div>
-      <div class="sub-amt">${fmtMoney(s.amount)}<div style="font-size:9.5px; color:var(--sub); font-weight:600;">${s.cycle}</div></div>
+      <div class="sub-amt">${fmtMoney(s.amount)}<div style="font-size:9.5px; color:rgba(255,255,255,.78); font-weight:600;">${s.cycle}</div></div>
     </div>`;
   }).join('');
   list.querySelectorAll('[data-sid]').forEach(el=> el.addEventListener('click', ()=> openSubModal(el.dataset.sid)));
+}
+/* v14.2.0 — SUBSCRIPTIONS: membership-card wallet presentation (spec:
+   module visuals should fit what the module represents — recurring bills
+   are literally the same shape as a wallet of membership/subscription
+   cards). A small fixed palette for common categories, and a stable
+   hash-based fallback gradient for anything custom, so the same
+   category always renders the same card color without needing a color
+   picker in the Add/Edit form. */
+const SUB_CATEGORY_STYLE = {
+  entertainment: { emoji:'🎬', grad:'linear-gradient(135deg,#7c3aed,#c026d3)' },
+  streaming:     { emoji:'🎬', grad:'linear-gradient(135deg,#7c3aed,#c026d3)' },
+  music:         { emoji:'🎵', grad:'linear-gradient(135deg,#db2777,#f97316)' },
+  utilities:     { emoji:'💡', grad:'linear-gradient(135deg,#0891b2,#0ea5e9)' },
+  insurance:     { emoji:'🛡️', grad:'linear-gradient(135deg,#334155,#64748b)' },
+  fitness:       { emoji:'💪', grad:'linear-gradient(135deg,#16a34a,#84cc16)' },
+  cloud:         { emoji:'☁️', grad:'linear-gradient(135deg,#2563eb,#38bdf8)' },
+  software:      { emoji:'💻', grad:'linear-gradient(135deg,#4338ca,#6366f1)' },
+  recharge:      { emoji:'📱', grad:'linear-gradient(135deg,#ea580c,#f59e0b)' },
+  news:          { emoji:'📰', grad:'linear-gradient(135deg,#334155,#0f172a)' },
+};
+const SUB_FALLBACK_GRADS = [
+  'linear-gradient(135deg,#0f766e,#14b8a6)', 'linear-gradient(135deg,#9333ea,#6366f1)',
+  'linear-gradient(135deg,#be123c,#f43f5e)', 'linear-gradient(135deg,#a16207,#f59e0b)',
+  'linear-gradient(135deg,#1d4ed8,#0ea5e9)',
+];
+function subCategoryEmoji(cat){ const k=(cat||'').toLowerCase().trim(); return (SUB_CATEGORY_STYLE[k]||{}).emoji || '🔁'; }
+function subCardGradient(cat){
+  const k=(cat||'').toLowerCase().trim();
+  if(SUB_CATEGORY_STYLE[k]) return SUB_CATEGORY_STYLE[k].grad;
+  let h=0; for(let i=0;i<k.length;i++) h=(h*31+k.charCodeAt(i))>>>0;
+  return SUB_FALLBACK_GRADS[h % SUB_FALLBACK_GRADS.length];
 }
 function openSubModal(id){
   const s = id ? S.subscriptions.find(x=>x.id===id) : null;
@@ -10319,7 +10512,7 @@ function renderDocuments(){
   if(S.documents.length===0){ list.innerHTML = `<div class="empty-state"><div class="em-icon">🗂️</div><div class="em-title">No documents yet</div>Add insurance, vehicle, loan or ID reference details.</div>`; return; }
   list.innerHTML = S.documents.map(d=>{
     const photo = getDocAttachment(d.id);
-    return `<div class="doc-card" data-did="${d.id}">${photo?`<img src="${photo}" class="doc-thumb">`:`<div class="doc-icon">🗂️</div>`}<div class="doc-mid"><div class="doc-title">${d.title}</div><div class="doc-meta">${d.category||'Document'}${d.expiryDate?' · expires '+d.expiryDate:''}</div></div></div>`;
+    return `<div class="doc-card folder-card" data-tab="${(d.category||'Document').slice(0,18)}" data-did="${d.id}">${photo?`<img src="${photo}" class="doc-thumb">`:`<div class="doc-icon">🗂️</div>`}<div class="doc-mid"><div class="doc-title">${d.title}</div><div class="doc-meta">${d.category||'Document'}${d.expiryDate?' · expires '+d.expiryDate:''}</div></div></div>`;
   }).join('');
   list.querySelectorAll('[data-did]').forEach(el=> el.addEventListener('click', ()=> openDocModal(el.dataset.did)));
 }

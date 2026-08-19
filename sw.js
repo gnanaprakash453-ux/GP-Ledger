@@ -145,7 +145,14 @@
 // of a plain checkmark). See the APP_VERSION comment block in index.html
 // for full detail. index.html changed, so bump so installed copies
 // actually receive all of this instead of serving a cached v14.0.2.
-const CACHE_NAME = 'gp-ledger-v14-1-0';
+// v14.2.0: extends the v14.1.0 visual pass to Finance (ledger paper),
+// Routine (day-planner sheet), Goals (milestone trail), Subscriptions
+// (membership-card wallet), Documents (folder tabs), Health (clipboard),
+// plus a universal lightweight screen-transition and a "Save & Sync" →
+// "Sync" label rename. See the APP_VERSION comment block in index.html
+// for full detail. index.html changed, so bump so installed copies
+// actually receive all of this instead of serving a cached v14.1.0.
+const CACHE_NAME = 'gp-ledger-v14-2-0';
 const IMG_CACHE_NAME = 'gp-ledger-images-v1';
 const CORE_ASSETS = [
   './index.html',

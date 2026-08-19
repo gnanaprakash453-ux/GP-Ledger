@@ -1,4 +1,60 @@
-# Changelog — v14.1.0 (visual + Diet↔Habits↔Home connection) → history below
+# Changelog — v14.2.0 (visual pass extended + Sync rename) → history below
+
+## v14.2.0
+
+Extends v14.1.0's visual pass to more modules — each treatment fitted to
+what that module actually represents, not a generic reskin — plus a
+global navigation polish and one label rename. No architecture change,
+same as v14.1.0.
+
+**Universal screen transition.** Every screen switch now plays a small,
+one-shot "page settle" (fade + slight rise, ~280ms). Deliberately kept to
+opacity/translateY on a class that's added and removed per-navigation —
+not a permanent transform — because v13.17.0 already root-caused a real
+black-screen bug from too many resident GPU-composited layers; this
+learns that lesson rather than repeating it, and is skipped entirely
+under `prefers-reduced-motion`. The literal paper-flip animation stays a
+Journal-only treatment, since Journal is the one module that's actually a
+diary — everywhere else gets this lighter, universal settle instead.
+
+**Finance → ledger book.** The transaction list (both the summary preview
+and the full log) now sits on a ledger-paper sheet: faint green ruling, a
+red margin rule, and red/green ink for out/in amounts — the most natural
+place for a literal ledger look, since this app is named GP Ledger.
+
+**Routine → day planner.** The Now/Upcoming/Completed block list sits on
+an agenda sheet with faint ruling and a date letterhead ("Thursday,
+August 20" style) at the top, echoing a daily planner page.
+
+**Goals → milestone trail.** A small SVG trail (checkpoint dots at 25/
+50/75/100%, a marker at the goal's actual progress, a flag/trophy at the
+end) now sits alongside the existing progress bar and percentage — not
+replacing them. It reads the exact same `pct` the bar already computes,
+so the two can never disagree.
+
+**Subscriptions → membership-card wallet.** Each recurring bill now
+renders as a colored membership/wallet card instead of a plain list row —
+a fixed color+icon per common category (Entertainment, Music, Utilities,
+Insurance, Fitness, Cloud, Software, Recharge, News), and a stable
+hash-based fallback gradient for any custom category, so the same
+category always gets the same card color without needing a color picker
+in the Add/Edit form.
+
+**Documents → manila folder.** Each document card now has a small folder
+tab above it labeled with its category, echoing a folder in a filing
+cabinet.
+
+**Health → clipboard.** The Today's Vitals card gained a clipboard-clip
+graphic and a heartbeat-dashed rule under its header.
+
+**Renamed "Save & Sync" → "Sync"** in the header button, its tooltip, and
+the matching confirm-dialog wording. Label only — it still writes to the
+Google Sheet exactly as before, same trigger, same behavior.
+
+index.html and sw.js changed (CACHE_NAME bumped to `gp-ledger-v14-2-0`)
+so installed copies actually receive this instead of serving a cached
+v14.1.0. apps-script.gs is unchanged — nothing here touches the sync
+payload shape.
 
 ## v14.1.0
 

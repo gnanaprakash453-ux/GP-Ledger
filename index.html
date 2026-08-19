@@ -2148,7 +2148,18 @@ nav.bottom, .fab{ transition:transform .18s ease; }
    change it here only; both the photo estimator and the AI Coach read
    from this constant. */
 const GEMINI_MODEL = 'gemini-3.5-flash';
-const APP_VERSION = 'v14.2.0'; // single source of truth for About screen & Settings row
+const APP_VERSION = 'v14.2.1'; // single source of truth for About screen & Settings row
+// v14.2.1 — bugfix: the screen-transition added in v14.2.0 was visibly
+// flickering. Root cause: goToScreen() triggered the fade-in animation
+// immediately after marking the screen active, but BEFORE calling that
+// screen's render function — so it faded in whatever stale content the
+// screen still had from its last visit, then the render call swapped in
+// the real content all at once partway through the fade. That instant
+// content-swap happening mid-animation is what read as a flicker. Moved
+// the animation trigger to after the render dispatch, so the fresh
+// content is already in place before anything starts fading — same
+// visual effect, no more swap-mid-fade.
+
 // v14.2.0 — extends v14.1.0's visual pass to more modules, each treatment
 // fitted to what that module actually represents rather than a generic
 // reskin, plus a global navigation polish and one label rename. (1) A
@@ -6989,12 +7000,6 @@ function goToScreen(name, opts){
   document.body.classList.remove('kb-open');
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   target.classList.add('active');
-  // v14.2.0 — universal "page settle" transition (see the screenSettle
-  // keyframe comment above for why this stays lightweight and one-shot
-  // rather than a permanent transform, after v13.17.0's black-screen
-  // lesson). Class is removed once the animation finishes so it never
-  // lingers or re-fires from an unrelated re-render.
-  target.classList.remove('screen-enter'); void target.offsetWidth; target.classList.add('screen-enter');
   target.addEventListener('animationend', ()=> target.classList.remove('screen-enter'), { once:true });
   try{ localStorage.setItem('gpl_lastScreen', name); }catch(e){} // v12.3 — see init()'s restore logic
   if(!opts.fromPopstate){
@@ -7055,6 +7060,17 @@ function goToScreen(name, opts){
   }catch(err){
     console.error('[goToScreen] render failed for', name, err);
   }
+  // v14.2.1 — moved from before the render dispatch to after it. The
+  // animation used to start the instant the screen became active, which
+  // meant it faded in whatever STALE content that screen still had from
+  // its last visit (or nothing, on a first visit) — then, mid-fade, the
+  // render call above swapped in the real content all at once. That
+  // instant swap happening in the middle of a smooth fade is what read
+  // as a flicker. Triggering the animation here instead means the fresh
+  // content is already in the DOM before the fade starts, so what
+  // animates in is the real screen, not a stale placeholder that gets
+  // yanked out from under it.
+  target.classList.remove('screen-enter'); void target.offsetWidth; target.classList.add('screen-enter');
   updateBackFab();
 }
 document.getElementById('headerSearchBtn').addEventListener('click', ()=> goToScreen('search'));

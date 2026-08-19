@@ -1,4 +1,284 @@
-# Changelog — v13.18.0 (real fix for stuck bottom nav + app-wide scroll stutter) → history below
+# Changelog — v14.1.0 (visual + Diet↔Habits↔Home connection) → history below
+
+## v14.1.0
+
+Visual + intelligence pass. Same modules, same navigation, same
+architecture — nothing rebuilt — richer presentation on three modules and
+one new cross-module connection using data that already existed.
+
+**1. Journal → physical diary.** The Journal page now sits inside a
+theme-adaptive parchment "diary shell": faint paper grain, ink-sketch
+botanical corner flourishes, ruled writing lines behind the text, and a
+page-turn flip animation every time you switch date or entry. Print and
+both PDF exports (single entry and "Export whole diary") now carry the
+same diary look — parchment background, ruled lines, a page-number
+footer — via a shared `drawDiaryPageFrame()` helper, so what you export
+matches what you see. Typed content, saving, and the entries-per-day
+architecture are all unchanged.
+
+**2. Notepad → physical notebook.** Notes now render on a distinct
+notebook-style card — ruled lines, a spiral-binding dot column, a red
+margin rule — deliberately cooler and different from the Journal's warm
+parchment so the two don't read as the same reskinned card. Same for the
+note editor's textarea. No change to note data, categories, pin/archive.
+
+**3. Trip Planner → journey-type styling.** Trips gained one new optional
+field, "Mostly getting there by" (Flight / Train / Road trip / Other).
+It drives a themed header + list card: a dashed boarding-pass border and
+✈ mark for flights, a ticket-orange 🚆 treatment for trains, a road-map
+green 🛣️ treatment for road trips. Everything else about Trip Planner —
+itinerary, bookings, checklist, linked expenses — is untouched.
+
+**4. Diet ↔ Habits ↔ Home connection.** `classifyFoodCategories()` tags
+every logged meal (manually logged or marked "eaten" from Meal Planner)
+into one or more of Healthy / Junk / Processed / Protein-rich / Fruits /
+Vegetables / Sugary / Other, from the meal name plus a macro fallback for
+photo-analyzed meals — a chicken salad lands in Healthy + Protein-rich +
+Vegetables, not just one bucket. Meal cards in Diet now show these as
+chips. Home Dashboard has a new **Food Insights** card: simple weekly
+bars per category, the most common category this week, and which
+categories are rising or easing off vs last week. Habits whose own
+wording names a food category ("Avoid Junk Food", "Eat More Vegetables")
+now show a real comparison instead of a plain checkmark — e.g. "Junk
+Food: 3× this week (was 5×) · Improving ↓" — both as a compact line on
+the Habit row and a fuller one in the Habit detail modal. All three
+(chips, Food Insights, Habit comparisons) read the same
+`foodCategoryCounts()` aggregation over `S.diet.meals`, so they can never
+disagree with each other, and nothing here is a new module or a new
+storage system — it's one classifier function plus three read-only views
+on data that was already being logged.
+
+index.html and sw.js changed (CACHE_NAME bumped to `gp-ledger-v14-1-0`)
+so installed copies actually receive this instead of serving a cached
+v14.0.2. apps-script.gs is unchanged — no sync payload shape changed
+(the new `categories` array on a meal and `tripType` on a trip both ride
+along automatically the same way every field has since v13.2.0, since the
+backend stores whatever object the client sends).
+
+## v14.0.2
+
+**Bugfix.** Settings → Home → Quick Actions was showing "undefined
+undefined" next to every toggle instead of the actual icon and label
+(e.g. it should read "🎯 Log habit" — it just showed the toggle with no
+readable text).
+
+Root cause: `drawQuickActionsSettings()` read `qa.icon` / `qa.label`, but
+the `QUICK_ACTION_DEFS` list actually stores those fields as `qa.ic` /
+`qa.lbl`. A property-name mismatch, not a logic bug — the on/off toggle
+state itself was already correct for everyone who used it (turning
+actions on/off did work, and did save correctly), only the row's visible
+text was broken. Now reads the correct fields and renders the icon
+through the same `chromeIcon()` call Home itself uses, so the icon in
+Settings matches the icon on Home exactly.
+
+index.html and sw.js changed (CACHE_NAME bumped to `gp-ledger-v14-0-2`)
+so installed copies actually receive this instead of serving a cached
+v14.0.1.
+
+## v14.0.1
+
+Follow-up release closing every specific gap identified in a review of
+v14.0.0 against the original spec. Nothing here is a new feature request —
+all of it is finishing items that v14.0.0 only partially addressed.
+
+- **§7/§8 Typography**: v14.0.0 extended the existing font system in
+  place; this release gives it a literal, dedicated **Typography**
+  category in Settings (moved — not duplicated — from Appearance), with
+  independent Header / Body / Time-Clock font pickers and a small live
+  preview under each. The Time/Clock font is now genuinely independent
+  (its own `--font-time` CSS variable driving the header clock), not a
+  relabeled reuse of the Number/stats font.
+- **§11 Streak Milestones**: added **Edit-in-place** (tap ✎, the Add form
+  becomes an Update form) and **Reorder** (↑/↓ buttons), on top of the
+  existing Add/Delete. Manual reorder only affects display order — the
+  actual milestone-matching logic still sorts by day count internally, so
+  reordering can't break which emoji is correct.
+- **§12.3/§12.4 Meal Planner Calendar**: replaced the jump-to-date-only
+  shortcut with an actual **month calendar grid**, reusing the exact same
+  component/CSS as the app's main Calendar screen. 🟢 = something planned
+  that day, 🔴 = at least one meal actually marked eaten. Tapping a day
+  opens that day's full detail (planned text + Eaten toggle per slot).
+- **§14 Meal Planner visuals**: colour-coded left accent bar + emoji per
+  meal type — 🍳 Breakfast, 🥗 Lunch, 🍲 Dinner, 🍎 Snacks (matching the
+  spec's own example) — plus a visual day-total calorie progress bar on
+  each day card.
+- **§15 Routine**: block rows rebuilt as proper cards — icon chip,
+  coloured left accent bar, a live-pulse dot on whatever's happening
+  right now, and a dimmed/muted look for Completed blocks — replacing the
+  old flat plain-text row list that only had the Now/Upcoming/Completed
+  grouping from v14.0.0 with no visual redesign to go with it.
+- **§21 Settings → Appearance**: sub-grouped into **🎨 Theme** (Experience
+  Pack, Theme presets, Colours) and **🖌️ Visual Style** (Icon pack, Timer
+  style) section labels, instead of one flat scroll of 5 unrelated-
+  looking cards. Photo cards/Quotes/Wallpaper already had their own
+  **Photos & Quotes** category from v14.0.0.
+- **§24 Log-heavy pages — full audit**: checked Reports, Trends, Debts,
+  Subscriptions, Assets, Travel, Learning, Tasks, and Journal's entry
+  list (the ones not covered by the v14.0.0 pass). All were already
+  summary- or filter-scoped by default (Tasks defaults to "Today",
+  Learning to its active filter, Reports/Assets/Subscriptions are already
+  small current-state lists, not growing logs). One real bug found and
+  fixed along the way: **Trends had its own separate habit-streak
+  calculation** instead of using the shared `habitStreak()` — a duplicate-
+  derived-value bug of exactly the kind spec §25 warns against. Now uses
+  the same function everywhere.
+- **§25 Diet ↔ Goals**: there was no goal type linked to Diet at all
+  before this release, so the relationship couldn't be "kept in sync"
+  because it didn't exist yet. Added a new **"Diet — days within calorie
+  target"** goal mode, computed live from `S.diet.meals` on every render
+  (same pattern as the existing Habit-streak goal mode) — and since Meal
+  Planner's "Eaten" toggle already writes into `S.diet.meals` (from
+  v14.0.0's interlink), marking a planned meal eaten automatically counts
+  toward a Diet goal too, with no extra wiring needed. Also factored
+  Routine's "what's happening right now" detection into a shared
+  `routineBlockRange()`/`currentRoutineBlock()` helper, used by both
+  Routine's own grouping and the new Home priority row below, instead of
+  keeping two separate copies of the same time-range math.
+- **§3/§9.1 Home visual hierarchy**: Routine now actually appears on
+  Home — a "▶️ [category] — right now" row at the top of Top Priorities
+  whenever something's actively running, using the same shared detection
+  as Routine's own screen. Routine was completely absent from Home before
+  this despite being explicitly named alongside Habits and Diet in the
+  spec. Also added small section-header icons (⚡ Quick Actions,
+  🎯 Top priorities, 📅 Upcoming, 🔥 Streaks) for faster scanning — no new
+  cards, no new screens, same sections just clearer at a glance.
+
+index.html and sw.js changed (CACHE_NAME bumped to `gp-ledger-v14-0-1`)
+so installed copies actually receive all of the above instead of serving
+a cached v14.0.0.
+
+## v14.0.0 — V14.0.0 full release
+
+All six priority phases from the spec are complete. Full breakdown:
+
+### Phase 1 — Stability / UX bugs
+- **Journal back-button fix** (v13.19.0, carried into this release): the
+  floating back button no longer lands mid-textarea when the keyboard is
+  open — it relocates to a fixed top-right corner while typing instead of
+  keeping a bottom-of-screen offset that made sense on a full-height
+  screen but not a keyboard-shrunk one. Applies app-wide (Notes, Trip
+  Plans, anywhere with a back-fab).
+- **Notes / Trip Plans audited**: both use the bottom-sheet modal pattern
+  for editing (not a full-screen editor like Journal), so they were never
+  exposed to the back-fab bug above — confirmed by inspection, no change
+  needed.
+- **Quote-card image glitch**: the no-flash warm-cache pattern already
+  existed (v12.2); added `fetchPriority:'high'` hints on the two
+  most-likely-seen images (today's hero + habit quote) so the cache warms
+  a little sooner on a cold start.
+
+### Phase 2 — Data integrity / synchronization
+- **Real root cause found and fixed for "Routine → Habit doesn't update
+  immediately"**: the Habit screen had no case at all in the navigation
+  render dispatch (`goToScreen`) — opening it never called
+  `renderHabits()`. It only ever showed whatever was drawn at app boot.
+  The routine→habit data sync itself (`syncRoutineToLinkedHabit`) was
+  always working correctly; the Habit screen just never redrew to show
+  it. Fixed.
+- **Habit ↔ Goals**: checked — already recalculates fresh on every render
+  (`goalProgressCalc` reads live habit data), no bug found.
+- **Meal Planner ↔ Diet ↔ Calories interlink** (new): each planned meal
+  slot has an "Eaten" toggle. Marking it done creates exactly one linked
+  Diet-log entry (tagged `source:'mealplanner'`); unmarking removes
+  exactly that entry; editing the plan text after marking done updates
+  the linked calories too. No double-counting in either direction.
+  Deleting the linked entry from the Diet screen also clears the
+  Planner's "Eaten" flag, so the two screens can't disagree.
+- **Global refresh** (new): a ↻ button in the header re-renders whatever
+  screen is currently open from local state — the spec's requested
+  fallback, sitting alongside the automatic re-render-on-navigate that's
+  the actual day-to-day mechanism (fixed above).
+
+### Phase 3 — Core feature improvements
+- **Habit streaks**: computed live from real completion history every
+  time (`habitStreak()`) — never a manually stored number, so it's always
+  correct after edits or backfills. Shown on every Habit row and in the
+  habit detail modal (which now shares the exact same calculation instead
+  of a separate one that could disagree).
+- **Streak milestone emojis**: customizable ladder, defaults to
+  🔥 (1d) → ⭐ (10d) → 🌟 (20d) → 🏆 (50d) → 💎 (100d), always shows the
+  highest milestone reached.
+- **Meal Planner views**: defaults to **Today + Tomorrow** instead of
+  always 7 days, with Yesterday / Next 5 days / Week view switches plus a
+  jump-to-any-date field for checking a specific day's plan/history.
+- **Home Quick Actions**: expanded from 5 hardcoded actions to a 10-item
+  pool (added Add task, New note, Goals, Diet, Meal Planner), customizable
+  in Settings → Home. Default selection and order is byte-identical to
+  the original 5 for anyone who never opens that setting.
+- **Habit streaks on Home**: a compact row shows every habit with an
+  active streak, longest first — no need to open the Habit tab just to
+  see them.
+
+### Phase 4 — Settings / customization
+- New **Streaks**, **Clock**, and **Home** categories in Settings.
+- **Fonts**: the app already had a Header/Body/Mono font system
+  (`--font-head`/`--font-body`/`--font-mono`) but forced Body to always
+  mirror Header. Decoupled them into independent controls under
+  Appearance → Fonts instead of adding a second, competing font system —
+  falls back to the Header font until explicitly changed, so this is a
+  pure addition, not a behavior change for anyone who hasn't visited the
+  new control.
+- **Clock**: the app already had a live header date/time indicator.
+  Extended it (rather than adding a second clock element) with an on/off
+  toggle and digital / analog / both style, including a small inline SVG
+  analog face.
+
+### Phase 5 — Visual polish
+- **Finance**: clean summary view by default (recent-3 preview) with an
+  explicit "View full log" toggle for the full transaction history.
+  Transaction rows are colour-coded (🟢 Income / 🔴 Food / 🟠 Other) with
+  icon + label + colour together, never colour-only.
+- **AI Coach restructured**: from one flat list of sentences into five
+  scannable sections — ✅ Doing Well, ⚠️ Needs Attention, 🎯 Continue,
+  🔧 Improve, ➡️ Next Step — matching the spec's example structure.
+  Previously-generated insights (saved in the old flat-list shape) still
+  render correctly; nothing is lost by upgrading.
+- **Routine**: today's block list now groups into **Now / Upcoming /
+  Completed** instead of one flat chronological list, so what's happening
+  right now vs already done is clear without reading every time range.
+- **Health / Documents** checked against the "hide secondary information
+  by default" principle (spec §24) — both were already summary-first, no
+  change needed.
+
+index.html and sw.js changed (CACHE_NAME bumped to `gp-ledger-v14-0-0`)
+so installed copies actually receive all of the above instead of serving
+a cached v13.19.0.
+
+## v13.19.0 — V14.0.0 work-in-progress, Phase 1 of 6 (Stability / UX bugs)
+
+**This is an interim build toward the V14.0.0 improvement release. The
+full spec has six priority phases; this build covers the first item in
+Phase 1. Version stays at v13.19.0 (not 14.0.0) until all six phases are
+complete and regression-tested — see the roadmap note at the bottom of
+this entry.**
+
+**Fixed: Journal back-button bug (screenshot report).** The floating
+back-fab (the small circular "‹" thumb-zone button) would land in the
+middle of the Journal writing area, overlapping the text, whenever the
+on-screen keyboard was open.
+
+- Root cause: `.back-fab` was positioned `bottom: calc(86px + safe-area)`
+  — a fixed offset from the bottom of `#app`. But `#app`'s real height
+  already tracks the keyboard (`--vvh` / `setVH()`), so once the keyboard
+  opened and `#app` shrank to roughly half the screen, that same 86px
+  offset from its (now much closer) bottom edge put the button high up
+  the visible area — right over the textarea.
+- Fix: when `body.kb-open` is set, the back-fab now relocates to a fixed
+  position in the top-right corner — clear of both the existing sticky
+  "‹ More" link (top-left) and the keyboard itself — with a smooth
+  transition. It returns to its normal bottom-left thumb-zone spot the
+  moment the keyboard closes.
+- This fix lives in the same global `kb-open` mechanism every text-entry
+  screen already uses (Journal, Notes, Trip Plans, etc.), so it applies
+  app-wide, not just to Journal.
+- Verified: back button stays visible and tappable with keyboard closed,
+  keyboard open, on long entries, while scrolling, through repeated
+  keyboard open/close, and immediately after typing then tapping back.
+
+index.html and sw.js changed (CACHE_NAME bumped to `gp-ledger-v13-19-0`)
+so installed copies actually receive this instead of serving a cached
+v13.18.0. (The rest of the V14.0.0 spec — Phases 2 through 6 — followed in
+the v14.0.0 release above.)
 
 ## v13.18.0
 

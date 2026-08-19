@@ -1,4 +1,4 @@
-// GP Ledger service worker — v13.1.0
+// GP Ledger service worker — v13.19.0
 // Bumping CACHE_NAME forces old caches to be dropped on next install,
 // so a re-deploy (e.g. after this update) actually reaches phones.
 // v13.0.0: new app icon set (all 4 files replaced) — bumping the cache
@@ -112,7 +112,40 @@
 // content scrolls 100% natively again. index.html changed, so bump so
 // installed copies actually receive this instead of serving a cached
 // v13.17.0.
-const CACHE_NAME = 'gp-ledger-v13-18-0';
+// v13.19.0: [V14.0.0 phase 1/6 — stability] Journal back-button fix (see
+// APP_VERSION comment in index.html for the root cause and fix). index.html
+// changed, so bump so installed copies actually receive this instead of
+// serving a cached v13.18.0.
+// v14.0.0: full release — see the APP_VERSION comment block in index.html
+// for the complete phase-by-phase summary (sync fixes, meal-planner/diet
+// linking, habit streaks, fonts, clock, AI Coach restructure, Routine
+// grouping, Finance summary/log view, global refresh). index.html
+// changed, so bump so installed copies actually receive all of this
+// instead of serving a cached v13.19.0.
+// v14.0.1: closes every gap flagged after the v14.0.0 review — dedicated
+// Typography section, Streak Milestone edit/reorder, real Meal Planner
+// calendar grid, Meal Planner visual redesign, Routine card redesign,
+// Appearance sub-grouping, log-heavy page audit (+ a real duplicate-
+// streak-calc bug fix in Trends), Diet↔Goals linking (new goal type —
+// this relationship didn't exist before), and a Home visual-hierarchy
+// pass. See the APP_VERSION comment block in index.html for full detail.
+// index.html changed, so bump so installed copies actually receive all
+// of this instead of serving a cached v14.0.0.
+// v14.0.2: bugfix — Settings → Home → Quick Actions was rendering
+// "undefined undefined" per row (wrong property names, qa.icon/qa.label
+// vs the actual qa.ic/qa.lbl). See APP_VERSION comment in index.html.
+// index.html changed, so bump so installed copies actually receive this
+// instead of serving a cached v14.0.1.
+// v14.1.0: visual + intelligence pass — physical-diary Journal (paper
+// texture, decorations, page-turn animation, matching Print/PDF export
+// styling), physical-notebook Notepad, journey-type Trip Planner styling
+// (Flight/Train/Road trip), and a Diet↔Habits↔Home food-category
+// connection (meal auto-categorization, a Home "Food Insights" card, and
+// real this-week-vs-last-week comparisons on diet-related habits instead
+// of a plain checkmark). See the APP_VERSION comment block in index.html
+// for full detail. index.html changed, so bump so installed copies
+// actually receive all of this instead of serving a cached v14.0.2.
+const CACHE_NAME = 'gp-ledger-v14-1-0';
 const IMG_CACHE_NAME = 'gp-ledger-images-v1';
 const CORE_ASSETS = [
   './index.html',

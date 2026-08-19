@@ -39,6 +39,7 @@
     user pick without touching the theme's actual text/sub colors. */
   --danger:#ef4444; --warn:#f59e0b; --good:#22c55e;
   --font-head:'Poppins',sans-serif; --font-body:'Manrope',sans-serif; --font-mono:'JetBrains Mono',monospace;
+  --font-time:'JetBrains Mono',monospace; /* v14.0.0 — spec §7: Time/Clock font is its own category, independent of --font-mono (stats/timers). Defaults to the same stack so nobody sees a change until they visit Settings → Typography. */
   --font-weight-head:700; --font-style-head:normal; /* v12.3 — heading weight/style, independent of family (see applyFontChoice()) */
   --safe-t:env(safe-area-inset-top,0px); --safe-b:env(safe-area-inset-bottom,0px);
   --radius:18px; --radius-sm:12px;
@@ -95,13 +96,17 @@ header.top{
    own row 2 (left-aligned, next to Search/Save & Sync on the right)
    instead of squeezing in next to the greeting, so it always has room and
    no longer needs to hide itself on narrow screens. */
-.header-datetime{ font-size:12px; font-weight:700; color:var(--sub); white-space:nowrap; flex-shrink:1; min-width:0; overflow:hidden; text-overflow:ellipsis; }
+.header-datetime{ font-size:12px; font-weight:700; color:var(--sub); white-space:nowrap; flex-shrink:1; min-width:0; overflow:hidden; text-overflow:ellipsis; font-family:var(--font-time); display:flex; align-items:center; gap:5px; }
+.header-datetime svg{ flex-shrink:0; }
 .header-actions{ display:flex; gap:8px; align-items:center; flex-shrink:0; }
 .icon-btn{
   width:38px; height:38px; border-radius:12px; border:1px solid var(--line);
   background:var(--card); display:flex; align-items:center; justify-content:center;
   font-size:16px; color:var(--text);
 }
+/* v14.0.0 — global refresh button spin feedback (spec §17) */
+.icon-btn.spinning{ animation:spin360 .4s ease; }
+@keyframes spin360{ from{ transform:rotate(0); } to{ transform:rotate(360deg); } }
 .sync-btn{
   display:flex; align-items:center; gap:6px; border:none; border-radius:12px;
   padding:0 12px; height:38px; background:var(--accent); color:var(--accent-ink); font-weight:700; font-size:12.5px;
@@ -163,8 +168,22 @@ main{ flex:1; overflow:hidden; position:relative; }
   position:absolute; left:14px; bottom:calc(86px + var(--safe-b)); width:46px; height:46px;
   border-radius:50%; background:var(--card); border:1px solid var(--line); color:var(--text);
   font-size:20px; font-weight:800; display:none; align-items:center; justify-content:center;
-  box-shadow:var(--shadow-md); z-index:32;
+  box-shadow:var(--shadow-md); z-index:32; right:auto; top:auto;
+  transition:top .18s ease, bottom .18s ease, left .18s ease, right .18s ease;
 }
+/* v14.0.0 — journal back-button fix. The thumb-zone position above was
+   computed as a fixed offset from the BOTTOM of #app, which is correct
+   when #app is full-height. But #app's real height already tracks the
+   keyboard via --vvh (see setVH()), so once the keyboard opens, #app
+   shrinks a lot and that same "86px from the bottom" lands high up the
+   now-short screen — right in the middle of the writing area, exactly
+   the overlap reported. Unlike nav.bottom/.fab (which kb-open hides
+   outright, since the requirement here is the back button must STAY
+   visible and tappable with the keyboard open), the fix is to relocate
+   it to a fixed, keyboard-safe corner — top-right, clear of both the
+   sticky "‹ More" link (top-left) and the on-screen keyboard — instead
+   of hiding it or leaving it to float mid-content. */
+body.kb-open .back-fab{ top:calc(10px + var(--safe-t)); bottom:auto; left:auto; right:14px; }
 #settingsCatBack{
   position:sticky; top:0; z-index:20; display:block; width:calc(100% + 32px);
   margin:-14px -16px 10px -16px !important; padding:14px 16px 10px; background:var(--bg);
@@ -216,6 +235,10 @@ main{ flex:1; overflow:hidden; position:relative; }
 }
 .habit-row .h-mid{ flex:1; min-width:0; }
 .habit-row .h-name{ font-size:14px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+/* v14.0.0 — habit streak badge (spec §10) */
+.streak-badge{ font-size:11px; font-weight:700; color:var(--sub); margin-left:6px; white-space:nowrap; }
+/* v14.0.0 — Streak Milestones edit-in-place highlight (spec §11) */
+.sm-row.editing{ background:color-mix(in srgb, var(--accent) 10%, transparent); border-radius:10px; margin:0 -8px; padding:8px !important; }
 .habit-row .h-progress-track{ height:5px; border-radius:3px; background:var(--line); margin-top:6px; overflow:hidden; }
 .habit-row .h-progress-fill{ height:100%; border-radius:3px; transition:width .25s ease; }
 .habit-row .h-val{ font-size:11px; color:var(--sub); margin-top:4px; font-family:var(--font-mono); }
@@ -369,6 +392,29 @@ nav.bottom button.active{ color:var(--text); background:var(--card2); }
 
 /* ============ TRANSACTIONS ============ */
 .tx-row{ display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--line); }
+/* v14.0.0 — Routine Now/Upcoming/Completed grouping (spec §15) */
+.routine-group-label{ font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.04em; color:var(--sub); margin:14px 0 4px; }
+.routine-group-label:first-child{ margin-top:0; }
+/* v14.0.0 — Routine block cards (spec §15): replaces the old flat tx-row
+   list with proper cards — coloured left accent bar per category, an
+   icon chip, and a distinct visual state per Now/Upcoming/Completed
+   group (Now is lightly highlighted with a live pulse dot; Completed is
+   dimmed so the eye goes to what's current/next first). */
+.routine-block-card{
+  display:flex; align-items:center; gap:10px; padding:10px 12px; margin-bottom:6px;
+  background:var(--card2); border:1px solid var(--line); border-left:3px solid var(--line);
+  border-radius:12px;
+}
+.routine-block-card.now{ background:color-mix(in srgb, var(--accent) 8%, var(--card2)); }
+.routine-block-card.done{ opacity:.6; }
+.rb-icon{ width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0; }
+.rb-mid{ flex:1; min-width:0; }
+.rb-cat{ font-size:13.5px; font-weight:700; display:flex; align-items:center; gap:6px; }
+.rb-note{ font-size:12px; color:var(--sub); margin-top:1px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.rb-time{ font-size:11px; color:var(--sub); margin-top:2px; }
+.rb-dur{ font-size:12px; font-weight:700; color:var(--sub); flex-shrink:0; }
+.rb-live-dot{ width:6px; height:6px; border-radius:50%; background:var(--good); display:inline-block; animation:rbPulse 1.6s ease infinite; }
+@keyframes rbPulse{ 0%,100%{ opacity:1; } 50%{ opacity:.3; } }
 .tx-row:last-child{ border-bottom:none; }
 .tx-icon{ width:34px; height:34px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:15px; flex-shrink:0; }
 .tx-mid{ flex:1; min-width:0; }
@@ -386,6 +432,8 @@ nav.bottom button.active{ color:var(--text); background:var(--card2); }
 
 /* ============ SETTINGS LIST ============ */
 .settings-group{ margin-bottom:18px; }
+/* v14.0.0 — Appearance sub-grouping (spec §21) */
+.settings-subhead{ font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:var(--sub); margin:4px 0 8px; }
 .settings-group h3{ font-size:11px; text-transform:uppercase; letter-spacing:.07em; color:var(--heading-color); font-weight:var(--font-weight-head); padding:0 4px 8px; }
 .settings-list{ background:var(--card); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; }
 .settings-row{ display:flex; align-items:center; justify-content:between; gap:10px; padding:14px 16px; border-bottom:1px solid var(--line); }
@@ -455,6 +503,8 @@ body{ background:var(--bg-gradient); }
    removed: replaced by the #setFontHead/#setFontWeight dropdowns, see
    drawFontPicker()/applyFontChoice(). */
 .font-select{ width:100%; }
+/* v14.0.0 — Typography preview strips (spec §8: "show a small preview for each font") */
+.font-preview{ margin-top:8px; padding:12px 14px; background:var(--card2); border:1px solid var(--line); border-radius:10px; font-size:16px; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
 /* ============ v9.5: MODULE TOGGLES ============ */
 .module-row .sr-sub{ margin-top:2px; }
@@ -563,6 +613,114 @@ body{ background:var(--bg-gradient); }
 .journal-datebar input[type=date]{ flex:1; }
 .journal-navbtn{ width:38px; height:38px; border-radius:11px; border:1px solid var(--line); background:var(--card2); flex-shrink:0; }
 .journal-hasentry{ width:8px; height:8px; border-radius:50%; background:var(--good); display:inline-block; margin-left:6px; }
+
+/* ============ v14.1.0: JOURNAL — physical diary presentation (spec §1) ============
+   Theme-adaptive rather than a fixed cream color, so it still reads correctly
+   under every Experience Pack / light-or-dark theme instead of risking
+   unreadable text on a previously-saved dark-on-dark journalColor. Warm
+   parchment tint is mixed in on top of the existing --card, not a hardcoded
+   color, and decorations are pure CSS/inline-SVG (no network image) so the
+   look is instant and offline-safe like the rest of the app. */
+.diary-shell{
+  position:relative; overflow:hidden; border-radius:var(--radius);
+  background:
+    radial-gradient(ellipse 140% 90% at 8% -10%, color-mix(in srgb, #d9b872 22%, transparent), transparent 55%),
+    linear-gradient(165deg, color-mix(in srgb, var(--card) 84%, #caa66b 16%), color-mix(in srgb, var(--card) 93%, #caa66b 7%));
+  border:1px solid color-mix(in srgb, var(--line) 55%, #caa66b 45%);
+  box-shadow:0 12px 28px rgba(0,0,0,.22), inset 0 0 50px rgba(120,90,40,.06);
+  margin-bottom:14px;
+}
+.diary-shell::before{ /* fine paper grain */
+  content:''; position:absolute; inset:0; pointer-events:none; opacity:.4; mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/></svg>");
+}
+.diary-shell::after{ /* botanical ink-sketch flourish, top-right corner */
+  content:''; position:absolute; top:10px; right:12px; width:58px; height:58px; pointer-events:none; opacity:.4;
+  background-repeat:no-repeat; background-size:contain;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><g fill='none' stroke='%23a1824a' stroke-width='2' stroke-linecap='round'><path d='M90 8 C 68 8, 52 24, 52 46 C 52 24, 36 14, 16 18'/><circle cx='90' cy='8' r='2.6' fill='%23a1824a'/><path d='M52 46 C 47 57, 36 62, 25 57'/><path d='M40 30 C 34 34, 30 40, 30 47'/></g></svg>");
+}
+.diary-corner-bl{ position:absolute; bottom:8px; left:10px; width:42px; height:42px; opacity:.32; pointer-events:none;
+  background-repeat:no-repeat; background-size:contain;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><g fill='none' stroke='%23a1824a' stroke-width='2' stroke-linecap='round'><path d='M8 92 C 8 70, 24 54, 46 54 C 24 54, 14 38, 18 16'/></g></svg>");
+}
+.diary-page-inner{ position:relative; padding:20px 16px 6px; }
+.diary-page-inner.page-turning{ animation:diaryTurn .45s var(--anim-ease); transform-origin:left center; }
+@keyframes diaryTurn{
+  0%{ transform:perspective(1000px) rotateY(0deg); opacity:1; }
+  45%{ transform:perspective(1000px) rotateY(-7deg); opacity:.72; }
+  100%{ transform:perspective(1000px) rotateY(0deg); opacity:1; }
+}
+.diary-pagenum{ text-align:center; font-size:11px; color:color-mix(in srgb, var(--sub) 60%, #a1824a 40%); letter-spacing:.1em; padding:4px 0 12px; }
+#journalText.diary-input{
+  background:transparent !important; border:none !important; box-shadow:none !important; padding:0 2px !important;
+  background-image:repeating-linear-gradient(180deg, transparent 0, transparent 28px, color-mix(in srgb, #a1824a 30%, transparent) 29px) !important;
+  background-attachment:local; line-height:29px !important; padding-top:3px !important; border-radius:0 !important;
+}
+.diary-toolbar-wrap{ padding:14px 16px 0; }
+.diary-entries-wrap{ padding:0 16px 16px; }
+
+/* ============ v14.1.0: NOTEPAD — physical notebook presentation (spec §2) ============
+   Deliberately cooler/neutral vs the Journal's warm parchment, with ruled
+   lines + a left margin rule + spiral-binding dots, so the two read as
+   different physical objects rather than reskins of the same card. */
+.notebook-card{
+  position:relative; overflow:hidden;
+  background:linear-gradient(170deg, color-mix(in srgb, var(--card) 90%, #eef2f9 10%), color-mix(in srgb, var(--card) 96%, #eef2f9 4%));
+  border:1px solid color-mix(in srgb, var(--line) 70%, #6b7fb0 30%);
+  border-left:10px solid color-mix(in srgb, var(--card2) 60%, #6b7fb0 15%);
+  border-radius:var(--radius); padding:14px 16px 14px 20px;
+  background-image:repeating-linear-gradient(180deg, transparent 0, transparent 25px, color-mix(in srgb, #6b7fb0 22%, transparent) 26px);
+  box-shadow:0 6px 16px rgba(0,0,0,.16);
+}
+.notebook-card::before{ /* spiral binding dots along the left edge */
+  content:''; position:absolute; left:-19px; top:10px; bottom:10px; width:10px; pointer-events:none;
+  background-image:radial-gradient(circle, color-mix(in srgb, var(--bg) 70%, #000 10%) 0 2.5px, transparent 3px);
+  background-size:10px 16px; background-repeat:repeat-y;
+}
+.notebook-margin{ position:absolute; left:8px; top:0; bottom:0; width:1px; background:color-mix(in srgb, #ef4444 45%, transparent); pointer-events:none; }
+#noteContent.notebook-input{
+  background:transparent !important; border:none !important; box-shadow:none !important; padding:2px 0 !important;
+  background-image:repeating-linear-gradient(180deg, transparent 0, transparent 25px, color-mix(in srgb, #6b7fb0 25%, transparent) 26px) !important;
+  line-height:26px !important; border-radius:0 !important;
+}
+
+/* ============ v14.1.0: TRIP PLANNER — journey-type visual language (spec §3) ============
+   tripHeaderCard swaps its treatment based on the trip's transport type —
+   flight/train/road — purely visual, no change to the underlying trip
+   data model beyond the one new `tripType` field. */
+.trip-card-flight{
+  background:linear-gradient(135deg, color-mix(in srgb, var(--card) 88%, #0ea5e9 12%), color-mix(in srgb, var(--card) 95%, #0ea5e9 5%));
+  border:1px dashed color-mix(in srgb, var(--line) 45%, #0ea5e9 55%);
+  position:relative;
+}
+.trip-card-flight::after{
+  content:'✈'; position:absolute; top:10px; right:14px; font-size:22px; opacity:.35; transform:rotate(20deg);
+}
+.trip-card-train{
+  background:linear-gradient(135deg, color-mix(in srgb, var(--card) 88%, #f59e0b 12%), color-mix(in srgb, var(--card) 95%, #f59e0b 5%));
+  border:1px dashed color-mix(in srgb, var(--line) 45%, #f59e0b 55%);
+  position:relative;
+}
+.trip-card-train::after{ content:'🚆'; position:absolute; top:10px; right:14px; font-size:20px; opacity:.35; }
+.trip-card-road{
+  background:linear-gradient(135deg, color-mix(in srgb, var(--card) 88%, #22c55e 12%), color-mix(in srgb, var(--card) 95%, #22c55e 5%));
+  border:1px dashed color-mix(in srgb, var(--line) 45%, #22c55e 55%);
+  position:relative;
+}
+.trip-card-road::after{ content:'🛣️'; position:absolute; top:10px; right:14px; font-size:20px; opacity:.35; }
+.trip-type-chip{ font-size:10.5px; font-weight:700; padding:3px 8px; border-radius:999px; background:var(--card2); color:var(--sub); }
+
+/* ============ v14.1.0: Diet food categories + Home food insights ============ */
+.food-cat-chip{ font-size:10px; font-weight:700; padding:2px 7px; border-radius:999px; margin-right:4px; display:inline-block; margin-top:3px; }
+.food-insight-card{ background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:14px 16px; margin-bottom:14px; }
+.fi-bar-row{ display:flex; align-items:center; gap:8px; margin-bottom:8px; font-size:12.5px; }
+.fi-bar-lbl{ width:96px; flex-shrink:0; color:var(--sub); }
+.fi-bar-track{ flex:1; height:9px; border-radius:5px; background:var(--card2); overflow:hidden; }
+.fi-bar-fill{ height:100%; border-radius:5px; }
+.fi-bar-val{ width:34px; text-align:right; flex-shrink:0; font-family:var(--font-mono); font-size:11.5px; color:var(--sub); }
+.habit-diet-insight{ margin-top:10px; padding:10px 12px; background:var(--card2); border-radius:var(--radius-sm); font-size:12.5px; }
+.habit-diet-insight .hdi-trend{ font-weight:800; }
+.habit-diet-insight.compact{ margin-top:4px; padding:3px 0 0; background:transparent; font-size:11px; color:var(--sub); }
 
 /* ============ v8: DIET ============ */
 .meal-card{ display:flex; gap:10px; background:var(--card); border:1px solid var(--line); border-radius:var(--radius-sm); padding:10px 12px; margin-bottom:8px; align-items:center; }
@@ -770,9 +928,20 @@ body{ background:var(--bg-gradient); }
 .checklist-row:last-child{ border-bottom:none; }
 .mp-day-card{ background:var(--card); border:1px solid var(--line); border-radius:var(--radius-sm); padding:12px; margin-bottom:8px; }
 .mp-day-head{ font-weight:700; font-size:12.5px; margin-bottom:8px; }
-.mp-slot{ display:flex; align-items:center; gap:8px; margin-bottom:6px; }
-.mp-slot label{ width:64px; flex-shrink:0; font-size:11px; color:var(--sub); font-weight:700; }
+/* v14.0.0 — Meal Planner visual improvement (spec §14): colour-coded left
+   accent bar per meal type (see MEAL_SLOT_STYLE), an emoji chip replacing
+   the old plain text label, and a visual day-total calorie bar. */
+.mp-day-calbar{ height:5px; border-radius:3px; background:var(--line); overflow:hidden; margin-bottom:10px; }
+.mp-day-calbar-fill{ height:100%; background:linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 60%, #f59e0b)); border-radius:3px; }
+.mp-slot{ display:flex; align-items:center; gap:8px; margin-bottom:6px; padding:4px 0 4px 8px; border-radius:8px; }
+.mp-slot-emoji{ width:26px; flex-shrink:0; font-size:16px; text-align:center; }
 .mp-slot input{ flex:1; }
+/* v14.0.0 — Meal Planner ↔ Diet completion toggle (spec §13) */
+.mp-eaten-btn{
+  flex-shrink:0; font-size:11px; font-weight:700; padding:8px 10px; border-radius:10px;
+  background:var(--card2); border:1px solid var(--line); color:var(--sub); white-space:nowrap;
+}
+.mp-eaten-btn.done{ background:color-mix(in srgb, var(--good) 18%, transparent); border-color:var(--good); color:var(--good); }
 
 /* ============ v9: DOCUMENTS ============ */
 .doc-card{ display:flex; align-items:center; gap:11px; background:var(--card); border:1px solid var(--line); border-radius:var(--radius-sm); padding:12px; margin-bottom:8px; }
@@ -786,6 +955,20 @@ body{ background:var(--bg-gradient); }
 .coach-msg{ background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:14px 16px; margin-bottom:10px; font-size:13.5px; line-height:1.55; display:flex; gap:10px; }
 .coach-msg .cm-icon{ font-size:18px; flex-shrink:0; }
 .coach-empty{ text-align:center; padding:30px 20px; color:var(--sub); font-size:13px; }
+/* v14.0.0 — AI Coach restructure (spec §19): scannable colour-coded
+   sections instead of one flat list of sentences. */
+.coach-section{ border-radius:var(--radius); padding:12px 14px; margin-bottom:10px; border:1px solid var(--line); }
+.coach-section h4{ font-size:12px; font-weight:800; margin-bottom:8px; display:flex; align-items:center; gap:6px; }
+.coach-section ul{ margin:0; padding-left:18px; }
+.coach-section li{ font-size:13px; line-height:1.5; margin-bottom:4px; }
+.coach-section.good{ background:color-mix(in srgb, var(--good) 10%, transparent); border-color:color-mix(in srgb, var(--good) 35%, var(--line)); }
+.coach-section.good h4{ color:var(--good); }
+.coach-section.warn{ background:color-mix(in srgb, #f59e0b 10%, transparent); border-color:color-mix(in srgb, #f59e0b 35%, var(--line)); }
+.coach-section.warn h4{ color:#f59e0b; }
+.coach-section.continue h4{ color:var(--accent); }
+.coach-section.improve h4{ color:#a78bfa; }
+.coach-section.next{ background:color-mix(in srgb, var(--accent) 10%, transparent); border-color:color-mix(in srgb, var(--accent) 35%, var(--line)); }
+.coach-section.next h4{ color:var(--accent); }
 
 /* ============ v9: header search btn ============ */
 .header-actions .icon-btn.search-open{ color:var(--accent); }
@@ -958,6 +1141,14 @@ nav.bottom, .fab{ transition:transform .18s ease; }
     <div class="header-row2">
       <div class="header-datetime" id="headerDateTime"></div>
       <div class="header-actions">
+        <!-- v14.0.0 — spec §17: manual local refresh fallback, distinct from
+             "Save & Sync" (which talks to the Google Sheet). This just
+             re-renders whatever's currently on screen from local state —
+             a fallback for the rare case something looks stale, now that
+             every screen already re-renders fresh on every visit (see
+             goToScreen's render dispatch) rather than the primary way
+             data gets current. -->
+        <button class="icon-btn" id="headerRefreshBtn" title="Refresh this screen">↻</button>
         <button class="icon-btn" id="headerSearchBtn" title="Search everything">🔍</button>
         <button class="sync-btn" id="syncBtn" title="Save & Sync"><span class="sync-dot"></span><span id="syncBtnLabel">Save &amp; Sync</span></button>
       </div>
@@ -992,11 +1183,24 @@ nav.bottom, .fab{ transition:transform .18s ease; }
           <div class="pc-stats" id="pcStats"></div>
         </div>
       </div>
-      <div class="section-head"><h2>Quick Actions</h2></div>
+      <!-- v14.0.0 — Home visual hierarchy pass (spec §3/§9.1): small
+         section icons for faster scanning (not decoration for its own
+         sake — each answers "what is this section" at a glance), and
+         Routine is now represented in Top priorities (see the
+         currentRoutineBlock() push in renderDashboard) alongside Habits,
+         closing the gap where Routine/Diet weren't shown on Home at all
+         despite being explicitly listed in the spec. No new cards, no
+         new screens — same sections, clearer at a glance. -->
+      <div class="section-head"><h2>⚡ Quick Actions</h2></div>
       <div class="quick-actions-row" id="dashQuickActions"></div>
-      <div class="section-head" style="margin-top:6px;"><h2>Top priorities</h2></div>
+      <!-- v14.0.0 — Habit streak visibility on Home (spec §9.3) -->
+      <div id="dashStreaksWrap"></div>
+      <!-- v14.1.0 — Diet+Habit+Home connection (spec §5-§8): what am I
+           actually eating, and am I improving? -->
+      <div id="dashFoodInsights"></div>
+      <div class="section-head" style="margin-top:6px;"><h2>🎯 Top priorities</h2></div>
       <div id="dashPriorities"></div>
-      <div class="section-head" style="margin-top:6px;"><h2>Upcoming</h2></div>
+      <div class="section-head" style="margin-top:6px;"><h2>📅 Upcoming</h2></div>
       <div id="dashUpcoming"></div>
     </section>
 
@@ -1030,7 +1234,12 @@ nav.bottom, .fab{ transition:transform .18s ease; }
       <div class="section-head"><h2>Budgets this month</h2><button class="link-btn" id="addBudgetBtn">+ Add</button></div>
       <div class="card" id="budgetCard"></div>
       <div class="section-head"><h2>Ledger</h2><button class="link-btn" id="addTxBtn">+ Add</button></div>
-      <div class="card" id="txListCard"><div id="txList"></div></div>
+      <!-- v14.0.0 — spec §22: clean summary by default (recent-3 preview),
+           full log behind an explicit "View Log" toggle instead of the
+           full transaction history rendering by default. -->
+      <div class="card" id="txPreviewCard"><div id="txPreview"></div></div>
+      <button class="btn secondary" id="txViewLogBtn" style="margin-bottom:12px;">📜 View full log</button>
+      <div class="card" id="txListCard" style="display:none;"><div id="txList"></div></div>
     </section>
 
     <!-- ===================== TRENDS ===================== -->
@@ -1157,17 +1366,25 @@ nav.bottom, .fab{ transition:transform .18s ease; }
         <button class="journal-navbtn" id="jNextDay">›</button>
         <button class="journal-navbtn" id="jTodayBtn" title="Jump to today">●</button>
       </div>
-      <div class="journal-toolbar">
-        <select id="journalFont">
-          <option value="Manrope">Manrope</option><option value="Fraunces">Fraunces</option>
-          <option value="Nunito">Nunito</option><option value="Inter">Inter</option>
-          <option value="JetBrains Mono">Mono</option>
-        </select>
-        <input type="color" id="journalColor" value="#eef1f7">
-        <button class="link-btn" id="journalExportAllBtn">Export whole diary</button>
+      <div class="diary-shell" id="diaryShell">
+        <div class="diary-corner-bl"></div>
+        <div class="diary-page-inner" id="diaryPageInner">
+          <div class="diary-toolbar-wrap">
+            <div class="journal-toolbar">
+              <select id="journalFont">
+                <option value="Manrope">Manrope</option><option value="Fraunces">Fraunces</option>
+                <option value="Nunito">Nunito</option><option value="Inter">Inter</option>
+                <option value="JetBrains Mono">Mono</option>
+              </select>
+              <input type="color" id="journalColor" value="#eef1f7">
+              <button class="link-btn" id="journalExportAllBtn">Export whole diary</button>
+            </div>
+            <textarea id="journalText" class="diary-input" placeholder="Write about your day…"></textarea>
+            <div class="hint" id="journalMeta" style="margin:8px 0 4px;"></div>
+          </div>
+          <div class="diary-pagenum" id="diaryPageNum">— page —</div>
+        </div>
       </div>
-      <textarea id="journalText" placeholder="Write about your day…"></textarea>
-      <div class="hint" id="journalMeta" style="margin:8px 0 12px;"></div>
       <div class="btn-row">
         <button class="btn primary" id="journalSaveBtn">Save entry</button>
         <button class="btn secondary" id="journalPrintBtn">🖨 Print</button>
@@ -1283,7 +1500,39 @@ nav.bottom, .fab{ transition:transform .18s ease; }
     <section class="screen" id="screen-mealplanner">
       <button class="link-btn" data-back="more" style="margin-bottom:8px;">‹ More</button>
       <div id="mealplannerMotivationCard"></div>
-      <div class="cal-head" style="margin-bottom:10px;">
+      <!-- v14.0.0 — default view changed from an always-7-day week to
+           Today+Tomorrow (spec §12.1), with a view switcher for the other
+           ranges (§12.2) plus a real Calendar grid (§12.3/§12.4, see
+           below) and a jump-to-date shortcut. -->
+      <div class="seg" id="mpViewSeg" style="margin-bottom:10px;">
+        <button data-v="default" class="active">Today + Tomorrow</button>
+        <button data-v="yesterday">Yesterday</button>
+        <button data-v="next5">Next 5 days</button>
+        <button data-v="week">Week</button>
+        <button data-v="calendar">📅 Calendar</button>
+      </div>
+      <div id="mpDatePickWrap" style="display:flex; gap:8px; align-items:center; margin-bottom:10px;">
+        <input type="date" id="mpJumpDate" style="flex:1;">
+        <button class="btn secondary" id="mpJumpDateBtn" style="width:auto; padding:0 16px;">View day</button>
+      </div>
+      <!-- v14.0.0 — real Calendar view (spec §12.3/§12.4), replacing the
+           date-jump-only approach: reuses the exact .cal-grid component
+           already built for the main Calendar module (same CSS, same
+           month-nav pattern), scoped to Meal Planner data. A green dot
+           marks any day with a plan; a red dot marks any day with at
+           least one meal actually marked eaten — so "was anything
+           planned" vs "was anything consumed" is visible at a glance
+           across a whole month, not just one day at a time. Tapping a day
+           drops into that day's existing single-day view, which already
+           shows planned text + the Eaten toggle per slot side by side. -->
+      <div class="cal-head" id="mpCalHead" style="margin-bottom:6px; display:none;">
+        <button id="mpCalPrevBtn">‹</button>
+        <h3 id="mpCalLabel">—</h3>
+        <button id="mpCalNextBtn">›</button>
+      </div>
+      <div class="cal-grid" id="mpCalGrid" style="display:none; margin-bottom:14px;"></div>
+      <div class="hint" id="mpCalLegend" style="display:none; margin:-6px 0 14px;">🟢 Planned &nbsp; 🔴 Eaten</div>
+      <div class="cal-head" id="mpWeekHead" style="margin-bottom:10px; display:none;">
         <button id="mpPrevWeekBtn">‹</button>
         <h3 id="mpWeekLabel">—</h3>
         <button id="mpNextWeekBtn">›</button>
@@ -1411,13 +1660,82 @@ nav.bottom, .fab{ transition:transform .18s ease; }
            listeners) — this only controls which ones are visible. -->
       <div class="settings-cat-list" id="settingsCatHub">
         <div class="settings-row settings-cat-row" data-cat="general"><div class="sr-icon">👤</div><div class="sr-label">General<div class="sr-sub">Profile, app icon, motivation, habit behaviour, diet stats</div></div><span class="chev">›</span></div>
-        <div class="settings-row settings-cat-row" data-cat="appearance"><div class="sr-icon">🎨</div><div class="sr-label">Appearance<div class="sr-sub">Experience Pack, theme colors, icon pack, background, fonts</div></div><span class="chev">›</span></div>
+        <div class="settings-row settings-cat-row" data-cat="appearance"><div class="sr-icon">🎨</div><div class="sr-label">Appearance<div class="sr-sub">Experience Pack, theme, colours, icon pack</div></div><span class="chev">›</span></div>
+        <div class="settings-row settings-cat-row" data-cat="typography"><div class="sr-icon">🔤</div><div class="sr-label">Typography<div class="sr-sub">Header, Body, and Time/Clock fonts</div></div><span class="chev">›</span></div>
+        <div class="settings-row settings-cat-row" data-cat="photos"><div class="sr-icon">🖼️</div><div class="sr-label">Photos &amp; Quotes<div class="sr-sub">Background photo cards, wallpaper, quote rotation</div></div><span class="chev">›</span></div>
+        <div class="settings-row settings-cat-row" data-cat="clock"><div class="sr-icon">🕐</div><div class="sr-label">Clock<div class="sr-sub">Show/hide, analog/digital style</div></div><span class="chev">›</span></div>
+        <div class="settings-row settings-cat-row" data-cat="streaks"><div class="sr-icon">🔥</div><div class="sr-label">Streaks<div class="sr-sub">Milestone emoji ladder</div></div><span class="chev">›</span></div>
+        <div class="settings-row settings-cat-row" data-cat="home"><div class="sr-icon">🏠</div><div class="sr-label">Home<div class="sr-sub">Quick Actions</div></div><span class="chev">›</span></div>
         <div class="settings-row settings-cat-row" data-cat="communication"><div class="sr-icon">📨</div><div class="sr-label">Communication<div class="sr-sub">Telegram reminders</div></div><span class="chev">›</span></div>
         <div class="settings-row settings-cat-row" data-cat="backup"><div class="sr-icon">💾</div><div class="sr-label">Backup &amp; Restore<div class="sr-sub">Google Sheet sync, JSON backup/restore</div></div><span class="chev">›</span></div>
         <div class="settings-row settings-cat-row" data-cat="modules"><div class="sr-icon">🧩</div><div class="sr-label">Modules &amp; Data<div class="sr-sub">Turn sections on/off, diet &amp; body stats</div></div><span class="chev">›</span></div>
         <div class="settings-row settings-cat-row" id="settingsAboutRow" data-cat="about"><div class="sr-icon">ℹ️</div><div class="sr-label">About<div class="sr-sub">Version <span id="aboutRowVersion"></span> · credits, what this app is</div></div><span class="chev">›</span></div>
       </div>
       <button class="link-btn" id="settingsCatBack" style="margin-bottom:10px; display:none;">‹ All settings</button>
+
+      <!-- v14.0.0 (revised) — spec §7/§8 explicitly asked for a literal,
+           dedicated Typography section with three independent pickers
+           (Header/Body/Time), not folded into Appearance. Built as its
+           own category below, and the font controls were MOVED here from
+           Appearance (not duplicated) — still exactly one source of truth
+           per font category, just filed under the section a person would
+           actually look for it. Time/Clock font is now genuinely
+           independent of the Number/mono font used for stats and timers
+           (spec was explicit these are different categories), applied via
+           its own --font-time CSS variable to the header clock. -->
+      <div class="settings-group" data-cat="typography" style="display:none;">
+        <h3>🔤 Header / App font</h3>
+        <div class="hint" style="margin-bottom:6px;">App name, page titles, and section headings.</div>
+        <select id="setFontHead" class="font-select"></select>
+        <select id="setFontWeight" style="margin-top:8px;"><option value="400">Regular</option><option value="500">Medium</option><option value="600">Semibold</option><option value="700">Bold</option><option value="800">Extra Bold</option><option value="400i">Italic</option><option value="700i">Bold Italic</option></select>
+        <div class="font-preview" id="fontHeadPreview" style="font-family:var(--font-head);">Today's Focus</div>
+
+        <h3 style="margin-top:20px;">🔤 Body / Content font</h3>
+        <div class="hint" style="margin-bottom:6px;">Journal entries, notes, descriptions, and general written content — independent of the header font above.</div>
+        <select id="setFontBody" class="font-select"></select>
+        <div class="font-preview" id="fontBodyPreview" style="font-family:var(--font-body);">The quick brown fox jumps over the lazy dog.</div>
+
+        <h3 style="margin-top:20px;">🕐 Time / Clock font</h3>
+        <div class="hint" style="margin-bottom:6px;">The global header clock, specifically — independent of the Number/mono font below used for stats and timers.</div>
+        <select id="setFontTime"><option value="JetBrains Mono">JetBrains Mono</option><option value="Space Mono">Space Mono</option><option value="IBM Plex Mono">IBM Plex Mono</option><option value="Inter">Inter</option><option value="Manrope">Manrope</option></select>
+        <div class="font-preview" id="fontTimePreview" style="font-family:var(--font-time);">12:34 PM</div>
+
+        <h3 style="margin-top:20px;">Number / stats font</h3>
+        <div class="hint" style="margin-bottom:6px;">Stat figures, timers, and durations elsewhere in the app.</div>
+        <select id="setFontMono"><option value="JetBrains Mono">JetBrains Mono</option><option value="Space Mono">Space Mono</option><option value="IBM Plex Mono">IBM Plex Mono</option></select>
+        <div class="font-preview" id="fontMonoPreview" style="font-family:var(--font-mono);">01:23:45</div>
+      </div>
+
+      <!-- v14.0.0 — Streak Milestones (spec §11). Own category, separate
+           from Appearance/Typography, per spec §21's reorganization. -->
+      <div class="settings-group" data-cat="streaks" style="display:none;">
+        <h3>🔥 Streak milestones</h3>
+        <div class="hint" style="margin-bottom:10px;">The emoji shown next to a habit's streak upgrades automatically at each milestone day-count. Defaults to 🔥 for every day until you add milestones — the feature works with zero setup. Tap a milestone to edit it, or use ↑/↓ to reorder the list.</div>
+        <div id="streakMilestoneList"></div>
+        <div style="display:flex; gap:8px; margin-top:10px;">
+          <input type="number" id="smNewDays" placeholder="Days" style="width:90px;" min="1">
+          <input type="text" id="smNewEmoji" placeholder="Emoji" style="width:70px; text-align:center;" maxlength="4">
+          <button class="btn secondary" id="smAddBtn" style="flex:1;">+ Add milestone</button>
+        </div>
+        <button class="btn secondary" id="smResetBtn" style="margin-top:10px;">↻ Reset to default</button>
+      </div>
+
+      <!-- v14.0.0 — Clock (spec §20) -->
+      <div class="settings-group" data-cat="clock" style="display:none;">
+        <h3>🕐 Global clock</h3>
+        <label class="fl" style="margin-top:0;">Show clock in header</label>
+        <select id="clockEnabled"><option value="1">On</option><option value="0">Off</option></select>
+        <label class="fl">Style</label>
+        <select id="clockStyle"><option value="digital">Digital</option><option value="analog">Analog</option><option value="both">Both</option></select>
+      </div>
+
+      <!-- v14.0.0 — Home Quick Actions customization (spec §9.2) -->
+      <div class="settings-group" data-cat="home" style="display:none;">
+        <h3>🏠 Quick Actions</h3>
+        <div class="hint" style="margin-bottom:10px;">Choose which shortcuts appear on Home, and in what order. Defaults match the current Quick Actions.</div>
+        <div id="qaSettingsList"></div>
+        <button class="btn secondary" id="qaResetBtn" style="margin-top:10px;">↻ Reset to default</button>
+      </div>
 
       <div class="settings-group" data-cat="general">
         <h3>Profile</h3>
@@ -1461,6 +1779,11 @@ nav.bottom, .fab{ transition:transform .18s ease; }
         </div>
       </div>
 
+      <!-- v14.0.0 — spec §21: sub-grouped Appearance into logical clusters
+           (Theme vs Style) with light section labels, instead of one flat
+           scroll of 5 unrelated-looking cards — Colours also moved up
+           next to Theme presets (they're the same conceptual cluster). -->
+      <div class="settings-subhead" data-cat="appearance">🎨 THEME</div>
       <div class="settings-group" data-cat="appearance">
         <h3>Experience Pack</h3>
         <div class="settings-list">
@@ -1486,6 +1809,21 @@ nav.bottom, .fab{ transition:transform .18s ease; }
       </div>
 
       <div class="settings-group" data-cat="appearance">
+        <h3>Colours</h3>
+        <div class="settings-list">
+          <div class="settings-row"><div class="sr-label">Accent color</div></div>
+          <div class="swatch-row" id="accentSwatches"></div>
+          <div style="padding:0 16px 14px;"><input type="color" id="setCustomAccent" value="#22c55e"></div>
+          <div class="settings-row" style="border-top:1px solid var(--line);"><div class="sr-label">Heading color<div class="sr-sub">Section titles &amp; card headings (e.g. "Quick Actions") — independent of the theme</div></div></div>
+          <div style="padding:0 16px 14px; display:flex; gap:8px; align-items:center;">
+            <input type="color" id="setHeadingColor" value="#eef1f7">
+            <button class="link-btn" id="resetHeadingColorBtn" type="button">Reset to theme</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-subhead" data-cat="appearance">🖌️ VISUAL STYLE</div>
+      <div class="settings-group" data-cat="appearance">
         <h3>Icon pack</h3>
         <div class="settings-list">
           <div class="settings-row"><div class="sr-label">Icon style, changed instantly<div class="sr-sub">Independent of your Experience Pack and color theme — applies everywhere right away</div></div></div>
@@ -1501,7 +1839,7 @@ nav.bottom, .fab{ transition:transform .18s ease; }
         </div>
       </div>
 
-      <div class="settings-group" data-cat="appearance">
+      <div class="settings-group" data-cat="photos">
         <h3>Photo cards</h3>
         <div class="settings-list">
           <div class="hint" style="padding:14px 16px 0;">The photo behind Today's Focus, the habit quote card, and every module's motivation card (Finance, Routine, Diet, Goals, etc). These always show, on every screen, by default — this section controls how often the picture behind them changes. The quote text itself has its own rotation below.</div>
@@ -1516,7 +1854,7 @@ nav.bottom, .fab{ transition:transform .18s ease; }
         </div>
       </div>
 
-      <div class="settings-group" data-cat="appearance">
+      <div class="settings-group" data-cat="photos">
         <h3>Quotes</h3>
         <div class="settings-list">
           <div class="hint" style="padding:14px 16px 0;">The quote text shown on the habit quote card, Today's Focus, and every module's motivation card (Finance, Routine, Diet, Debts, Goals, etc — each has its own themed quote list under "Manage my quotes"). Separate from the photo behind it above — this controls the words themselves, how often they change, and which quotes are in rotation.</div>
@@ -1533,7 +1871,7 @@ nav.bottom, .fab{ transition:transform .18s ease; }
         </div>
       </div>
 
-      <div class="settings-group" data-cat="appearance">
+      <div class="settings-group" data-cat="photos">
         <h3>Wallpaper</h3>
         <div class="settings-list">
           <div class="hint" style="padding:14px 16px 0;">A separate, much fainter photo behind the whole app (behind your cards, not inside them). Off by default for most people — the quote/photo cards above are unaffected either way.</div>
@@ -1546,24 +1884,6 @@ nav.bottom, .fab{ transition:transform .18s ease; }
         </div>
       </div>
 
-      <div class="settings-group" data-cat="appearance">
-        <h3>Fonts</h3>
-        <div class="settings-list">
-          <div class="settings-row"><div class="sr-label">Accent color</div></div>
-          <div class="swatch-row" id="accentSwatches"></div>
-          <div style="padding:0 16px 14px;"><input type="color" id="setCustomAccent" value="#22c55e"></div>
-          <div class="settings-row" style="border-top:1px solid var(--line);"><div class="sr-label">Heading color<div class="sr-sub">Section titles &amp; card headings (e.g. "Quick Actions") — independent of the theme</div></div></div>
-          <div style="padding:0 16px 14px; display:flex; gap:8px; align-items:center;">
-            <input type="color" id="setHeadingColor" value="#eef1f7">
-            <button class="link-btn" id="resetHeadingColorBtn" type="button">Reset to theme</button>
-          </div>
-          <div class="settings-row" style="border-top:1px solid var(--line);"><div class="sr-label">App font<div class="sr-sub">Used for headings and body text everywhere in the app</div></div></div>
-          <div style="padding:0 16px 6px;"><select id="setFontHead" class="font-select"></select></div>
-          <div style="padding:0 16px 14px;"><select id="setFontWeight"><option value="400">Regular</option><option value="500">Medium</option><option value="600">Semibold</option><option value="700">Bold</option><option value="800">Extra Bold</option><option value="400i">Italic</option><option value="700i">Bold Italic</option></select></div>
-          <div class="settings-row"><div class="sr-label">Number / mono font</div></div>
-          <div style="padding:0 16px 14px;"><select id="setFontMono"><option value="JetBrains Mono">JetBrains Mono</option><option value="Space Mono">Space Mono</option><option value="IBM Plex Mono">IBM Plex Mono</option></select></div>
-        </div>
-      </div>
 
       <div class="settings-group" data-cat="modules">
         <h3>Modules</h3>
@@ -1722,7 +2042,161 @@ nav.bottom, .fab{ transition:transform .18s ease; }
    change it here only; both the photo estimator and the AI Coach read
    from this constant. */
 const GEMINI_MODEL = 'gemini-3.5-flash';
-const APP_VERSION = 'v13.16.0'; // single source of truth for About screen & Settings row
+const APP_VERSION = 'v14.1.0'; // single source of truth for About screen & Settings row
+// v14.1.0 — visual + intelligence pass, architecture unchanged (per this
+// session's brief: same modules/nav/functionality, richer presentation +
+// smarter use of existing data). (1) JOURNAL: physical-diary presentation —
+// theme-adaptive parchment page (paper grain, ink-sketch corner flourishes,
+// ruled writing lines), a page-turn flip animation on every date/entry
+// switch, and matching diary styling carried into Print and both PDF
+// exports (drawDiaryPageFrame()) so what's exported looks like what's on
+// screen. (2) NOTEPAD: a distinct physical-notebook presentation — ruled
+// lines, spiral-binding dots, red margin rule — deliberately cooler/
+// different from the Journal so the two don't read as the same reskinned
+// card. (3) TRIP PLANNER: one new optional field, trip.tripType (Flight/
+// Train/Road trip/Other), drives a themed header + list card (boarding-
+// pass dashed border for flights, ticket-orange for trains, road-map green
+// for road trips) — same data model otherwise. (4) DIET→HOME→HABITS
+// connection: classifyFoodCategories() tags every logged meal (manual or
+// Meal Planner "eaten") into one or more of Healthy/Junk/Processed/
+// Protein-rich/Fruits/Vegetables/Sugary/Other from its name (+ a macro
+// fallback), shown as chips on each meal row; the Home Dashboard's new
+// Food Insights card (renderFoodInsights()) turns that into simple weekly
+// bars + what's trending up/down; and dietHabitInsight() matches a habit's
+// own wording (e.g. "Avoid Junk Food", "Eat More Vegetables") to a food
+// category and replaces the plain checkmark with a real this-week-vs-
+// last-week comparison, both as a compact line on the Habit row and a
+// fuller one in the Habit detail modal. All three read the same
+// foodCategoryCounts() aggregation, so Diet, Home, and Habits can never
+// disagree about what "this week" means.
+// v14.0.2 — bugfix: Settings → Home → Quick Actions was showing "undefined
+// undefined" next to every toggle instead of the icon+label (e.g. "🎯 Log
+// habit"). Root cause: drawQuickActionsSettings() read qa.icon/qa.label,
+// but QUICK_ACTION_DEFS actually stores those fields as qa.ic/qa.lbl — a
+// property-name mismatch, not a logic bug, so the on/off toggle state
+// itself was already correct the whole time; only the row's text was
+// broken. Now reads the right fields and renders the icon via chromeIcon()
+// (matching how the icon actually renders on Home itself) instead of
+// printing the raw (missing) property. index.html and sw.js changed
+// (CACHE_NAME bumped to 'gp-ledger-v14-0-2') so installed copies actually
+// receive this instead of serving a cached v14.0.1.
+// v14.0.1 — closes every gap flagged after the v14.0.0 review:
+//
+// §7/§8 Typography: was extending the existing font system in place;
+// now a literal, dedicated Typography category in Settings (moved, not
+// duplicated, from Appearance) with independent Header/Body/Time-Clock
+// pickers and a live preview under each. Time/Clock font is now a real
+// third category with its own --font-time CSS variable driving the
+// header clock, separate from the Number/stats font.
+//
+// §11 Streak Milestones: added Edit-in-place (tap ✎) and Reorder (↑/↓)
+// alongside the existing Add/Delete. Display order follows manual
+// reordering; the underlying streakEmoji() milestone match is still
+// computed by day-count internally, so reordering for display never
+// breaks correctness.
+//
+// §12.3/§12.4 Meal Planner Calendar: replaced the jump-to-date-only
+// approach with an actual month calendar grid (reusing the app's
+// existing Calendar component/CSS) — green dot = planned, red dot = at
+// least one meal marked eaten that day. Tapping a day opens that day's
+// detail view.
+//
+// §14 Meal Planner visuals: colour-coded left accent bar + emoji per
+// meal type (🍳 Breakfast / 🥗 Lunch / 🍲 Dinner / 🍎 Snacks, matching the
+// spec's own example), plus a visual day-total calorie progress bar.
+//
+// §15 Routine: block rows rebuilt as proper cards (icon chip, coloured
+// accent bar, live-pulse dot on the current block, dimmed Completed
+// state) instead of the old flat plain-text list.
+//
+// §21 Appearance: sub-grouped into "🎨 Theme" (Experience Pack, Theme
+// presets, Colours) and "🖌️ Visual Style" (Icon pack, Timer style)
+// section labels instead of one flat scroll of unrelated-looking cards.
+//
+// §24 Log-heavy pages: audited Reports, Trends, Debts, Subscriptions,
+// Assets, Travel, Learning, Tasks, and Journal's entry list — all were
+// already summary/filter-scoped by default. One real issue found and
+// fixed: Trends had its own separate habit-streak calculation instead of
+// the shared habitStreak(), a duplicate-derived-value bug exactly of the
+// kind spec §25 warns against.
+//
+// §25 Diet ↔ Goals: there was no goal type linked to Diet at all before
+// this, so the relationship literally didn't exist to keep in sync. Added
+// a "Diet — days within calorie target" goal mode, computed live from
+// S.diet.meals (which already picks up Meal Planner's "Eaten" toggle
+// automatically, from the v14.0.0 interlink). Also factored Routine's
+// current-block detection into a shared routineBlockRange()/
+// currentRoutineBlock() helper used by both Routine's own grouping and
+// the new Home priority row below, instead of two copies of the same
+// time-range math.
+//
+// §3/§9.1 Home: Routine now actually appears on Home (a "right now" row
+// in Top Priorities when something's running) — it was completely absent
+// before despite being named alongside Habits/Diet in the spec. Added
+// small section-header icons (⚡🎯📅🔥) for faster scanning. No new
+// cards or screens — same sections, clearer at a glance.
+//
+// index.html and sw.js changed (CACHE_NAME bumped to 'gp-ledger-v14-0-1')
+// so installed copies actually receive all of this instead of serving a
+// cached v14.0.0.
+// v14.0.0 — full release. Builds on v13.19.0 (Phase 1's Journal back-button
+// fix) with the remaining five priority phases from the V14.0.0 spec:
+//
+// PHASE 1 — Stability/UX (rest of it): confirmed Notes and Trip Plans use
+// the bottom-sheet modal pattern (not full-screen editors like Journal),
+// so they were never exposed to the back-fab/keyboard bug — no code
+// changes needed there, verified by inspection. Quote-card first-load
+// image already had a no-flash pattern since v12.2; added fetchPriority
+// hints on the two most-likely-seen images so the warm-cache preload
+// finishes a little sooner on cold start.
+//
+// PHASE 2 — Data integrity/sync: found and fixed the REAL cause of
+// "Routine update doesn't show in Habit" — the Habit screen had no case
+// at all in goToScreen's render dispatch, so navigating to it never
+// called renderHabits(); it only ever showed whatever was drawn at app
+// boot. Habit↔Goals was already live on every render, no bug there. Added
+// Meal Planner → Diet → Calories linking (mark a planned meal "Eaten" to
+// create exactly one linked Diet entry; unmark removes exactly that one;
+// editing the plan text after marking done keeps the linked calories in
+// sync — no double-counting in either direction). Added a manual global
+// refresh (↻, top-right of the header) as the spec's fallback, alongside
+// the automatic re-render-on-navigate that's now the actual mechanism.
+//
+// PHASE 3 — Core features: Habit streaks computed live from real
+// completion history (never a stored number) with a customizable
+// milestone-emoji ladder (🔥⭐🌟🏆💎 by default). Meal Planner now defaults
+// to Today+Tomorrow instead of always 7 days, with Yesterday/Next 5
+// days/Week view switches and a jump-to-any-date lookup. Home Quick
+// Actions expanded from 5 fixed items to a 10-item pool, user-toggleable
+// in Settings → Home (default selection/order unchanged for anyone who
+// doesn't open that screen). Habit streaks now also shown directly on
+// Home.
+//
+// PHASE 4 — Settings/customization: new Streaks, Clock, and Home
+// categories in Settings. Fonts: found the app already had a Header/Body/
+// Mono font architecture (--font-head/--font-body/--font-mono) but forced
+// Body to always mirror Header — decoupled them into independent
+// controls instead of building a second, competing font system. Clock:
+// extended the existing header date/time indicator (on/off, digital/
+// analog/both) rather than adding a second clock element — one clock,
+// one home, per GP Ledger's own "one property, one home" rule.
+//
+// PHASE 5 — Visual polish: Finance's clean-summary-first view with a
+// "View full log" toggle, and the colour-coded (Food/Other/Income, never
+// colour-only — icon+label+category text all carry the signal too)
+// transaction log were already built earlier in this V14.0.0 effort.
+// AI Coach restructured from one flat list of sentences into the spec's
+// five scannable sections (✅ Doing Well / ⚠️ Needs Attention / 🎯 Continue
+// / 🔧 Improve / ➡️ Next Step) — old previously-generated insights (saved
+// in the old flat-array shape) still render correctly, nothing lost.
+// Routine's block list now groups into Now / Upcoming / Completed instead
+// of one flat chronological list. Health and Documents were checked
+// against spec §24 (log-heavy pages) and were already summary-first —
+// no change needed.
+//
+// index.html and sw.js changed (CACHE_NAME bumped to 'gp-ledger-v14-0-0')
+// so installed copies actually receive all of this instead of serving a
+// cached v13.19.0.
 
 /* ---------- v9.5: module registry (drives bottom nav, Home, More, Settings toggles) ---------- */
 /* core:true = one of the 4 primary tabs when enabled; group = header used in the More screen. */
@@ -2148,16 +2622,32 @@ function drawFontPicker(){
   const sel = document.getElementById('setFontHead'); if(!sel) return;
   const active = S.settings.fontHead || 'Plus Jakarta Sans';
   sel.innerHTML = FONT_OPTIONS.map(f=>`<option value="${f.id}" ${f.id===active?'selected':''}>${f.id}</option>`).join('');
+  // v14.0.0 — Body font is now independent of Header font (spec §7/§8);
+  // falls back to whatever Header font is set until explicitly changed,
+  // so nobody who never touches this sees any visual difference.
+  const selBody = document.getElementById('setFontBody'); if(!selBody) return;
+  const activeBody = S.settings.fontBody || S.settings.fontHead || 'Plus Jakarta Sans';
+  selBody.innerHTML = FONT_OPTIONS.map(f=>`<option value="${f.id}" ${f.id===activeBody?'selected':''}>${f.id}</option>`).join('');
 }
 function applyFontChoice(){
   const r = document.documentElement.style;
   r.setProperty('--font-head', fontStack(S.settings.fontHead));
-  r.setProperty('--font-body', fontStack(S.settings.fontHead)); // app uses one family for head+body, weight is what differentiates headings
+  // v14.0.0 — was hardcoded to always mirror the Header font; now reads
+  // S.settings.fontBody independently (falls back to Header font if the
+  // person never set a Body font, so this is a pure addition, not a
+  // behavior change for anyone who hasn't visited the new control).
+  r.setProperty('--font-body', fontStack(S.settings.fontBody || S.settings.fontHead));
   const w = S.settings.fontWeight || '700';
   const italic = w.endsWith('i');
   r.setProperty('--font-weight-head', italic ? w.slice(0,-1) : w);
   r.setProperty('--font-style-head', italic ? 'italic' : 'normal');
+  // v14.0.0 — Time/Clock font (spec §7): a real third category, distinct
+  // from --font-mono (stats/timers). Falls back to the mono font's stack
+  // if never explicitly set, so this is additive.
+  const timeFont = S.settings.fontTime || S.settings.fontMono || 'JetBrains Mono';
+  r.setProperty('--font-time', `'${timeFont}', monospace`);
 }
+
 /* v12.3 — heading color is a fine-tune layer on top of whatever pack/theme is
    active, same pattern as customAccent: empty = follow the pack's own text
    color (full contrast, just not a separate hardcoded value), a hex value =
@@ -3086,7 +3576,7 @@ function renderTopMotivation(moduleKey, elId){
 /* ---------- state ---------- */
 let S = { habits:[], transactions:[], settings:{}, routineLogs:{}, routineCats:[], routineTemplates:null, runningTimer:null, debts:[], journal:{}, diet:{ meals:{}, settings:{} },
   goals:[], subscriptions:[], assets:[], health:{ meds:[], vitals:{}, appts:[] }, documents:[], aiCoach:{ lastInsights:[], lastRun:'' }, budgets:[], quotes:[], moduleQuotes:{}, notifLog:[], tasks:[],
-  notes:[], trips:[], learningItems:[], ideas:[], mealPlan:{}, mealFavorites:[], people:[], trash:[], accounts:[] };
+  notes:[], trips:[], learningItems:[], ideas:[], mealPlan:{}, mealPlanDone:{}, mealFavorites:[], people:[], trash:[], accounts:[] };
 let selectedDate = todayStr();
 
 /* v13.16.0 — tracks whether this device has local changes that have not
@@ -3133,6 +3623,7 @@ function loadState(){
     const lrn = localStorage.getItem('gpl_learningItems');
     const idea = localStorage.getItem('gpl_ideas');
     const mp = localStorage.getItem('gpl_mealPlan');
+    const mpd = localStorage.getItem('gpl_mealPlanDone');
     const mf = localStorage.getItem('gpl_mealFavorites');
     const ppl = localStorage.getItem('gpl_people');
     const trsh = localStorage.getItem('gpl_trash');
@@ -3164,6 +3655,11 @@ function loadState(){
     S.learningItems = lrn ? JSON.parse(lrn) : [];
     S.ideas = idea ? JSON.parse(idea) : [];
     S.mealPlan = mp ? JSON.parse(mp) : {};
+    S.mealPlanDone = mpd ? JSON.parse(mpd) : {}; // v14.0.0 — {date:{slotKey:{done,mealId}}}, links a planned
+    // meal slot to the Diet-log entry it created when marked eaten (see
+    // markMealSlotDone/unmarkMealSlotDone). Kept as its own map, separate
+    // from S.mealPlan's free-text slots, so nothing about the existing
+    // plan-text format has to change.
     S.mealFavorites = mf ? JSON.parse(mf) : [];
     S.people = ppl ? JSON.parse(ppl) : [];
     S.trash = trsh ? JSON.parse(trsh) : [];
@@ -3174,7 +3670,7 @@ function loadState(){
     S.debts = []; S.journal = {}; S.diet = { meals:{}, settings:defaultDietSettings() };
     S.goals = []; S.subscriptions = []; S.assets = []; S.health = defaultHealth(); S.documents = []; S.aiCoach = { lastInsights:[], lastRun:'' };
     S.budgets = []; S.routineTemplates = null; S.quotes = null; S.moduleQuotes = null; S.notifLog = []; S.tasks = [];
-    S.notes = []; S.trips = []; S.learningItems = []; S.ideas = []; S.mealPlan = {}; S.mealFavorites = []; S.people = [];
+    S.notes = []; S.trips = []; S.learningItems = []; S.ideas = []; S.mealPlan = {}; S.mealPlanDone = {}; S.mealFavorites = []; S.people = [];
     S.trash = []; S.accounts = [];
   }
   // Guard against the v5 "first-open glitch": if habits is missing, not an array,
@@ -3326,6 +3822,7 @@ function saveState(){
     localStorage.setItem('gpl_learningItems', JSON.stringify(S.learningItems));
     localStorage.setItem('gpl_ideas', JSON.stringify(S.ideas));
     localStorage.setItem('gpl_mealPlan', JSON.stringify(S.mealPlan));
+    localStorage.setItem('gpl_mealPlanDone', JSON.stringify(S.mealPlanDone));
     localStorage.setItem('gpl_mealFavorites', JSON.stringify(S.mealFavorites));
     localStorage.setItem('gpl_people', JSON.stringify(S.people));
     localStorage.setItem('gpl_trash', JSON.stringify(S.trash));
@@ -3560,9 +4057,16 @@ function preloadTodaysImages(){
     const seed = encodeURIComponent(bgSeed+'-empty-'+moduleKey+'-'+today);
     urls.push(`https://picsum.photos/seed/${seed}/700/500`);
   });
-  urls.forEach(url=>{
+  urls.forEach((url,i)=>{
     if(__warmImgUrls.has(url)) return;
     const img = new Image();
+    // v14.0.0 — spec §18: hint the browser to fetch the most-likely-seen
+    // images (today's focus hero + habit quote — the first two pushed
+    // above) ahead of everything else competing for bandwidth at boot,
+    // shaving a little more off the cold-start delay before this cache
+    // is warm. Unsupported browsers just ignore the property — no
+    // functional change, this is a pure enhancement.
+    if(i<2 && 'fetchPriority' in img) img.fetchPriority = 'high';
     img.onload = ()=>{ __warmImgUrls.add(url); };
     img.src = url;
   });
@@ -3622,6 +4126,51 @@ function habitValue(habit, date){
   const logs = habit.logs[date]||[];
   return logs.reduce((a,l)=>a+Number(l.amount||0),0);
 }
+/* v14.0.0 — Habit streak system (spec §10/§11). Computed live from actual
+   completion history every time it's needed — never stored as a manual
+   number — so it's always correct after edits, backfills, or a broken day,
+   with no separate value that could drift out of sync with the log data
+   itself. Today only counts once it's actually complete; an incomplete
+   "today" doesn't break yesterday's streak (you still have until the day
+   ends to keep it alive), it just isn't counted yet itself. */
+function habitStreak(h){
+  let streak = 0;
+  let d = todayStr();
+  if(habitProgress(h, d) < 1) d = addDays(d, -1); // today not done yet — start counting from yesterday
+  while(habitProgress(h, d) >= 1){ streak++; d = addDays(d, -1); }
+  return streak;
+}
+/* Default milestone ladder — always present so the feature works with zero
+   setup (spec §11: "default configuration should use 🔥 so the feature
+   works immediately"). Stored in S.settings.streakMilestones once the user
+   customizes it in Settings; falls back to this default otherwise. */
+function defaultStreakMilestones(){
+  return [
+    { days:1, emoji:'🔥' },
+    { days:10, emoji:'⭐' },
+    { days:20, emoji:'🌟' },
+    { days:50, emoji:'🏆' },
+    { days:100, emoji:'💎' },
+  ];
+}
+function activeStreakMilestones(){
+  const list = S.settings.streakMilestones;
+  return (Array.isArray(list) && list.length) ? list : defaultStreakMilestones();
+}
+/* Picks the emoji for the HIGHEST configured milestone the streak has
+   reached or passed (spec §10.2's 53-day/50-milestone → 💎 53 days
+   example), not the nearest one. */
+function streakEmoji(days){
+  const ms = activeStreakMilestones().slice().sort((a,b)=>a.days-b.days);
+  let chosen = ms[0] ? ms[0].emoji : '🔥';
+  ms.forEach(m=>{ if(days >= m.days) chosen = m.emoji; });
+  return chosen;
+}
+function streakBadgeHtml(h){
+  const days = habitStreak(h);
+  if(days<=0) return '';
+  return `<span class="streak-badge">${streakEmoji(days)} ${days}d</span>`;
+}
 function renderDateStrip(){
   const strip = document.getElementById('dateStrip');
   strip.innerHTML='';
@@ -3674,9 +4223,10 @@ function renderHabits(){
     row.innerHTML = `
       <div class="h-icon" style="background:${h.color}22; color:${h.color}">${habitIcon(h)}</div>
       <div class="h-mid" data-open="1">
-        <div class="h-name">${h.name}</div>
+        <div class="h-name">${h.name}${streakBadgeHtml(h)}</div>
         <div class="h-progress-track"><div class="h-progress-fill" style="width:${Math.round(pct*100)}%; background:${h.color}"></div></div>
         <div class="h-val">${valLabel}</div>
+        ${dietHabitInsightHtml(h, true)}
       </div>
       <div class="h-actions">
         ${h.kind==='check' ? `<button class="h-check${doneClass}" data-act="toggle">✓</button>` :
@@ -3797,9 +4347,9 @@ function openHabitDetail(id){
     const isFuture = ds > todayStr();
     cells += `<div class="wg-cell"><div class="wg-dow">${DOW[i]}</div><div class="wg-box${hit?' hit':''}" style="${hit?`background:${h.color};border-color:${h.color}`:''}">${isFuture?'':(hit?'✓':Math.round(pct*100)+'%')}</div></div>`;
   }
-  // streaks
-  let streak=0, d=todayStr();
-  while(habitProgress(h,d)>=1){ streak++; d=addDays(d,-1); }
+  // streaks — v14.0.0: shared habitStreak() so this matches the badge
+  // shown on the Habit list row exactly (today-not-done-yet handling etc).
+  let streak = habitStreak(h);
   let best=0, cur=0, probe=addDays(todayStr(),-120);
   for(let i=0;i<=120;i++){ const ds=addDays(probe,i); if(habitProgress(h,ds)>=1){cur++; best=Math.max(best,cur);} else cur=0; }
 
@@ -3807,9 +4357,10 @@ function openHabitDetail(id){
     <div class="modal-head"><h3>${habitIcon(h)} ${h.name}</h3><button class="modal-close" data-close>✕</button></div>
     <div class="weekgrid">${cells}</div>
     <div class="stat-grid" style="margin-bottom:14px;">
-      <div class="stat"><div class="num">${streak}d</div><div class="lbl">Current streak</div></div>
+      <div class="stat"><div class="num">${streakEmoji(streak)} ${streak}d</div><div class="lbl">Current streak</div></div>
       <div class="stat"><div class="num">${best}d</div><div class="lbl">Best streak</div></div>
     </div>
+    ${dietHabitInsightHtml(h, false)}
     <label class="fl">Target</label>
     <div style="display:flex; gap:8px;">
       <input type="number" id="detTarget" value="${h.target}" style="flex:1;">
@@ -4156,19 +4707,46 @@ function renderFinance(){
   donutChart = new Chart(ctx, { type:'doughnut', data:{ labels, datasets:[{ data, backgroundColor:['#38bdf8','#f59e0b','#a78bfa','#f43f5e','#22c55e','#eab308','#ec4899','#14b8a6'] }] },
     options:{ plugins:{ legend:{ position:'bottom', labels:{ color:'#9aa3b5', boxWidth:10, font:{size:11} } } } } });
 
+  // v14.0.0 — spec §23: visual differentiation beyond just red/green —
+  // date gets its own muted styling, Food expenses get one treatment,
+  // other expenses another, income a third. Never color-only: icon +
+  // label + category text all carry the same signal, for accessibility.
+  function txCategoryStyle(t){
+    if(t.type==='in') return { bg:'#22c55e22', fg:'#22c55e', icon:'🟢', label:'Income' };
+    if((t.category||'').toLowerCase()==='food') return { bg:'#ef444422', fg:'#ef4444', icon:'🔴', label:'Food' };
+    return { bg:'#f9731622', fg:'#f97316', icon:'🟠', label:'Other' };
+  }
+  function txRowHtml(t){
+    const cs = txCategoryStyle(t);
+    return `<div class="tx-row" data-txid="${t.id}">
+      <div class="tx-icon" style="background:${cs.bg}; color:${cs.fg}">${t.type==='in'?'↓':'↑'}</div>
+      <div class="tx-mid"><div class="tx-note">${cs.icon} ${t.note||t.category||'Transaction'}</div>
+        <div class="tx-cat"><span style="color:${cs.fg}; font-weight:700;">${cs.label}</span> · <span style="color:var(--accent2, var(--sub)); font-weight:600;">${t.date}</span></div></div>
+      <div class="tx-amt ${t.type}">${t.type==='in'?'+':'-'}${fmtMoney(t.amount)}</div>
+    </div>`;
+  }
+  const sorted = [...S.transactions].sort((a,b)=> b.date.localeCompare(a.date) || b.created-a.created);
+  // Compact summary preview: most recent 3, always visible, no separate toggle needed to see "what just happened"
+  const previewEl = document.getElementById('txPreview');
+  if(previewEl){
+    previewEl.innerHTML = sorted.length===0
+      ? `<div class="hint">No transactions yet. Tap + Add to log one.</div>`
+      : sorted.slice(0,3).map(txRowHtml).join('');
+  }
   const listEl = document.getElementById('txList');
   listEl.innerHTML='';
-  const sorted = [...S.transactions].sort((a,b)=> b.date.localeCompare(a.date) || b.created-a.created);
-  if(sorted.length===0){ listEl.innerHTML = `<div class="empty-state"><div class="em-icon">💸</div><div class="em-title">No transactions yet</div>Tap + to add one.</div>`; return; }
-  sorted.slice(0,80).forEach(t=>{
-    const row = document.createElement('div'); row.className='tx-row';
-    row.innerHTML = `<div class="tx-icon" style="background:${t.type==='in'?'#22c55e22':'#ef444422'}; color:${t.type==='in'?'#22c55e':'#ef4444'}">${t.type==='in'?'↓':'↑'}</div>
-      <div class="tx-mid"><div class="tx-note">${t.note||t.category||'Transaction'}</div><div class="tx-cat">${t.category||'—'} · ${t.date}</div></div>
-      <div class="tx-amt ${t.type}">${t.type==='in'?'+':'-'}${fmtMoney(t.amount)}</div>`;
-    row.onclick = ()=> openTxModal(t.id);
-    listEl.appendChild(row);
-  });
+  if(sorted.length===0){ listEl.innerHTML = `<div class="empty-state"><div class="em-icon">💸</div><div class="em-title">No transactions yet</div>Tap + to add one.</div>`; }
+  else { listEl.innerHTML = sorted.slice(0,80).map(txRowHtml).join(''); }
+  listEl.querySelectorAll('[data-txid]').forEach(row=> row.onclick = ()=> openTxModal(row.dataset.txid));
+  if(previewEl) previewEl.querySelectorAll('[data-txid]').forEach(row=> row.onclick = ()=> openTxModal(row.dataset.txid));
 }
+document.getElementById('txViewLogBtn').addEventListener('click', function(){
+  const card = document.getElementById('txListCard');
+  const open = card.style.display!=='none';
+  card.style.display = open ? 'none' : 'block';
+  document.getElementById('txPreviewCard').style.display = open ? 'block' : 'none';
+  this.textContent = open ? '📜 View full log' : '▲ Hide full log — showing summary';
+});
 /* v13.9.0 — Accounts. A thin layer over the SAME transaction list, not
    a second ledger: each account is just {id,name,type,openingBalance},
    and its balance is opening balance + the sum of whatever
@@ -4331,8 +4909,13 @@ function renderTrends(){
   });
 
   const board = document.getElementById('streakBoard');
-  const withStreak = S.habits.map(h=>{ let s=0, d=todayStr(); while(habitProgress(h,d)>=1){s++; d=addDays(d,-1);} return {h,s}; }).sort((a,b)=>b.s-a.s);
-  board.innerHTML = withStreak.length ? withStreak.map(x=>`<div class="tx-row"><div class="tx-icon" style="background:${x.h.color}22;color:${x.h.color}">${habitIcon(x.h)}</div><div class="tx-mid"><div class="tx-note">${x.h.name}</div></div><div class="tx-amt mono">${x.s}d</div></div>`).join('') : '<div class="empty-state">No habits yet</div>';
+  // v14.0.0 — was its own separate streak calc, duplicating (and risking
+  // drifting from) the shared habitStreak() used everywhere else (Habit
+  // list, Home, habit detail modal) — spec §25 explicitly asks for
+  // centralizing derived calculations instead of recomputing them per
+  // page. Now uses the same function, with the same milestone emoji.
+  const withStreak = S.habits.map(h=>({h, s:habitStreak(h)})).sort((a,b)=>b.s-a.s);
+  board.innerHTML = withStreak.length ? withStreak.map(x=>`<div class="tx-row"><div class="tx-icon" style="background:${x.h.color}22;color:${x.h.color}">${habitIcon(x.h)}</div><div class="tx-mid"><div class="tx-note">${x.h.name}</div></div><div class="tx-amt mono">${x.s>0?streakEmoji(x.s)+' ':''}${x.s}d</div></div>`).join('') : '<div class="empty-state">No habits yet</div>';
 
   const weeks=[]; for(let i=7;i>=0;i--){ const ws=addDays(startOfWeek(todayStr()),-7*i); weeks.push(ws); }
   const inc = weeks.map(ws=> S.transactions.filter(t=>t.date>=ws && t.date<addDays(ws,7) && t.type==='in').reduce((a,t)=>a+Number(t.amount),0));
@@ -4874,16 +5457,60 @@ function renderRoutine(){
 
   const list = document.getElementById('routineBlocks'); list.innerHTML='';
   if(sorted.length===0){ list.innerHTML = `<div class="empty-state"><div class="em-icon">⏱️</div><div class="em-title">No blocks logged today</div>Tap + to add one.</div>`; }
-  sorted.forEach(b=>{
-    const row=document.createElement('div'); row.className='tx-row';
-    row.innerHTML = `<div class="tx-icon" style="background:${catColor(b.cat)}22;color:${catColor(b.cat)}">⏱</div>
-      <div class="tx-mid"><div class="tx-note">${b.cat}${b.note?' · '+b.note:''}</div><div class="tx-cat">${fmt12(b.start)} – ${fmt12(b.end)}</div></div>
-      <div class="tx-amt mono">${fmtDuration(blockDuration(b))}</div>`;
-    row.onclick = ()=> openRoutineModal(b.id);
-    list.appendChild(row);
-  });
+  else {
+    // v14.0.0 — Routine visual reorganization (spec §15): group today's
+    // blocks into Now / Upcoming / Completed instead of one flat
+    // chronological list, so "what's happening now vs already done" is
+    // clear at a glance without reading every row's time range. Uses the
+    // shared routineBlockRange() helper (spec §25: centralize derived
+    // calculations) — the exact same range math Home's "right now"
+    // priority row uses via currentRoutineBlock(), so the two can't
+    // disagree about what's currently active.
+    const nowMin = new Date().getHours()*60 + new Date().getMinutes();
+    const groups = { now:[], upcoming:[], done:[] };
+    sorted.forEach(b=>{
+      const [s,e] = routineBlockRange(b);
+      if(nowMin>=s && nowMin<e) groups.now.push(b);
+      else if(nowMin<s) groups.upcoming.push(b);
+      else groups.done.push(b);
+    });
+    const rowHtml = (b, kind) => `<div class="routine-block-card ${kind}" data-routineopen="${b.id}" style="border-left-color:${catColor(b.cat)};">
+      <div class="rb-icon" style="background:${catColor(b.cat)}22;color:${catColor(b.cat)}">${routineCatEmoji(b.cat)}</div>
+      <div class="rb-mid">
+        <div class="rb-cat">${b.cat}${kind==='now'?' <span class="rb-live-dot"></span>':''}</div>
+        ${b.note?`<div class="rb-note">${b.note}</div>`:''}
+        <div class="rb-time">${fmt12(b.start)} – ${fmt12(b.end)}</div>
+      </div>
+      <div class="rb-dur mono">${fmtDuration(blockDuration(b))}</div>
+    </div>`;
+    const groupHtml = (label, icon, arr, kind) => arr.length ? `<div class="routine-group-label">${icon} ${label}</div>${arr.map(b=>rowHtml(b,kind)).join('')}` : '';
+    list.innerHTML = groupHtml('Now', '▶️', groups.now, 'now') + groupHtml('Upcoming', '⏭️', groups.upcoming, 'upcoming') + groupHtml('Completed', '✅', groups.done, 'done');
+    list.querySelectorAll('[data-routineopen]').forEach(row=> row.onclick = ()=> openRoutineModal(row.dataset.routineopen));
+  }
 
   renderRoutineTotals();
+}
+/* v14.0.0 — Routine visual redesign (spec §15): per-category emoji so
+   blocks are scannable by glance/colour/icon together, not just colour.
+   Falls back to a generic icon for any custom category the person adds
+   (this app allows adding routine categories freely — see Categories
+   button — so this can't be a hardcoded exhaustive list). */
+const ROUTINE_CAT_EMOJI = {
+  'Sleep':'😴', 'Work/Study':'💼', 'Exercise':'🏃', 'Meals':'🍽️',
+  'Junk/Scrolling':'📱', 'Chores':'🧹', 'Social':'👥', 'Other':'⏱️',
+};
+function routineCatEmoji(cat){ return ROUTINE_CAT_EMOJI[cat] || '⏱️'; }
+/* v14.0.0 — shared with both renderRoutine()'s Now/Upcoming/Completed
+   grouping and Home's "right now" priority row (spec §25: centralize
+   derived calculations instead of recomputing per page). */
+function routineBlockRange(b){
+  const [sh,sm]=b.start.split(':').map(Number), [eh,em]=b.end.split(':').map(Number);
+  let s=sh*60+sm, e=eh*60+em; if(e<s) e+=1440; return [s,e];
+}
+function currentRoutineBlock(){
+  const today = S.routineLogs[todayStr()] || [];
+  const nowMin = new Date().getHours()*60 + new Date().getMinutes();
+  return today.find(b=>{ const [s,e] = routineBlockRange(b); return nowMin>=s && nowMin<e; }) || null;
 }
 /* v12.0.3 — 12-hour AM/PM display for stored "HH:MM" (24h) time strings.
    Note: the native <input type="time"> picker widget itself is controlled
@@ -5324,6 +5951,13 @@ function renderJournal(){
   document.getElementById('journalDateInput').value = journalDate;
   const list = journalEntries(journalDate);
   const editing = journalEditingId ? list.find(e=>e.id===journalEditingId) : null;
+  // v14.1.0 — diary page-turn effect (spec §1) on every date/entry switch
+  const pageInner = document.getElementById('diaryPageInner');
+  if(pageInner){
+    pageInner.classList.remove('page-turning'); void pageInner.offsetWidth; pageInner.classList.add('page-turning');
+    const numEl = document.getElementById('diaryPageNum');
+    if(numEl) numEl.textContent = `✦ ${fmtDiaryDate(journalDate)} ✦`;
+  }
   document.getElementById('journalText').value = editing ? editing.text : '';
   document.getElementById('journalFont').value = editing?.font || 'Manrope';
   document.getElementById('journalColor').value = editing?.color || '#eef1f7';
@@ -5387,15 +6021,41 @@ document.getElementById('journalPrintBtn').addEventListener('click', ()=>{
   const entry = { text: document.getElementById('journalText').value, font: document.getElementById('journalFont').value };
   if(!entry.text.trim()){ alert('Nothing in the editor to print.'); return; }
   const w = window.open('', '_blank');
-  w.document.write(`<html><head><title>${fmtDiaryDate(journalDate)}</title></head><body style="font-family:'${entry.font}',sans-serif; padding:40px; white-space:pre-wrap; line-height:1.6;"><h2>${fmtDiaryDate(journalDate)}</h2>${(entry.text||'').replace(/</g,'&lt;')}</body></html>`);
+  // v14.1.0 — printed page keeps the same diary look as the in-app page
+  // (spec §1): parchment background, ruled lines, a thin decorative
+  // border, so what you print matches what you see.
+  w.document.write(`<html><head><title>${fmtDiaryDate(journalDate)}</title></head><body style="margin:0; padding:36px; background:#f2e8cf;">
+    <div style="font-family:'Fraunces',serif; font-size:20px; color:#5c4a26; text-align:center; margin-bottom:4px;">${fmtDiaryDate(journalDate)}</div>
+    <div style="height:2px; width:60px; background:#a1824a; margin:0 auto 22px;"></div>
+    <div style="font-family:'${entry.font}',sans-serif; white-space:pre-wrap; line-height:30px; color:#3a2f18; padding:6px 18px; border:1px solid #d8c9a0; border-radius:10px; background-image:repeating-linear-gradient(180deg, transparent 0, transparent 29px, rgba(120,95,45,.22) 30px);">${(entry.text||'').replace(/</g,'&lt;')}</div>
+    <div style="text-align:center; font-size:11px; color:#8a7549; letter-spacing:.1em; margin-top:14px;">✦ ✦ ✦</div>
+  </body></html>`);
   w.document.close(); w.focus(); w.print();
 });
+/* v14.1.0 — shared decorative diary-page frame for PDF export (spec §1: "the
+   exported/printed diary documents should preserve the same visual diary
+   appearance"). Pure vector drawing (parchment fill, border, faint ruled
+   lines, page-label footer) so it costs nothing extra and works offline. */
+function drawDiaryPageFrame(doc, pageLabel){
+  const w = doc.internal.pageSize.getWidth(), h = doc.internal.pageSize.getHeight();
+  doc.setFillColor(247,240,221); doc.rect(0,0,w,h,'F');
+  doc.setDrawColor(216,201,160); doc.setLineWidth(0.6); doc.rect(8,8,w-16,h-16);
+  doc.setDrawColor(120,95,45); doc.setLineWidth(0.12);
+  for(let y=36; y<h-18; y+=7){ doc.line(16, y, w-16, y); }
+  doc.setDrawColor(161,130,74); doc.setLineWidth(0.5);
+  doc.line(w-28,14,w-16,14); doc.line(w-16,14,w-16,26);
+  doc.setFontSize(9); doc.setTextColor(138,117,73);
+  doc.text(pageLabel, w/2, h-11, {align:'center'});
+  doc.setTextColor(58,47,24);
+}
 document.getElementById('journalPdfBtn').addEventListener('click', ()=>{
   const text = document.getElementById('journalText').value; if(!text.trim()){ alert('Nothing in the editor to export.'); return; }
   const { jsPDF } = window.jspdf; const doc = new jsPDF();
-  doc.setFontSize(16); doc.text(fmtDiaryDate(journalDate), 14, 18);
-  doc.setFontSize(11);
-  doc.text(doc.splitTextToSize(text, 180), 14, 30);
+  drawDiaryPageFrame(doc, `✦ ${fmtDiaryDate(journalDate)} ✦`);
+  doc.setFont('times','bold'); doc.setFontSize(17); doc.setTextColor(92,74,38);
+  doc.text(fmtDiaryDate(journalDate), 16, 24);
+  doc.setFont('times','normal'); doc.setFontSize(11.5); doc.setTextColor(58,47,24);
+  doc.text(doc.splitTextToSize(text, 176), 16, 42, {lineHeightFactor:1.65});
   doc.save(`Journal-${journalDate}.pdf`);
 });
 document.getElementById('journalWordBtn').addEventListener('click', ()=>{
@@ -5411,15 +6071,19 @@ document.getElementById('journalExportAllBtn').addEventListener('click', ()=>{
   const { jsPDF } = window.jspdf; const doc = new jsPDF();
   dates.forEach((ds,i)=>{
     if(i>0) doc.addPage();
-    doc.setFontSize(16); doc.text(fmtDiaryDate(ds), 14, 18);
-    doc.setFontSize(11);
-    let y = 30;
+    drawDiaryPageFrame(doc, `Page ${i+1} of ${dates.length}`);
+    doc.setFont('times','bold'); doc.setFontSize(16); doc.setTextColor(92,74,38);
+    doc.text(fmtDiaryDate(ds), 16, 24);
+    doc.setFont('times','normal'); doc.setFontSize(11); doc.setTextColor(58,47,24);
+    let y = 40;
     journalEntries(ds).forEach(e=>{
       const stamp = new Date(e.created).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
-      doc.setFont(undefined,'bold'); doc.text(stamp, 14, y); doc.setFont(undefined,'normal');
-      const lines = doc.splitTextToSize(e.text||'', 180);
-      doc.text(lines, 14, y+6);
-      y += 6 + lines.length*6 + 6;
+      doc.setFont('times','bolditalic'); doc.setFontSize(9.5); doc.setTextColor(138,117,73);
+      doc.text(stamp, 16, y); doc.setFont('times','normal'); doc.setFontSize(11); doc.setTextColor(58,47,24);
+      const lines = doc.splitTextToSize(e.text||'', 176);
+      doc.text(lines, 16, y+6, {lineHeightFactor:1.5});
+      y += 6 + lines.length*6.5 + 8;
+      if(y > doc.internal.pageSize.getHeight()-24){ doc.addPage(); drawDiaryPageFrame(doc, fmtDiaryDate(ds)); y = 24; }
     });
   });
   doc.save(`GP-Ledger-Diary-${todayStr()}.pdf`);
@@ -5593,15 +6257,25 @@ function renderDiet(){
     const tagInfo = MEAL_TAG_LABELS[cls.tag];
     el.innerHTML = `
       ${m.image ? `<img class="meal-thumb" src="${m.image}">` : `<div class="meal-thumb" style="display:flex;align-items:center;justify-content:center;">🍽</div>`}
-      <div class="meal-mid"><div class="meal-name">${m.name}${dietPeriod!=='day'?' · '+m.date.slice(5):''}</div>
+      <div class="meal-mid"><div class="meal-name">${m.name}${dietPeriod!=='day'?' · '+m.date.slice(5):''}${m.source==='mealplanner'?' <span class="tag-badge" style="font-size:9.5px; vertical-align:middle;">Meal Planner</span>':''}</div>
       <div class="meal-macros">${Math.round(m.calories||0)} kcal · P${Math.round(m.protein||0)} C${Math.round(m.carbs||0)} F${Math.round(m.fat||0)} · Fib${Math.round(m.fiber||0)}</div>
       <div class="meal-tag" style="font-size:11px; font-weight:700; margin-top:2px; color:${tagInfo.color};">${tagInfo.label}${FAT_QUALITY_LABELS[cls.fatQuality] ? ' · '+FAT_QUALITY_LABELS[cls.fatQuality] : ''}</div>
+      <div>${foodCategoryChipsHtml(m)}</div>
       ${m.estimateNote ? `<div class="meal-est-note">✨ AI estimate: ${m.estimateNote}</div>` : ''}</div>
       <button class="link-btn" data-del="${m.id}" data-date="${m.date}">✕</button>
     `;
     el.querySelector('[data-del]').onclick = ()=>{
       S.diet.meals[m.date] = (S.diet.meals[m.date]||[]).filter(x=>x.id!==m.id);
-      saveState(); renderDiet();
+      // v14.0.0 — if this entry came from a Meal Planner "Eaten" toggle,
+      // deleting it here must also clear that slot's done flag back on
+      // the Meal Planner screen. Without this the two screens would
+      // disagree: Diet no longer counts the calories, but Meal Planner
+      // would still show "✓ Eaten" and refuse to let it be marked done
+      // again (see markMealSlotDone's already-done guard).
+      if(m.source==='mealplanner' && m.slot && S.mealPlanDone[m.date] && S.mealPlanDone[m.date][m.slot]){
+        delete S.mealPlanDone[m.date][m.slot];
+      }
+      saveState(); renderDiet(); renderMealPlanner();
     };
     list.appendChild(el);
   });
@@ -5635,6 +6309,142 @@ function classifyMeal(m){
   if(cal>0 && protein >= (cal*0.15)/4) score += 1; // decent protein density for the calories
   const tag = score>=2 ? 'healthy' : score<=-2 ? 'junk' : 'balanced';
   return { fatQuality, tag };
+}
+/* ============ v14.1.0: Diet+Habit+Home connection (spec §5–§8) ============
+   FOOD_CATEGORY_DEFS is the source of truth for both the chips shown on a
+   logged meal and the Home Dashboard's Food Insights card + the Habit↔Diet
+   comparison, so all three always agree. A meal can land in several
+   categories at once (spec's chicken-salad example) — keyword match against
+   the meal name first (what the person actually typed/photographed is the
+   most reliable signal), then a light macro/tag fallback so photo-analyzed
+   or numbers-only meals still get categorized instead of landing in
+   "Other". */
+const FOOD_CATEGORY_DEFS = {
+  healthy:   { label:'Healthy',   emoji:'🥗', color:'var(--good)' },
+  junk:      { label:'Junk',      emoji:'🍔', color:'var(--danger)' },
+  processed: { label:'Processed', emoji:'🥫', color:'#f59e0b' },
+  protein:   { label:'Protein-rich', emoji:'🍗', color:'#38bdf8' },
+  fruits:    { label:'Fruits',    emoji:'🍎', color:'#ef4444' },
+  vegetables:{ label:'Vegetables',emoji:'🥦', color:'#22c55e' },
+  sugary:    { label:'Sugary',    emoji:'🍩', color:'#ec4899' },
+  other:     { label:'Other',     emoji:'🍽️', color:'var(--sub)' },
+};
+const FOOD_CATEGORY_KEYWORDS = {
+  junk:       ['burger','pizza','fries','fried chicken','nugget','chips','instant noodle','maggi','samosa','bhujia','pakora','kfc','mcdonald','domino','donut','doughnut','cola','soda','ice cream'],
+  processed:  ['packaged','instant','canned','sausage','salami','ham','bacon','processed','frozen meal','ready to eat','ready-to-eat','noodle','cheese slice'],
+  sugary:     ['cake','cookie','biscuit','chocolate','candy','sweet','sugar','soda','cola','juice box','donut','doughnut','pastry','dessert','ice cream','gulab jamun','jalebi','rasgulla','honey'],
+  protein:    ['chicken','egg','fish','paneer','tofu','lentil','dal','beans','protein shake','whey','mutton','beef','prawn','shrimp','yogurt','curd','milk','nuts','peanut'],
+  fruits:     ['apple','banana','mango','orange','grape','papaya','watermelon','melon','berries','strawberry','pineapple','guava','pomegranate','pear','kiwi','fruit salad','fruit bowl'],
+  vegetables: ['salad','spinach','broccoli','carrot','vegetable','veggie','beans','cabbage','cauliflower','sabzi','sabji','greens','cucumber','gourd','okra','bhindi'],
+  healthy:    ['salad','grilled','steamed','boiled','oats','quinoa','brown rice','smoothie','soup','sprouts'],
+};
+function classifyFoodCategories(m){
+  if(Array.isArray(m.categories) && m.categories.length) return m.categories;
+  const name = (m.name||'').toLowerCase();
+  const found = new Set();
+  Object.entries(FOOD_CATEGORY_KEYWORDS).forEach(([cat, words])=>{
+    if(words.some(w=>name.includes(w))) found.add(cat);
+  });
+  // macro/tag fallback so numbers-only or AI-photo meals still classify
+  const cls = classifyMeal(m);
+  if(cls.tag==='junk') found.add('junk');
+  if(cls.tag==='healthy' && found.size===0) found.add('healthy');
+  const protein = Number(m.protein)||0, cal = Number(m.calories)||0;
+  if(cal>0 && protein >= (cal*0.20)/4) found.add('protein');
+  if(found.size===0) found.add('other');
+  return Array.from(found);
+}
+function foodCategoryChipsHtml(m){
+  return classifyFoodCategories(m).map(c=>{
+    const d = FOOD_CATEGORY_DEFS[c]; if(!d) return '';
+    return `<span class="food-cat-chip" style="background:${d.color}22; color:${d.color}">${d.emoji} ${d.label}</span>`;
+  }).join('');
+}
+/* v14.1.0 — shared weekly food-category aggregation, used by both the Home
+   Dashboard Food Insights card (spec §6) and the Habit↔Diet comparison
+   (spec §7), so the two always agree on what "this week" means and never
+   drift into two different counts for the same underlying meal data. */
+function weekRange(offsetWeeks){ // 0 = the 7 days ending today, -1 = the 7 days before that
+  const end = addDays(todayStr(), offsetWeeks*7);
+  return [addDays(end,-6), end];
+}
+function foodCategoryCounts(startDs, endDs){
+  const counts = {}; Object.keys(FOOD_CATEGORY_DEFS).forEach(k=>counts[k]=0);
+  let mealCount = 0;
+  Object.keys(S.diet.meals||{}).forEach(ds=>{
+    if(ds<startDs || ds>endDs) return;
+    (S.diet.meals[ds]||[]).forEach(m=>{ mealCount++; classifyFoodCategories(m).forEach(c=>{ if(counts[c]!==undefined) counts[c]++; }); });
+  });
+  return { counts, mealCount };
+}
+/* Renders the Home Dashboard "what am I putting into my body" card (spec
+   §6). Deliberately simple — top category, healthy vs junk bars, and which
+   categories are trending up/down vs last week — not a second Reports tab. */
+function renderFoodInsights(){
+  const wrap = document.getElementById('dashFoodInsights'); if(!wrap) return;
+  const [ws, we] = weekRange(0), [lws, lwe] = weekRange(-1);
+  const { counts, mealCount } = foodCategoryCounts(ws, we);
+  const { counts: lastCounts } = foodCategoryCounts(lws, lwe);
+  if(mealCount===0){
+    wrap.innerHTML = '';
+    return;
+  }
+  const order = ['healthy','vegetables','fruits','protein','junk','sugary','processed','other'];
+  const top = order.slice().sort((a,b)=>counts[b]-counts[a])[0];
+  const trend = order.filter(c=>c!=='other').map(c=>({ c, delta: counts[c]-lastCounts[c] }))
+    .filter(x=>x.delta!==0).sort((a,b)=>Math.abs(b.delta)-Math.abs(a.delta));
+  const up = trend.filter(x=>x.delta>0).slice(0,2);
+  const down = trend.filter(x=>x.delta<0).slice(0,2);
+  const maxCount = Math.max(1, ...Object.values(counts));
+  wrap.innerHTML = `
+    <div class="food-insight-card">
+      <div class="section-head" style="margin:0 0 8px;"><h2 style="font-size:14px;">🍽️ What I'm eating this week</h2></div>
+      ${order.filter(c=>counts[c]>0).map(c=>{
+        const d = FOOD_CATEGORY_DEFS[c];
+        return `<div class="fi-bar-row"><span class="fi-bar-lbl">${d.emoji} ${d.label}</span><div class="fi-bar-track"><div class="fi-bar-fill" style="width:${Math.round(counts[c]/maxCount*100)}%; background:${d.color}"></div></div><span class="fi-bar-val">${counts[c]}</span></div>`;
+      }).join('')}
+      <div class="hint" style="margin-top:6px;">Most common this week: ${FOOD_CATEGORY_DEFS[top].emoji} ${FOOD_CATEGORY_DEFS[top].label}.
+      ${up.length ? ` Rising: ${up.map(x=>`${FOOD_CATEGORY_DEFS[x.c].label} ↑`).join(', ')}.` : ''}
+      ${down.length ? ` Easing off: ${down.map(x=>`${FOOD_CATEGORY_DEFS[x.c].label} ↓`).join(', ')}.` : ''}</div>
+    </div>`;
+}
+/* v14.1.0 — spec §7: habits must not be represented only by checkmarks.
+   Matches a habit's name against a food category by keyword, then compares
+   this week vs last week's actual logged-meal counts for that category
+   (reusing foodCategoryCounts so it's the exact same data Food Insights
+   uses — no separate/duplicate tracking). "Improving" depends on whether
+   the habit reads as avoid-type ("Avoid Junk Food") or more-type ("Eat
+   More Vegetables") — inferred from the habit's own wording. */
+const HABIT_DIET_CATEGORY_MAP = [
+  { cat:'junk', words:['junk'] },
+  { cat:'sugary', words:['sugar','sweet'] },
+  { cat:'vegetables', words:['vegetable','veggie',' veg','veg '] },
+  { cat:'fruits', words:['fruit'] },
+  { cat:'protein', words:['protein'] },
+  { cat:'processed', words:['processed'] },
+  { cat:'healthy', words:['healthy eating','clean eating','healthy food'] },
+];
+function dietHabitInsight(h){
+  const name = ' '+(h.name||'').toLowerCase()+' ';
+  const match = HABIT_DIET_CATEGORY_MAP.find(x=>x.words.some(w=>name.includes(w)));
+  if(!match) return null;
+  const avoid = /avoid|less |reduce|limit|cut down|cut back|no more|stop /.test(name);
+  const [ws,we] = weekRange(0), [lws,lwe] = weekRange(-1);
+  const thisWeek = foodCategoryCounts(ws,we).counts[match.cat];
+  const lastWeek = foodCategoryCounts(lws,lwe).counts[match.cat];
+  const improving = thisWeek===lastWeek ? null : (avoid ? thisWeek<lastWeek : thisWeek>lastWeek);
+  const d = FOOD_CATEGORY_DEFS[match.cat];
+  return { catLabel:d.label, emoji:d.emoji, thisWeek, lastWeek, improving };
+}
+function dietHabitInsightHtml(h, compact){
+  const ins = dietHabitInsight(h); if(!ins) return '';
+  const rawArrow = ins.thisWeek>ins.lastWeek ? '↑' : ins.thisWeek<ins.lastWeek ? '↓' : '→';
+  const trendTxt = ins.improving===null ? 'Same as last week' : ins.improving ? 'Improving' : 'Needs attention';
+  const color = ins.improving===null ? 'var(--sub)' : ins.improving ? 'var(--good)' : 'var(--danger)';
+  if(compact){
+    return `<div class="habit-diet-insight compact">${ins.emoji} ${ins.catLabel}: ${ins.thisWeek}× this week (was ${ins.lastWeek}×) · <span class="hdi-trend" style="color:${color}">${trendTxt} ${rawArrow}</span></div>`;
+  }
+  return `<div class="habit-diet-insight">${ins.emoji} ${ins.catLabel}: <b>${ins.thisWeek}×</b> this week · Last week: ${ins.lastWeek}× · <span class="hdi-trend" style="color:${color}">${trendTxt} ${rawArrow}</span></div>`;
 }
 function openMealModal(){
   openModal(`
@@ -5729,9 +6539,10 @@ function openMealModal(){
       fatQuality: fatSrcEl.value || '', // '' = let classifyMeal() derive it from the macros
       mealTag: fatSrcEl.dataset.aiTag || '' // set only if the AI photo analysis suggested one
     };
+    rec.categories = classifyFoodCategories(rec); // v14.1.0 — spec §5, stamped at log time
     if(!S.diet.meals[todayStr()]) S.diet.meals[todayStr()]=[];
     S.diet.meals[todayStr()].push(rec);
-    saveState(); renderDiet(); closeModal();
+    saveState(); renderDiet(); renderDashboard(); closeModal();
     showToast(`${name} logged`, '🥗');
   };
 }
@@ -6067,6 +6878,15 @@ function goToScreen(name, opts){
   // debugging instead of silently freezing the UI.
   try{
     if(name==='dashboard') renderDashboard();
+    else if(name==='habits') renderHabits(); // v14.0.0 phase 2 — THIS WAS MISSING. The Habit
+    // screen had no case in this dispatch at all, so navigating to it never
+    // called renderHabits() — it only ever showed whatever was drawn at app
+    // boot (renderAll()) or leftover from some other trigger. Every other
+    // module already re-renders fresh on every visit (see the rest of this
+    // switch); Habit silently didn't. This is the real root cause behind
+    // "Routine update → Habit doesn't immediately reflect it": the routine
+    // sync (syncRoutineToLinkedHabit) was writing the data correctly the
+    // whole time, the Habit screen just never redrew itself to show it.
     else if(name==='finance'){ renderFinance(); renderBudgets(); }
     else if(name==='trends') renderTrends();
     else if(name==='reports') renderReports();
@@ -6097,6 +6917,26 @@ function goToScreen(name, opts){
   updateBackFab();
 }
 document.getElementById('headerSearchBtn').addEventListener('click', ()=> goToScreen('search'));
+/* v14.0.0 — global refresh fallback (spec §17). Finds the currently active
+   screen and replays goToScreen's own render dispatch for it — the exact
+   same render call that already runs on every navigation — plus a couple
+   of shared widgets (header clock, bottom-nav badges) that don't live
+   inside any one screen. Fast (it's all synchronous local re-render, no
+   network) and gives clear feedback via a brief toast+spin. */
+function globalRefresh(){
+  const activeScreen = document.querySelector('.screen.active');
+  const name = activeScreen ? activeScreen.id.replace(/^screen-/,'') : 'dashboard';
+  const btn = document.getElementById('headerRefreshBtn');
+  btn.classList.add('spinning');
+  try{
+    goToScreen(name, { fromPopstate:true, keepCategory:true }); // re-render in place: no new history entry, don't kick out of a Settings sub-category
+    renderHeaderClock();
+    renderBottomNav();
+  } finally {
+    setTimeout(()=> btn.classList.remove('spinning'), 400);
+  }
+}
+document.getElementById('headerRefreshBtn').addEventListener('click', globalRefresh);
 document.getElementById('bottomNav').addEventListener('click', (e)=>{
   const btn = e.target.closest('button[data-screen]'); if(btn) goToScreen(btn.dataset.screen);
 });
@@ -6204,8 +7044,12 @@ function openSettingsCategory(cat, opts){
   opts = opts || {};
   document.getElementById('settingsCatHub').style.display = 'none';
   document.getElementById('settingsCatBack').style.display = 'block';
-  document.querySelectorAll('#screen-settings .settings-group[data-cat]').forEach(g=>{
-    g.style.display = (g.dataset.cat===cat) ? 'block' : 'none';
+  // v14.0.0 — also toggles .settings-subhead[data-cat] (spec §21's Theme/
+  // Visual Style dividers inside Appearance) using the same cat-match
+  // logic as .settings-group, so they only ever show under their own
+  // category instead of leaking into every other one.
+  document.querySelectorAll('#screen-settings .settings-group[data-cat], #screen-settings .settings-subhead[data-cat]').forEach(g=>{
+    g.style.display = (g.dataset.cat===cat) ? (g.classList.contains('settings-subhead') ? 'block' : 'block') : 'none';
   });
   document.querySelector('#screen-settings .scroll, #screen-settings')?.scrollTo?.({top:0});
   // v12.2 — push a real history entry for the drill-in so system/browser
@@ -6219,7 +7063,7 @@ function openSettingsCategory(cat, opts){
 function closeSettingsCategory(){
   document.getElementById('settingsCatHub').style.display = 'block';
   document.getElementById('settingsCatBack').style.display = 'none';
-  document.querySelectorAll('#screen-settings .settings-group[data-cat]').forEach(g=> g.style.display = 'none');
+  document.querySelectorAll('#screen-settings .settings-group[data-cat], #screen-settings .settings-subhead[data-cat]').forEach(g=> g.style.display = 'none');
   updateBackFab();
 }
 document.getElementById('settingsCatHub').addEventListener('click', (e)=>{
@@ -6250,6 +7094,7 @@ function loadSettingsForm(){
   document.getElementById('setCustomAccent').value = st.customAccent || st.accent || '#22c55e';
   drawFontPicker();
   document.getElementById('setFontMono').value = st.fontMono;
+  document.getElementById('setFontTime').value = st.fontTime || st.fontMono || 'JetBrains Mono'; // v14.0.0
   document.getElementById('setFontWeight').value = st.fontWeight || '700';
   document.getElementById('setHeadingColor').value = st.headingColor || cssVar('--text','#eef1f7');
   document.getElementById('setTgOn').classList.toggle('on', !!st.tgEnabled);
@@ -6312,7 +7157,138 @@ function loadSettingsForm(){
   drawAlertToneList();
   drawModuleToggleList();
   drawMotivationModuleList();
+  drawStreakMilestoneList(); // v14.0.0
+  loadClockSettingsForm(); // v14.0.0
+  drawQuickActionsSettings(); // v14.0.0
 }
+/* v14.0.0 — Streak Milestones settings (spec §11): now supports editing an
+   existing milestone in place (tap ✎, the Add fields become an Update
+   form) and manual reordering (↑/↓ buttons move an entry within the
+   stored array). Display order here follows the STORED order (not
+   auto-sorted by day count) so reordering is actually visible — separate
+   from streakEmoji()'s own internal day-sort, which always picks the
+   correct highest-reached milestone regardless of storage order, so
+   reordering for display never breaks the underlying calculation. */
+let smEditingIndex = null;
+function drawStreakMilestoneList(){
+  const wrap = document.getElementById('streakMilestoneList'); if(!wrap) return;
+  const list = activeStreakMilestones();
+  wrap.innerHTML = list.map((m,i)=>`
+    <div class="settings-row sm-row${smEditingIndex===i?' editing':''}" style="display:flex; align-items:center; gap:8px;">
+      <span style="font-size:20px;">${m.emoji}</span>
+      <span style="flex:1;">${m.days} day${m.days===1?'':'s'}</span>
+      <button class="link-btn" data-smup="${i}" ${i===0?'disabled style="opacity:.3;"':''} title="Move up">↑</button>
+      <button class="link-btn" data-smdown="${i}" ${i===list.length-1?'disabled style="opacity:.3;"':''} title="Move down">↓</button>
+      <button class="link-btn" data-smedit="${i}" title="Edit">✎</button>
+      <button class="link-btn" data-smdel="${i}" title="Delete">✕</button>
+    </div>`).join('') || `<div class="hint">No custom milestones yet — using the default 🔥 ladder.</div>`;
+  wrap.querySelectorAll('[data-smdel]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const list2 = activeStreakMilestones().slice();
+      list2.splice(Number(btn.dataset.smdel), 1);
+      S.settings.streakMilestones = list2;
+      if(smEditingIndex===Number(btn.dataset.smdel)) cancelStreakMilestoneEdit();
+      saveState(); drawStreakMilestoneList(); renderHabits(); renderDashboard();
+    });
+  });
+  wrap.querySelectorAll('[data-smup]:not([disabled])').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const i = Number(btn.dataset.smup);
+      const list2 = activeStreakMilestones().slice();
+      [list2[i-1], list2[i]] = [list2[i], list2[i-1]];
+      S.settings.streakMilestones = list2;
+      saveState(); drawStreakMilestoneList();
+    });
+  });
+  wrap.querySelectorAll('[data-smdown]:not([disabled])').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const i = Number(btn.dataset.smdown);
+      const list2 = activeStreakMilestones().slice();
+      [list2[i+1], list2[i]] = [list2[i], list2[i+1]];
+      S.settings.streakMilestones = list2;
+      saveState(); drawStreakMilestoneList();
+    });
+  });
+  wrap.querySelectorAll('[data-smedit]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const i = Number(btn.dataset.smedit);
+      const m = activeStreakMilestones()[i];
+      smEditingIndex = i;
+      document.getElementById('smNewDays').value = m.days;
+      document.getElementById('smNewEmoji').value = m.emoji;
+      document.getElementById('smAddBtn').textContent = '✓ Update milestone';
+      drawStreakMilestoneList();
+      document.getElementById('smNewDays').focus();
+    });
+  });
+}
+function cancelStreakMilestoneEdit(){
+  smEditingIndex = null;
+  document.getElementById('smNewDays').value=''; document.getElementById('smNewEmoji').value='';
+  document.getElementById('smAddBtn').textContent = '+ Add milestone';
+}
+document.getElementById('smAddBtn').addEventListener('click', ()=>{
+  const days = Number(document.getElementById('smNewDays').value);
+  const emoji = document.getElementById('smNewEmoji').value.trim();
+  if(!days || days<1){ alert('Enter a valid number of days.'); return; }
+  if(!emoji){ alert('Pick an emoji for this milestone.'); return; }
+  const list = activeStreakMilestones().slice();
+  if(smEditingIndex!==null){
+    list[smEditingIndex] = { days, emoji };
+  } else {
+    const dupe = list.findIndex(m=>m.days===days);
+    if(dupe>=0) list[dupe] = { days, emoji }; else list.push({ days, emoji });
+  }
+  S.settings.streakMilestones = list;
+  saveState();
+  const wasEditing = smEditingIndex!==null;
+  cancelStreakMilestoneEdit();
+  drawStreakMilestoneList(); renderHabits(); renderDashboard();
+  showToast(wasEditing ? 'Milestone updated' : 'Milestone added', '🔥');
+});
+document.getElementById('smResetBtn').addEventListener('click', ()=>{
+  if(!confirm('Reset streak milestones to the default 🔥⭐🌟🏆💎 ladder?')) return;
+  S.settings.streakMilestones = null;
+  cancelStreakMilestoneEdit();
+  saveState(); drawStreakMilestoneList(); renderHabits(); renderDashboard();
+});
+/* v14.0.0 — Global clock (spec §20) */
+function loadClockSettingsForm(){
+  const el1 = document.getElementById('clockEnabled'), el2 = document.getElementById('clockStyle');
+  if(!el1 || !el2) return;
+  el1.value = S.settings.clockEnabled===false ? '0' : '1';
+  el2.value = S.settings.clockStyle || 'digital';
+}
+document.getElementById('clockEnabled').addEventListener('change', (e)=>{
+  S.settings.clockEnabled = e.target.value==='1'; saveState(); renderHeaderClock();
+});
+document.getElementById('clockStyle').addEventListener('change', (e)=>{
+  S.settings.clockStyle = e.target.value; saveState(); renderHeaderClock();
+});
+/* v14.0.0 — Home Quick Actions customization (spec §9.2) */
+function drawQuickActionsSettings(){
+  const wrap = document.getElementById('qaSettingsList'); if(!wrap) return;
+  const active = activeQuickActionKeys();
+  wrap.innerHTML = QUICK_ACTION_DEFS.map(qa=>{
+    const on = active.includes(qa.key);
+    return `<div class="settings-row"><div class="sr-label">${chromeIcon(qa.ic,18)} ${qa.lbl}</div><button class="switch${on?' on':''}" data-qa="${qa.key}"></button></div>`;
+  }).join('');
+  wrap.querySelectorAll('[data-qa]').forEach(btn=>{
+    btn.addEventListener('click', function(){
+      const key = this.dataset.qa;
+      let list = activeQuickActionKeys().slice();
+      if(list.includes(key)) list = list.filter(k=>k!==key); else list.push(key);
+      S.settings.quickActions = list;
+      this.classList.toggle('on', list.includes(key));
+      saveState(); renderDashboard();
+    });
+  });
+}
+document.getElementById('qaResetBtn').addEventListener('click', ()=>{
+  S.settings.quickActions = null;
+  saveState(); drawQuickActionsSettings(); renderDashboard();
+  showToast('Quick Actions reset to default', '🏠');
+});
 function drawModuleToggleList(){
   const wrap = document.getElementById('moduleToggleList'); if(!wrap) return;
   wrap.innerHTML = MODULE_DEFS.map(m=>`
@@ -6373,12 +7349,13 @@ function drawAccentSwatches(){
   });
 }
 [['setName','name'],
- ['setMotivationFreq','motivationFreq'],['setFontMono','fontMono'],
+ ['setMotivationFreq','motivationFreq'],['setFontMono','fontMono'],['setFontTime','fontTime'],
  ['setTgToken','tgToken'],['setTgChatId','tgChatId'],['setSheetUrl','sheetUrl'],['setSheetId','sheetId']
 ].forEach(([elId,key])=>{
   document.getElementById(elId).addEventListener('input', (e)=>{
     S.settings[key]=e.target.value; saveState();
     if(key==='fontMono') applyFontMono();
+    if(key==='fontTime') applyFontChoice(); // v14.0.0 — Time/Clock font (spec §7)
     if(key.startsWith('icon')) renderBadge();
     if(key==='name') updateGreeting();
   });
@@ -6393,8 +7370,12 @@ document.getElementById('setCustomAccent').addEventListener('input', (e)=>{
   S.settings.customAccent = e.target.value; saveState(); applyAccentOnly(e.target.value); drawAccentSwatches();
 });
 document.getElementById('setFontHead').addEventListener('change', (e)=>{
-  S.settings.fontHead = e.target.value; S.settings.fontBody = e.target.value; saveState(); applyFontChoice();
-  showToast(`${e.target.value} applied`, '🔤');
+  S.settings.fontHead = e.target.value; saveState(); applyFontChoice(); drawFontPicker();
+  showToast(`${e.target.value} applied to headers`, '🔤');
+});
+document.getElementById('setFontBody').addEventListener('change', (e)=>{
+  S.settings.fontBody = e.target.value; saveState(); applyFontChoice();
+  showToast(`${e.target.value} applied to body text`, '🔤');
 });
 document.getElementById('setFontWeight').addEventListener('change', (e)=>{
   S.settings.fontWeight = e.target.value; saveState(); applyFontChoice();
@@ -6522,17 +7503,38 @@ function updateGreeting(){
    Does not touch greetName/greetSub. Uses the browser's local timezone
    (the app's configured/local timezone — no separate timezone setting
    exists elsewhere in Settings). Ticks every 30s, which is frequent enough
-   for a minute-resolution display without a per-second timer. */
-function updateHeaderDateTime(){
+   for a minute-resolution display without a per-second timer.
+   v14.0.0 — this IS the app's "global clock" (spec §20): extended with an
+   on/off setting and analog/digital/both style, rather than adding a
+   second clock element elsewhere — one clock, one home. Renamed to
+   renderHeaderClock() to match Settings' clockEnabled/clockStyle wiring;
+   updateHeaderDateTime kept as an alias so nothing else that may still
+   reference the old name breaks. */
+function renderHeaderClock(){
   const el = document.getElementById('headerDateTime');
   if(!el) return;
+  if(S.settings.clockEnabled===false){ el.style.display='none'; return; }
+  el.style.display='flex';
   const now = new Date();
   const datePart = now.toLocaleDateString(undefined,{weekday:'short', month:'short', day:'numeric'});
   const timePart = now.toLocaleTimeString(undefined,{hour:'numeric', minute:'2-digit'});
-  el.textContent = `${datePart} · ${timePart}`;
+  const style = S.settings.clockStyle || 'digital';
+  const analogSvg = analogClockSvg(now, 16);
+  if(style==='analog') el.innerHTML = `${analogSvg}<span>${datePart}</span>`;
+  else if(style==='both') el.innerHTML = `${analogSvg}<span>${datePart} · ${timePart}</span>`;
+  else el.textContent = `${datePart} · ${timePart}`;
 }
-updateHeaderDateTime();
-setInterval(updateHeaderDateTime, 30000);
+function analogClockSvg(now, size){
+  const h = now.getHours()%12, m = now.getMinutes();
+  const hAngle = (h+m/60)/12*360, mAngle = m/60*360;
+  const r = size/2;
+  const hx = r + Math.sin(hAngle*Math.PI/180)*r*0.5, hy = r - Math.cos(hAngle*Math.PI/180)*r*0.5;
+  const mx = r + Math.sin(mAngle*Math.PI/180)*r*0.75, my = r - Math.cos(mAngle*Math.PI/180)*r*0.75;
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><circle cx="${r}" cy="${r}" r="${r-1}" fill="none" stroke="currentColor" stroke-width="1.2"/><line x1="${r}" y1="${r}" x2="${hx}" y2="${hy}" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><line x1="${r}" y1="${r}" x2="${mx}" y2="${my}" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg>`;
+}
+function updateHeaderDateTime(){ renderHeaderClock(); }
+renderHeaderClock();
+setInterval(renderHeaderClock, 30000);
 
 /* ---------- Telegram ---------- */
 document.getElementById('testTgBtn').addEventListener('click', async ()=>{
@@ -6644,7 +7646,7 @@ function buildBackupSnapshot_(opts){
     budgets:S.budgets,
     quotes:S.quotes, moduleQuotes:S.moduleQuotes, // v12.9.1 — your custom/edited quotes back up to the Sheet too, not just the local JSON export
     notifLog:S.notifLog, // v13.15.0 — same gap as aiCoach: notification history was never actually included in any backup
-    tasks:S.tasks, notes:S.notes, trips:S.trips, learningItems:S.learningItems, ideas:S.ideas, mealPlan:S.mealPlan, mealFavorites:S.mealFavorites,
+    tasks:S.tasks, notes:S.notes, trips:S.trips, learningItems:S.learningItems, ideas:S.ideas, mealPlan:S.mealPlan, mealPlanDone:S.mealPlanDone, mealFavorites:S.mealFavorites,
     people:S.people, trash:S.trash, accounts:S.accounts
   };
 }
@@ -6774,6 +7776,7 @@ function restoreBackupSnapshot_(d){
   if(Array.isArray(d.learningItems)) S.learningItems = d.learningItems;
   if(Array.isArray(d.ideas)) S.ideas = d.ideas;
   if(d.mealPlan && typeof d.mealPlan==='object') S.mealPlan = d.mealPlan;
+  if(d.mealPlanDone && typeof d.mealPlanDone==='object') S.mealPlanDone = d.mealPlanDone; // v14.0.0
   if(Array.isArray(d.mealFavorites)) S.mealFavorites = d.mealFavorites;
   if(Array.isArray(d.people)) S.people = d.people;
   if(Array.isArray(d.trash)) S.trash = d.trash;
@@ -7576,6 +8579,15 @@ function renderDashboard(){
 
   /* ---- priorities (unchanged data, restyled via CSS not JS) ---- */
   const pr = [];
+  // v14.0.0 — Home visual/content pass (spec §3/§9.1): Routine wasn't
+  // represented on Home at all before this, despite being explicitly
+  // listed alongside Habits/Diet as info Home should prioritize. Surfaces
+  // as the first priority row (highest attention) when something's
+  // actively running right now — reuses the same current-block detection
+  // as Routine's own Now/Upcoming/Completed grouping rather than a third
+  // copy of that logic.
+  const nowBlock = currentRoutineBlock();
+  if(nowBlock) pr.push({text:`${routineCatEmoji(nowBlock.cat)} ${nowBlock.cat} — right now (until ${fmt12(nowBlock.end)})`, tag:'Routine', color:(S.routineCats.find(c=>c.name===nowBlock.cat)||{color:'#9aa3b5'}).color});
   habits.filter(h=>habitProgress(h,today)<1).slice(0,4).forEach(h=> pr.push({text:`${habitIcon(h)} ${h.name} — not logged yet`, tag:'Habit', color:h.color}));
   overdueDebts.forEach(d=> pr.push({text:`💳 ${d.name} EMI is overdue`, tag:'Debt', color:'#ef4444'}));
   dueSoonSubscriptions().forEach(s=> pr.push({text:`🔁 ${s.name} renews soon (${fmtMoney(s.amount)})`, tag:'Subscription', color:'#f59e0b'}));
@@ -7628,17 +8640,53 @@ function renderDashboard(){
 
   /* ---- v12.0: Quick Actions — icon+label row (visual only change; same
      actions/targets as before, plus these now also appear in the universal
-     FAB's create sheet — see CREATE_ACTIONS near the FAB wiring). ---- */
+     FAB's create sheet — see CREATE_ACTIONS near the FAB wiring). ----
+     v14.0.0 — the fixed 5-item list below is now QUICK_ACTION_DEFS (spec
+     §9.2), a larger pool the user can pick/reorder from in Settings →
+     Home. The 5 original items stay the exact default (activeQuickActionKeys()
+     falls back to them untouched), so anyone who never opens that setting
+     sees no change at all. */
   const qa = document.getElementById('dashQuickActions');
-  const QA_ITEMS = [
-    {key:'habit', ic:'habits', lbl:'Log habit', fn:()=>goToScreen('habits')},
-    {key:'tx', ic:'finance', lbl:'Add expense', fn:()=>openTxModal(null)},
-    {key:'meal', ic:'food', lbl:'Log meal', fn:()=>openMealModal()},
-    {key:'journal', ic:'journal', lbl:'Journal', fn:()=>goToScreen('journal')},
-    {key:'routine', ic:'routine', lbl:'Routine', fn:()=>goToScreen('routine')},
-  ];
-  qa.innerHTML = QA_ITEMS.map(q=>`<button class="qa-item" data-qa="${q.key}"><span class="qa-ic">${chromeIcon(q.ic,20)}</span><span class="qa-lbl">${q.lbl}</span></button>`).join('');
-  qa.querySelectorAll('[data-qa]').forEach((btn,i)=> btn.onclick = QA_ITEMS[i].fn);
+  const activeKeys = activeQuickActionKeys();
+  const items = activeKeys.map(k=> QUICK_ACTION_DEFS.find(q=>q.key===k)).filter(Boolean);
+  qa.innerHTML = items.map(q=>`<button class="qa-item" data-qa="${q.key}"><span class="qa-ic">${chromeIcon(q.ic,20)}</span><span class="qa-lbl">${q.lbl}</span></button>`).join('');
+  qa.querySelectorAll('[data-qa]').forEach((btn,i)=> btn.onclick = items[i].fn);
+
+  // v14.0.0 — Habit streak visibility on Home (spec §9.3): a compact row
+  // so streaks are visible without opening the Habit tab. Only habits
+  // with an active streak (>0) show, sorted longest-first; nothing shows
+  // (the section stays empty) if no habit currently has a streak going.
+  const streakWrap = document.getElementById('dashStreaksWrap');
+  if(streakWrap){
+    const withStreaks = S.habits.map(h=>({h, days:habitStreak(h)})).filter(x=>x.days>0).sort((a,b)=>b.days-a.days);
+    streakWrap.innerHTML = withStreaks.length ? `
+      <div class="section-head" style="margin-top:6px;"><h2>🔥 Streaks</h2></div>
+      <div class="quick-actions-row">
+        ${withStreaks.map(({h,days})=>`<div class="qa-item" style="cursor:default;"><span class="qa-ic">${habitIcon(h)}</span><span class="qa-lbl">${streakEmoji(days)} ${days}d</span></div>`).join('')}
+      </div>` : '';
+  }
+  renderFoodInsights(); // v14.1.0 — spec §6
+}
+/* v14.0.0 — full Quick Actions pool + the 5 originals as the untouched
+   default order/selection. fn is resolved lazily (not stored in
+   S.settings, only the key is) so this stays serializable and safe to
+   persist. */
+const QUICK_ACTION_DEFS = [
+  {key:'habit', ic:'habits', lbl:'Log habit', fn:()=>goToScreen('habits')},
+  {key:'tx', ic:'finance', lbl:'Add expense', fn:()=>openTxModal(null)},
+  {key:'meal', ic:'food', lbl:'Log meal', fn:()=>openMealModal()},
+  {key:'journal', ic:'journal', lbl:'Journal', fn:()=>goToScreen('journal')},
+  {key:'routine', ic:'routine', lbl:'Routine', fn:()=>goToScreen('routine')},
+  {key:'task', ic:'tasks', lbl:'Add task', fn:()=>openTaskModal(null)},
+  {key:'note', ic:'notes', lbl:'New note', fn:()=>openNoteModal(null)},
+  {key:'goal', ic:'goals', lbl:'Goals', fn:()=>goToScreen('goals')},
+  {key:'diet', ic:'diet', lbl:'Diet', fn:()=>goToScreen('diet')},
+  {key:'mealplanner', ic:'mealplanner', lbl:'Meal Planner', fn:()=>goToScreen('mealplanner')},
+];
+const DEFAULT_QUICK_ACTION_KEYS = ['habit','tx','meal','journal','routine'];
+function activeQuickActionKeys(){
+  const list = S.settings.quickActions;
+  return (Array.isArray(list) && list.length) ? list.filter(k=> QUICK_ACTION_DEFS.some(q=>q.key===k)) : DEFAULT_QUICK_ACTION_KEYS;
 }
 document.getElementById('focusTabs').addEventListener('click', (e)=>{
   const btn = e.target.closest('.ft-tab'); if(!btn) return;
@@ -7699,7 +8747,7 @@ function openBudgetModal(id){
 document.getElementById('addBudgetBtn').addEventListener('click', ()=>openBudgetModal(null));
 
 /* ---------- GOALS ---------- */
-const GOAL_ICONS = { debt:'💳', savings:'💰', weight:'⚖️', habit:'🎯', custom:'⭐' };
+const GOAL_ICONS = { debt:'💳', savings:'💰', weight:'⚖️', habit:'🎯', diet:'🍽️', custom:'⭐' }; // v14.0.0 — diet added (spec §25)
 function goalProgressCalc(g){
   let current=0, target=g.target||1, pct=0, behind=false;
   if(g.mode==='debt'){
@@ -7719,6 +8767,29 @@ function goalProgressCalc(g){
     const days = Number(g.target)||30;
     let hit=0;
     if(h){ for(let i=0;i<days;i++){ const ds=addDays(todayStr(),-i); if(habitProgress(h,ds)>=1) hit++; } }
+    current = hit; target = days; pct = clamp01(hit/days);
+  } else if(g.mode==='diet'){
+    // v14.0.0 — Diet ↔ Goals (spec §25): there was previously no goal type
+    // linked to Diet at all, so this relationship couldn't be kept in
+    // sync because it didn't exist. Computed live from S.diet.meals every
+    // render (same pattern as the 'habit' mode above) — a day "hits" if
+    // it has at least one logged meal and the day's total calories are at
+    // or under the target (small 5% tolerance so a slightly-over day
+    // still counts, matching how the AI Coach already talks about missed
+    // vs hit days). Automatically reflects Meal Planner's "Eaten" toggle
+    // too, since those write into S.diet.meals the same as manually
+    // logged meals (see markMealSlotDone).
+    const days = Number(g.target)||30;
+    const dt = dietTargets();
+    const calTarget = (dt && dt.calories) || 2000;
+    let hit=0;
+    for(let i=0;i<days;i++){
+      const ds=addDays(todayStr(),-i);
+      const meals = S.diet.meals[ds]||[];
+      if(meals.length===0) continue;
+      const total = meals.reduce((s,m)=>s+Number(m.calories||0),0);
+      if(total>0 && total<=calTarget*1.05) hit++;
+    }
     current = hit; target = days; pct = clamp01(hit/days);
   } else if(g.mode==='savings' && g.autoTrackCategory){
     // v12.8 — optional automation: instead of manually updating "current
@@ -7746,7 +8817,7 @@ function renderGoals(){
   if(S.goals.length===0){ list.innerHTML = `<div class="empty-state"><div class="em-icon">🎯</div><div class="em-title">No goals yet</div>Tap + to set your first goal — debt-free, savings, weight, a habit streak, or anything custom.</div>`; return; }
   list.innerHTML = S.goals.map(g=>{
     const gp = goalProgressCalc(g);
-    const unit = g.unit || (g.mode==='debt'||g.mode==='savings' ? '₹' : g.mode==='weight' ? 'kg' : g.mode==='habit' ? 'days' : '');
+    const unit = g.unit || (g.mode==='debt'||g.mode==='savings' ? '₹' : g.mode==='weight' ? 'kg' : (g.mode==='habit'||g.mode==='diet') ? 'days' : '');
     return `<div class="goal-card" data-gid="${g.id}">
       <div class="goal-top">
         <div class="goal-icon">${GOAL_ICONS[g.mode]||'⭐'}</div>
@@ -7773,10 +8844,13 @@ function openGoalModal(id){
       <option value="savings" ${g&&g.mode==='savings'?'selected':''}>Save an amount</option>
       <option value="weight" ${g&&g.mode==='weight'?'selected':''}>Reach a weight</option>
       <option value="habit" ${g&&g.mode==='habit'?'selected':''}>Habit streak (days hit in a window)</option>
+      <option value="diet" ${g&&g.mode==='diet'?'selected':''}>Diet — days within calorie target</option>
       <option value="custom" ${g&&g.mode==='custom'?'selected':''}>Custom (track manually)</option>
     </select>
     <div id="goalDebtWrap" style="display:none;"><label class="fl">Which loan</label><select id="goalDebtSel">${debtOpts}</select><div class="hint">Auto-calculated from that loan's balance — no manual updates needed.</div></div>
     <div id="goalHabitWrap" style="display:none;"><label class="fl">Which habit</label><select id="goalHabitSel">${habitOpts}</select><label class="fl">Target days (out of last N days)</label><input type="number" id="goalHabitDays" value="${g&&g.mode==='habit'?g.target:30}"><div class="hint">Auto-calculated from that habit's daily check-ins — no manual updates needed.</div></div>
+    <!-- v14.0.0 — Diet ↔ Goals (spec §25) -->
+    <div id="goalDietWrap" style="display:none;"><label class="fl">Target window (days)</label><input type="number" id="goalDietDays" value="${g&&g.mode==='diet'?g.target:30}"><div class="hint">Auto-calculated from Diet's logged meals against your calorie target (Settings → Diet &amp; body stats) — a day counts if it's logged and at/under target. No manual updates needed; also picks up meals marked "Eaten" from Meal Planner automatically.</div></div>
     <div id="goalWeightWrap" style="display:none;">
       <label class="fl">Starting weight (kg)</label><input type="number" id="goalWStart" value="${g&&g.mode==='weight'?g.startValue:''}">
       <label class="fl">Target weight (kg)</label><input type="number" id="goalWTarget" value="${g&&g.mode==='weight'?g.target:''}">
@@ -7810,6 +8884,7 @@ function openGoalModal(id){
     const m = modeSel.value;
     document.getElementById('goalDebtWrap').style.display = m==='debt'?'block':'none';
     document.getElementById('goalHabitWrap').style.display = m==='habit'?'block':'none';
+    document.getElementById('goalDietWrap').style.display = m==='diet'?'block':'none';
     document.getElementById('goalWeightWrap').style.display = m==='weight'?'block':'none';
     document.getElementById('goalManualWrap').style.display = (m==='savings'||m==='custom')?'block':'none';
     document.getElementById('goalSavingsAutoWrap').style.display = m==='savings' ? 'block' : 'none';
@@ -7823,6 +8898,7 @@ function openGoalModal(id){
     const rec = { id:g?g.id:uid(), title, mode, createdAt:g?g.createdAt:todayStr(), deadline:document.getElementById('goalDeadline').value||'' };
     if(mode==='debt'){ const d=S.debts.find(x=>x.id===document.getElementById('goalDebtSel').value); if(!d){alert('Add a debt first in Debts/EMI');return;} rec.linkedId=d.id; rec.target = (g&&g.mode==='debt') ? g.target : Number(d.balance); }
     else if(mode==='habit'){ const h=S.habits.find(x=>x.id===document.getElementById('goalHabitSel').value); if(!h){alert('Add a habit first');return;} rec.linkedId=h.id; rec.target=Number(document.getElementById('goalHabitDays').value)||30; }
+    else if(mode==='diet'){ rec.target=Number(document.getElementById('goalDietDays').value)||30; }
     else if(mode==='weight'){ rec.startValue=Number(document.getElementById('goalWStart').value)||0; rec.target=Number(document.getElementById('goalWTarget').value)||0; }
     else {
       rec.target=Number(document.getElementById('goalMTarget').value)||1; rec.unit=document.getElementById('goalMUnit').value.trim();
@@ -8260,7 +9336,8 @@ function renderNotes(){
     return;
   }
   wrap.innerHTML = list.map(n=>`
-    <div class="note-card ${n.pinned?'pinned':''}" data-nopen="${n.id}">
+    <div class="note-card notebook-card ${n.pinned?'pinned':''}" data-nopen="${n.id}">
+      <div class="notebook-margin"></div>
       <div class="note-title">${n.pinned?'📌 ':''}${n.title||'(untitled)'}</div>
       <div class="note-body">${(n.content||'').replace(/</g,'&lt;')}</div>
       <div class="note-meta">${n.category?`<span class="tag-badge">${n.category}</span>`:''}<span>${new Date(n.updatedAt||n.createdAt).toLocaleDateString(undefined,{month:'short',day:'numeric'})}</span></div>
@@ -8272,7 +9349,11 @@ function openNoteModal(id){
   openModal(`
     <div class="modal-head"><h3>${n?'Edit':'Add'} note</h3><button class="modal-close" data-close>✕</button></div>
     <label class="fl" style="margin-top:0;">Title</label><input type="text" id="noteTitle" value="${n?(n.title||'').replace(/"/g,'&quot;'):''}" placeholder="e.g. Wifi password for the office">
-    <label class="fl">Note</label><textarea id="noteContent" rows="5" placeholder="Type it before you forget it…">${n?(n.content||''):''}</textarea>
+    <label class="fl">Note</label>
+    <div class="notebook-card" style="padding:8px 10px 8px 16px;">
+      <div class="notebook-margin"></div>
+      <textarea id="noteContent" class="notebook-input" rows="5" placeholder="Type it before you forget it…">${n?(n.content||''):''}</textarea>
+    </div>
     <label class="fl">Category</label>
     <select id="noteCategory">${NOTE_CATEGORIES.map(c=>`<option value="${c}" ${n&&n.category===c?'selected':''}>${c}</option>`).join('')}</select>
     <div class="settings-row" style="margin-top:10px;"><div class="sr-label">📌 Pin to top</div><button class="switch${n&&n.pinned?' on':''}" id="notePinToggle"></button></div>
@@ -8511,6 +9592,17 @@ document.getElementById('contentFilterSeg').addEventListener('click', (e)=>{
    second data model to keep in sync with Diet. */
 let mpWeekStart = startOfWeek(todayStr());
 const MEAL_SLOTS = [['breakfast','Breakfast'],['lunch','Lunch'],['dinner','Dinner'],['snacks','Snacks']];
+/* v14.0.0 — Meal Planner visual improvement (spec §14): emoji + colour per
+   meal type, used for the slot icon chip and the left accent bar on each
+   slot row — matches the spec's own example (🍳 Breakfast, 🥗 Lunch,
+   🍎 Snack, 🍲 Dinner) while keeping Dinner/Snacks in this app's existing
+   slot order. */
+const MEAL_SLOT_STYLE = {
+  breakfast: { emoji:'🍳', color:'#f59e0b' },
+  lunch:     { emoji:'🥗', color:'#22c55e' },
+  dinner:    { emoji:'🍲', color:'#ef4444' },
+  snacks:    { emoji:'🍎', color:'#8b5cf6' },
+};
 function weekDates(startDate){ return Array.from({length:7},(_,i)=>addDays(startDate,i)); }
 
 /* v13.6.0 — calorie-aware meal suggestions. Reuses dietTargets() (the
@@ -8593,6 +9685,176 @@ function mpParseCalories(text){
   const m = (text||'').match(/\(~(\d+)\s*kcal\)/i);
   return m ? Number(m[1]) : 0;
 }
+/* v14.0.0 — Meal Planner ↔ Diet ↔ Calories interlink (spec §13). Marking a
+   planned meal slot as eaten creates one entry in S.diet.meals for that
+   date, tagged source:'mealplanner' and linked back to the slot via
+   S.mealPlanDone[date][slot].mealId. That id is the single source of
+   truth that prevents double-counting: marking an already-done slot done
+   again is a no-op, and unmarking removes exactly that one diet-log entry
+   (never a blanket "remove all meals that day"), so any meal logged
+   separately that same day is untouched. Diet's own totals need no
+   changes — renderDiet()/dietMealsInPeriod() already sum whatever's in
+   S.diet.meals, so a meal-planner-sourced entry counts exactly once,
+   exactly like a manually logged one. */
+function markMealSlotDone(ds, slotKey){
+  const day = S.mealPlan[ds] || {};
+  const text = (day[slotKey]||'').trim();
+  if(!text) return;
+  if(!S.mealPlanDone[ds]) S.mealPlanDone[ds] = {};
+  if(S.mealPlanDone[ds][slotKey] && S.mealPlanDone[ds][slotKey].done) return; // already counted
+  const cal = mpParseCalories(text);
+  const name = text.replace(/\s*\(~\d+\s*kcal\)$/,'') || text;
+  const mealId = uid();
+  if(!S.diet.meals[ds]) S.diet.meals[ds] = [];
+  const mpRec = { id:mealId, name, calories:cal, protein:0, carbs:0, fat:0, fiber:0,
+    time:new Date().toTimeString().slice(0,5), source:'mealplanner', slot:slotKey };
+  mpRec.categories = classifyFoodCategories(mpRec); // v14.1.0 — spec §5, keep Meal Planner-sourced meals in step with manually logged ones
+  S.diet.meals[ds].push(mpRec);
+  S.mealPlanDone[ds][slotKey] = { done:true, mealId };
+  saveState(); renderMealPlanner(); renderDiet(); renderDashboard();
+  showToast(`${(MEAL_SLOTS.find(s=>s[0]===slotKey)||[,slotKey])[1]} marked eaten`, '✅');
+}
+function unmarkMealSlotDone(ds, slotKey){
+  const rec = S.mealPlanDone[ds] && S.mealPlanDone[ds][slotKey];
+  if(!rec || !rec.done) return;
+  if(S.diet.meals[ds]) S.diet.meals[ds] = S.diet.meals[ds].filter(m=>m.id!==rec.mealId);
+  delete S.mealPlanDone[ds][slotKey];
+  saveState(); renderMealPlanner(); renderDiet(); renderDashboard();
+}
+/* Editing the plan text after a slot's already marked eaten keeps the
+   linked Diet entry in sync (spec §13: "editing a consumed meal should
+   update the linked data correctly") instead of leaving a stale calorie
+   figure behind. */
+function syncDoneMealEdit(ds, slotKey, newText){
+  const rec = S.mealPlanDone[ds] && S.mealPlanDone[ds][slotKey];
+  if(!rec || !rec.done || !S.diet.meals[ds]) return;
+  const m = S.diet.meals[ds].find(x=>x.id===rec.mealId);
+  if(!m) return;
+  m.calories = mpParseCalories(newText);
+  m.name = newText.replace(/\s*\(~\d+\s*kcal\)$/,'') || newText;
+}
+let mpViewMode = 'default'; // 'default' | 'yesterday' | 'next5' | 'week' | 'date' | 'calendar'
+let mpJumpDateVal = null;
+let mpCalView = (()=>{ const n=new Date(); return { y:n.getFullYear(), m:n.getMonth() }; })(); // v14.0.0
+function mpDatesForView(){
+  const today = todayStr();
+  if(mpViewMode==='yesterday') return [addDays(today,-1)];
+  if(mpViewMode==='next5') return Array.from({length:5},(_,i)=>addDays(today,i));
+  if(mpViewMode==='week') return weekDates(mpWeekStart);
+  if(mpViewMode==='date' && mpJumpDateVal) return [mpJumpDateVal];
+  return [today, addDays(today,1)]; // default: Today + Tomorrow
+}
+/* v14.0.0 — Meal Planner Calendar (spec §12.3/§12.4). Same grid pattern as
+   the app's main Calendar module (renderCalendar()), scoped to meal-plan
+   data: green dot = something planned that day, red dot = at least one
+   slot actually marked eaten. Never fabricates history — a day with
+   neither shows no dots at all. */
+function renderMpCalendar(){
+  document.getElementById('mpCalLabel').textContent = `${monthName(mpCalView.m)} ${mpCalView.y}`;
+  const grid = document.getElementById('mpCalGrid');
+  grid.innerHTML='';
+  DOW.forEach(d=>{ const el=document.createElement('div'); el.className='cal-dow'; el.textContent=d; grid.appendChild(el); });
+  const first = new Date(mpCalView.y, mpCalView.m, 1);
+  const startOffset = (first.getDay()+6)%7;
+  const daysInMonth = new Date(mpCalView.y, mpCalView.m+1, 0).getDate();
+  for(let i=0;i<startOffset;i++){ const el=document.createElement('div'); el.className='cal-cell empty'; grid.appendChild(el); }
+  for(let day=1; day<=daysInMonth; day++){
+    const ds = `${mpCalView.y}-${String(mpCalView.m+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const el = document.createElement('div');
+    el.className = 'cal-cell' + (ds===todayStr()?' today':'');
+    const dots=[];
+    const plan = S.mealPlan[ds];
+    if(plan && Object.values(plan).some(v=>v)) dots.push('#22c55e');
+    const done = S.mealPlanDone[ds];
+    if(done && Object.values(done).some(v=>v && v.done)) dots.push('#ef4444');
+    el.innerHTML = `<span>${day}</span><span class="cal-dots">${dots.map(c=>`<span style="background:${c}"></span>`).join('')}</span>`;
+    el.onclick = ()=>{
+      mpJumpDateVal = ds; mpViewMode = 'date';
+      document.querySelectorAll('#mpViewSeg button').forEach(x=>x.classList.remove('active'));
+      document.getElementById('mpJumpDate').value = ds;
+      renderMealPlanner();
+    };
+    grid.appendChild(el);
+  }
+}
+document.getElementById('mpCalPrevBtn').addEventListener('click', ()=>{ mpCalView.m--; if(mpCalView.m<0){mpCalView.m=11;mpCalView.y--;} renderMpCalendar(); });
+document.getElementById('mpCalNextBtn').addEventListener('click', ()=>{ mpCalView.m++; if(mpCalView.m>11){mpCalView.m=0;mpCalView.y++;} renderMpCalendar(); });
+function renderMealPlanner(){
+  renderTopMotivation('mealplanner','mealplannerMotivationCard');
+  document.getElementById('mpWeekHead').style.display = mpViewMode==='week' ? 'flex' : 'none';
+  const isCal = mpViewMode==='calendar';
+  document.getElementById('mpCalHead').style.display = isCal ? 'flex' : 'none';
+  document.getElementById('mpCalGrid').style.display = isCal ? 'grid' : 'none';
+  document.getElementById('mpCalLegend').style.display = isCal ? 'block' : 'none';
+  document.getElementById('mpWeekList').style.display = isCal ? 'none' : 'block';
+  document.getElementById('mpDatePickWrap').style.display = isCal ? 'none' : 'flex';
+  if(isCal){ renderMpCalendar(); return; }
+  if(mpViewMode==='week'){
+    const wDates = weekDates(mpWeekStart);
+    const d0 = new Date(wDates[0]+'T00:00:00'), d6 = new Date(wDates[6]+'T00:00:00');
+    document.getElementById('mpWeekLabel').textContent = `${d0.toLocaleDateString(undefined,{month:'short',day:'numeric'})} – ${d6.toLocaleDateString(undefined,{month:'short',day:'numeric'})}`;
+  }
+  const dates = mpDatesForView();
+  const targets = mealSlotTargets();
+  const wrap = document.getElementById('mpWeekList');
+  wrap.innerHTML = (targets.personalized ? '' : `<div class="hint" style="margin-bottom:10px;">Using a general 2,000 kcal/day target — set your height/weight/age in Diet → Settings for a target personalized to you.</div>`) +
+    dates.map(ds=>{
+    const d = new Date(ds+'T00:00:00');
+    const day = S.mealPlan[ds] || {};
+    const isToday = ds===todayStr();
+    const dayTotal = MEAL_SLOTS.reduce((sum,[key])=>sum+mpParseCalories(day[key]),0);
+    return `<div class="mp-day-card">
+      <div class="mp-day-head" style="display:flex; justify-content:space-between; align-items:center;">
+        <span>${d.toLocaleDateString(undefined,{weekday:'long', month:'short', day:'numeric'})}${isToday?' · Today':''}</span>
+        ${dayTotal>0?`<span style="font-weight:700; color:var(--sub); font-size:11px;">~${dayTotal} / ${targets.daily} kcal</span>`:''}
+      </div>
+      ${dayTotal>0 ? `<div class="mp-day-calbar"><div class="mp-day-calbar-fill" style="width:${Math.min(100, dayTotal/targets.daily*100)}%;"></div></div>` : ''}
+      ${MEAL_SLOTS.map(([key,label])=>{
+        const doneRec = S.mealPlanDone[ds] && S.mealPlanDone[ds][key];
+        const done = !!(doneRec && doneRec.done);
+        const hasText = !!(day[key]||'').trim();
+        const style = MEAL_SLOT_STYLE[key] || {emoji:'🍽',color:'var(--sub)'};
+        return `
+        <div class="mp-slot" style="border-left:3px solid ${style.color};">
+          <span class="mp-slot-emoji" title="${label}">${style.emoji}</span>
+          <input type="text" data-mpdate="${ds}" data-mpslot="${key}" value="${(day[key]||'').replace(/"/g,'&quot;')}" placeholder="${label}…" style="flex:1;">
+          <button class="mp-eaten-btn${done?' done':''}" data-mpdone="${ds}" data-mpdoneslot="${key}" title="${done?'Marked eaten — tap to undo':'Mark as eaten'}" ${hasText?'':'disabled style="opacity:.35;"'}>${done?'✓ Eaten':'☐ Eaten'}</button>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }).join('');
+  wrap.querySelectorAll('[data-mpdate]').forEach(inp=>{
+    inp.addEventListener('change', ()=>{
+      const ds = inp.dataset.mpdate, slot = inp.dataset.mpslot;
+      if(!S.mealPlan[ds]) S.mealPlan[ds] = {};
+      S.mealPlan[ds][slot] = inp.value.trim();
+      syncDoneMealEdit(ds, slot, S.mealPlan[ds][slot]);
+      saveState(); renderMealPlanner(); renderDiet();
+    });
+  });
+  wrap.querySelectorAll('[data-mpdone]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const ds = btn.dataset.mpdone, slot = btn.dataset.mpdoneslot;
+      const doneRec = S.mealPlanDone[ds] && S.mealPlanDone[ds][slot];
+      if(doneRec && doneRec.done) unmarkMealSlotDone(ds, slot); else markMealSlotDone(ds, slot);
+    });
+  });
+}
+document.querySelectorAll('#mpViewSeg button').forEach(b=> b.addEventListener('click', ()=>{
+  document.querySelectorAll('#mpViewSeg button').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');
+  mpViewMode = b.dataset.v;
+  renderMealPlanner();
+}));
+document.getElementById('mpJumpDateBtn').addEventListener('click', ()=>{
+  const v = document.getElementById('mpJumpDate').value;
+  if(!v) return;
+  mpJumpDateVal = v; mpViewMode = 'date';
+  document.querySelectorAll('#mpViewSeg button').forEach(x=>x.classList.remove('active'));
+  renderMealPlanner();
+});
+document.getElementById('mpPrevWeekBtn').addEventListener('click', ()=>{ mpWeekStart = addDays(mpWeekStart,-7); renderMealPlanner(); });
+document.getElementById('mpNextWeekBtn').addEventListener('click', ()=>{ mpWeekStart = addDays(mpWeekStart,7); renderMealPlanner(); });
 function suggestFoodForSlot(slot, targetCal, usedNames){
   const pool = FOOD_SUGGESTIONS[slot]||[];
   const fresh = pool.filter(f=>!usedNames.has(f.name));
@@ -8621,42 +9883,6 @@ function autoFillWeekByCalories(){
   return { filled, personalized: targets.personalized };
 }
 
-function renderMealPlanner(){
-  renderTopMotivation('mealplanner','mealplannerMotivationCard');
-  const dates = weekDates(mpWeekStart);
-  const d0 = new Date(dates[0]+'T00:00:00'), d6 = new Date(dates[6]+'T00:00:00');
-  document.getElementById('mpWeekLabel').textContent = `${d0.toLocaleDateString(undefined,{month:'short',day:'numeric'})} – ${d6.toLocaleDateString(undefined,{month:'short',day:'numeric'})}`;
-  const targets = mealSlotTargets();
-  const wrap = document.getElementById('mpWeekList');
-  wrap.innerHTML = (targets.personalized ? '' : `<div class="hint" style="margin-bottom:10px;">Using a general 2,000 kcal/day target — set your height/weight/age in Diet → Settings for a target personalized to you.</div>`) +
-    dates.map(ds=>{
-    const d = new Date(ds+'T00:00:00');
-    const day = S.mealPlan[ds] || {};
-    const isToday = ds===todayStr();
-    const dayTotal = MEAL_SLOTS.reduce((sum,[key])=>sum+mpParseCalories(day[key]),0);
-    return `<div class="mp-day-card">
-      <div class="mp-day-head" style="display:flex; justify-content:space-between; align-items:center;">
-        <span>${d.toLocaleDateString(undefined,{weekday:'long', month:'short', day:'numeric'})}${isToday?' · Today':''}</span>
-        ${dayTotal>0?`<span style="font-weight:700; color:var(--sub); font-size:11px;">~${dayTotal} / ${targets.daily} kcal</span>`:''}
-      </div>
-      ${MEAL_SLOTS.map(([key,label])=>`
-        <div class="mp-slot">
-          <label>${label}</label>
-          <input type="text" data-mpdate="${ds}" data-mpslot="${key}" value="${(day[key]||'').replace(/"/g,'&quot;')}" placeholder="—">
-        </div>`).join('')}
-    </div>`;
-  }).join('');
-  wrap.querySelectorAll('[data-mpdate]').forEach(inp=>{
-    inp.addEventListener('change', ()=>{
-      const ds = inp.dataset.mpdate, slot = inp.dataset.mpslot;
-      if(!S.mealPlan[ds]) S.mealPlan[ds] = {};
-      S.mealPlan[ds][slot] = inp.value.trim();
-      saveState(); renderMealPlanner();
-    });
-  });
-}
-document.getElementById('mpPrevWeekBtn').addEventListener('click', ()=>{ mpWeekStart = addDays(mpWeekStart,-7); renderMealPlanner(); });
-document.getElementById('mpNextWeekBtn').addEventListener('click', ()=>{ mpWeekStart = addDays(mpWeekStart,7); renderMealPlanner(); });
 document.getElementById('mpRepeatWeekBtn').addEventListener('click', ()=>{
   const thisWeek = weekDates(mpWeekStart);
   const lastWeek = weekDates(addDays(mpWeekStart,-7));
@@ -8763,6 +9989,9 @@ function upcomingBirthdaysOn(ds){
    openTxModal above), filtered and totaled read-only on the trip
    detail screen. */
 const TRIP_STATUSES = ['Planning','Booked','Ongoing','Completed'];
+/* v14.1.0 — spec §3: journey-type visual language. Purely a display hint;
+   nothing else about the Trip Planner's architecture changes. */
+const TRIP_TYPES = { flight:{lbl:'✈️ Flight', cls:'trip-card-flight'}, train:{lbl:'🚆 Train', cls:'trip-card-train'}, road:{lbl:'🛣️ Road trip', cls:'trip-card-road'}, other:{lbl:'Other', cls:''} };
 const BOOKING_TYPES = ['Hotel','Transport','Activity','Other'];
 let currentTripId = null;
 let tripDetailFilter = 'itinerary';
@@ -8776,9 +10005,10 @@ function renderTravel(){
   }
   wrap.innerHTML = list.map(tr=>{
     const dates = tr.startDate ? `${new Date(tr.startDate+'T00:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric'})}${tr.endDate?' – '+new Date(tr.endDate+'T00:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric'}):''}` : '';
-    return `<div class="note-card" data-topen="${tr.id}">
+    const tt = TRIP_TYPES[tr.tripType] || TRIP_TYPES.other;
+    return `<div class="note-card ${tt.cls}" data-topen="${tr.id}">
       <div class="note-title">${tr.name}</div>
-      <div class="note-meta"><span class="tag-badge">${tr.destination||'—'}</span><span class="status-badge">${tr.status||'Planning'}</span>${tr.currency?`<span class="tag-badge">${tr.currency}</span>`:''}${dates?`<span>${dates}</span>`:''}</div>
+      <div class="note-meta"><span class="tag-badge">${tr.destination||'—'}</span><span class="status-badge">${tr.status||'Planning'}</span>${tr.tripType&&tr.tripType!=='other'?`<span class="trip-type-chip">${tt.lbl}</span>`:''}${tr.currency?`<span class="tag-badge">${tr.currency}</span>`:''}${dates?`<span>${dates}</span>`:''}</div>
     </div>`;
   }).join('');
   wrap.querySelectorAll('[data-topen]').forEach(el=> el.addEventListener('click', ()=> openTripDetail(el.dataset.topen)));
@@ -8794,6 +10024,8 @@ function openTripModal(id){
     <label class="fl">End date</label><input type="date" id="tripEnd" value="${tr?tr.endDate||'':''}">
     <label class="fl">Status</label>
     <select id="tripStatus">${TRIP_STATUSES.map(s=>`<option ${tr&&tr.status===s?'selected':''}>${s}</option>`).join('')}</select>
+    <label class="fl">Mostly getting there by <span class="hint" style="display:inline;">(styles this trip's look)</span></label>
+    <select id="tripType">${Object.entries(TRIP_TYPES).map(([k,v])=>`<option value="${k}" ${(tr?tr.tripType||'other':'other')===k?'selected':''}>${v.lbl}</option>`).join('')}</select>
     <label class="fl">Notes (optional)</label><textarea id="tripNotes" rows="3">${tr?(tr.notes||''):''}</textarea>
     <button class="btn primary" id="tripSave" style="margin-top:16px;">Save</button>
     ${tr?'<button class="btn danger" id="tripDel" style="margin-top:10px;">Delete trip</button>':''}
@@ -8808,6 +10040,7 @@ function openTripModal(id){
       startDate: document.getElementById('tripStart').value || '',
       endDate: document.getElementById('tripEnd').value || '',
       status: document.getElementById('tripStatus').value,
+      tripType: document.getElementById('tripType').value,
       notes: document.getElementById('tripNotes').value.trim(),
       itinerary: tr?tr.itinerary||[]:[], bookings: tr?tr.bookings||[]:[], checklist: tr?tr.checklist||[]:[],
     };
@@ -8833,11 +10066,13 @@ function renderTripDetail(){
   const tr = currentTrip();
   if(!tr){ goToScreen('travel'); return; }
   const dates = tr.startDate ? `${new Date(tr.startDate+'T00:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric'})}${tr.endDate?' – '+new Date(tr.endDate+'T00:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric'}):''}` : 'No dates set';
+  const tt = TRIP_TYPES[tr.tripType] || TRIP_TYPES.other;
+  document.getElementById('tripHeaderCard').className = `card ${tt.cls}`;
   document.getElementById('tripHeaderCard').innerHTML = `
     <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
       <div>
         <div style="font-weight:800; font-size:15px;">${tr.name}</div>
-        <div class="note-meta" style="margin-top:4px;"><span class="tag-badge">${tr.destination||'—'}</span><span class="status-badge">${tr.status}</span>${tr.currency?`<span class="tag-badge">${tr.currency}</span>`:''}</div>
+        <div class="note-meta" style="margin-top:4px;"><span class="tag-badge">${tr.destination||'—'}</span><span class="status-badge">${tr.status}</span>${tr.tripType&&tr.tripType!=='other'?`<span class="trip-type-chip">${tt.lbl}</span>`:''}${tr.currency?`<span class="tag-badge">${tr.currency}</span>`:''}</div>
         <div style="font-size:12px; color:var(--sub); margin-top:4px;">${dates}</div>
         ${tr.notes?`<div class="note-body" style="margin-top:6px;">${tr.notes.replace(/</g,'&lt;')}</div>`:''}
       </div>
@@ -9169,14 +10404,35 @@ function buildCoachDigest(){
   if((S.people||[]).length) lines.push(`People tracked: ${S.people.length}. Upcoming birthdays (14d): ${upcomingBirthdays(14).length}.`);
   return lines.join('\n');
 }
-async function renderCoach(){
+/* v14.0.0 — AI Coach restructure (spec §19). S.aiCoach.lastInsights can be
+   EITHER the old shape (a flat array of strings, from before this change —
+   still rendered correctly below so nobody's last-generated insights
+   vanish) OR the new shape: { doingWell:[], needsAttention:[], continueDoing:[],
+   improve:[], nextStep:'' }, requested directly from Gemini via the
+   updated prompt in the click handler below. */
+function renderCoach(){
   const out = document.getElementById('coachOutput');
-  if(S.aiCoach.lastInsights && S.aiCoach.lastInsights.length){
-    out.innerHTML = S.aiCoach.lastInsights.map(t=>`<div class="coach-msg"><span class="cm-icon">💡</span><div>${t}</div></div>`).join('') +
-      `<div class="hint">Last generated ${S.aiCoach.lastRun ? new Date(S.aiCoach.lastRun).toLocaleString() : ''}</div>`;
-  } else {
+  const d = S.aiCoach.lastInsights;
+  if(!d || (Array.isArray(d) && d.length===0) || (!Array.isArray(d) && !Object.keys(d).length)){
     out.innerHTML = `<div class="coach-empty">No insights generated yet — tap the button above.</div>`;
+    return;
   }
+  if(Array.isArray(d)){
+    // old flat-list format — unchanged rendering so previously generated
+    // insights still display correctly after this update
+    out.innerHTML = d.map(t=>`<div class="coach-msg"><span class="cm-icon">💡</span><div>${t}</div></div>`).join('') +
+      `<div class="hint">Last generated ${S.aiCoach.lastRun ? new Date(S.aiCoach.lastRun).toLocaleString() : ''}</div>`;
+    return;
+  }
+  const section = (cls, icon, title, items)=> (items && items.length) ? `
+    <div class="coach-section ${cls}"><h4>${icon} ${title}</h4><ul>${items.map(t=>`<li>${t}</li>`).join('')}</ul></div>` : '';
+  out.innerHTML =
+    section('good','✅','Doing well', d.doingWell) +
+    section('warn','⚠️','Needs attention', d.needsAttention) +
+    section('continue','🎯','Continue', d.continueDoing) +
+    section('improve','🔧','Improve', d.improve) +
+    (d.nextStep ? `<div class="coach-section next"><h4>➡️ Next step</h4><ul><li>${d.nextStep}</li></ul></div>` : '') +
+    `<div class="hint">Last generated ${S.aiCoach.lastRun ? new Date(S.aiCoach.lastRun).toLocaleString() : ''}</div>`;
 }
 document.getElementById('runCoachBtn').addEventListener('click', async ()=>{
   const key = S.diet.settings.geminiKey;
@@ -9185,7 +10441,9 @@ document.getElementById('runCoachBtn').addEventListener('click', async ()=>{
   out.innerHTML = `<div class="coach-empty">Thinking through your last 30 days…</div>`;
   try{
     const digest = buildCoachDigest();
-    const prompt = `You are a supportive personal life-coach reading structured data exported from a life-management app called GP Ledger (habits, finance, health, tasks, learning, travel, content, meal planning, and relationships). Data:\n\n${digest}\n\nWrite 4 to 6 short, specific, plain-English insights or pieces of advice (max 22 words each) a real person would find useful — call out patterns, risks, and wins. Avoid generic advice not backed by the data above. Reply with ONLY a compact JSON array of strings, no markdown, no explanation. Example: ["insight one","insight two"]`;
+    // v14.0.0 — prompt now asks for the same 5-bucket structure the UI
+    // renders (spec §19), instead of a flat list of sentences.
+    const prompt = `You are a supportive personal life-coach reading structured data exported from a life-management app called GP Ledger (habits, finance, health, tasks, learning, travel, content, meal planning, and relationships). Data:\n\n${digest}\n\nReply with ONLY a compact JSON object (no markdown, no explanation) with these keys: "doingWell" (array of 1-3 short strings, things going well), "needsAttention" (array of 1-3 short strings, things slipping), "continueDoing" (array of 1-2 short strings, habits/routines worth keeping up), "improve" (array of 1-2 short strings, specific actionable improvements), "nextStep" (ONE short string, the single most useful next action). Each string max 18 words, plain English, specific to the data above — no generic advice. Example: {"doingWell":["Exercise streak: 12 days"],"needsAttention":["Sleep routine inconsistent"],"continueDoing":["Keep the morning routine going"],"improve":["Log dinner earlier to hit your calorie target"],"nextStep":"Complete tomorrow's routine before 9am"}`;
     const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`, {
       method:'POST', headers:{'Content-Type':'application/json', 'x-goog-api-key': key},
       body: JSON.stringify({ contents:[{ parts:[{ text:prompt }] }] })
@@ -9198,8 +10456,11 @@ document.getElementById('runCoachBtn').addEventListener('click', async ()=>{
       throw new Error('Gemini returned no result — try again in a moment.');
     }
     const txt = data.candidates[0].content.parts[0].text.replace(/```json|```/g,'').trim();
-    const insights = JSON.parse(txt);
-    S.aiCoach.lastInsights = Array.isArray(insights) ? insights : [String(insights)];
+    const parsed = JSON.parse(txt);
+    // Accept either the new object shape or (if the model ever replies
+    // with a flat array despite the prompt) the old shape — never crash
+    // on an unexpected-but-parseable response.
+    S.aiCoach.lastInsights = parsed;
     S.aiCoach.lastRun = new Date().toISOString();
     saveState();
     renderCoach();

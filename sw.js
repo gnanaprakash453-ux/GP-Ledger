@@ -136,40 +136,18 @@
 // vs the actual qa.ic/qa.lbl). See APP_VERSION comment in index.html.
 // index.html changed, so bump so installed copies actually receive this
 // instead of serving a cached v14.0.1.
-// v14.1.0: visual + intelligence pass — physical-diary Journal (paper
-// texture, decorations, page-turn animation, matching Print/PDF export
-// styling), physical-notebook Notepad, journey-type Trip Planner styling
-// (Flight/Train/Road trip), and a Diet↔Habits↔Home food-category
-// connection (meal auto-categorization, a Home "Food Insights" card, and
-// real this-week-vs-last-week comparisons on diet-related habits instead
-// of a plain checkmark). See the APP_VERSION comment block in index.html
-// for full detail. index.html changed, so bump so installed copies
-// actually receive all of this instead of serving a cached v14.0.2.
-// v14.2.0: extends the v14.1.0 visual pass to Finance (ledger paper),
-// Routine (day-planner sheet), Goals (milestone trail), Subscriptions
-// (membership-card wallet), Documents (folder tabs), Health (clipboard),
-// plus a universal lightweight screen-transition and a "Save & Sync" →
-// "Sync" label rename. See the APP_VERSION comment block in index.html
-// for full detail. index.html changed, so bump so installed copies
-// actually receive all of this instead of serving a cached v14.1.0.
-// v14.2.1: bugfix — the v14.2.0 screen-transition was visibly flickering
-// (stale content faded in, then got swapped mid-animation by the render
-// call). Animation now triggers after render instead of before. See
-// APP_VERSION comment in index.html. index.html changed, so bump so
-// installed copies actually receive this instead of serving a cached
-// v14.2.0.
-// v14.2.2: Habit↔Diet insight now scoped to the day being viewed (not a
-// week-wide number under a single day's row), and the Finance ledger
-// styling had its red margin rule removed + background lightened. See
-// APP_VERSION comment in index.html. index.html changed, so bump so
-// installed copies actually receive this instead of serving a cached
-// v14.2.1.
-// v14.2.3: the universal screen-transition (added v14.2.0, retimed
-// v14.2.1) is removed — still reported as flickery/odd afterward, so
-// screen switches are instant again. See APP_VERSION comment in
-// index.html. index.html changed, so bump so installed copies actually
-// receive this instead of serving a cached v14.2.2.
-const CACHE_NAME = 'gp-ledger-v14-2-3';
+// v14.1.0: thematic module redesigns (Journal/Notes/Trip Planner/Finance
+// log/Tasks/Subscriptions/Debts), a Global Clock redesign (relocated to
+// a compact header chip per feedback), and Diet↔Habit↔Home integration
+// (auto food categorization, linked-habit food insights, Home "Eating
+// Patterns" card). See the APP_VERSION comment block in index.html for
+// full detail. index.html changed, so bump so installed copies actually
+// receive all of this instead of serving a cached v14.0.2.
+// v14.2.0: closes out the full "GP Hub UI/AI/Module Integration" spec —
+// see the APP_VERSION comment block in index.html for the complete
+// summary. index.html changed, so bump so installed copies actually
+// receive all of this instead of serving a cached v14.1.0.
+const CACHE_NAME = 'gp-ledger-v14-2-0';
 const IMG_CACHE_NAME = 'gp-ledger-images-v1';
 const CORE_ASSETS = [
   './index.html',

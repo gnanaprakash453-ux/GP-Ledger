@@ -1,187 +1,81 @@
-# Changelog — v14.2.3 (universal screen-transition removed) → history below
-
-## v14.2.3
-
-**Removed the universal screen-transition.** It was retimed in v14.2.1 to
-fix a stale-content-swap flicker, but was still reported as flickery/odd
-during normal navigation and scrolling afterward. Most likely cause:
-motivation-card photos (from picsum.photos) load asynchronously and can
-pop in after the fade-in has already finished, plus general repaint cost
-on lower-end hardware — neither of which retiming alone can fix.
-
-Rather than keep iterating blind on a purely cosmetic feature, screen
-switches go back to instant, exactly like before v14.2.0. This is a pure
-subtraction — no other v14.2.x visual or functional change (ledger
-styling, Habit↔Diet day-scoping, Routine/Goals/Subscriptions/Documents/
-Health treatments) is affected.
-
-The Journal's own page-turn effect when you switch dates or entries is
-untouched — it's a self-contained animation on one inner element within
-the Journal screen only, not an app-wide transition, and hasn't been
-reported as an issue.
-
-index.html and sw.js changed (CACHE_NAME bumped to `gp-ledger-v14-2-3`)
-so installed copies actually receive this instead of serving a cached
-v14.2.2.
-
-## v14.2.2
-
-Two fixes from feedback.
-
-**Habit↔Diet insight now scoped to the actual day viewed.** The line
-under a diet-related habit ("Vegetables: 3× this week…") was always
-computed as this-week-vs-last-week, regardless of which day was open on
-the Habit screen's date strip. Viewing a single day's habit row but
-seeing a week-wide number was misleading. It now shows that exact day's
-count compared to the day before it — e.g. "Vegetables: 2× today (day
-before: 1×) · Improving ↑" — on both the compact line under the habit
-row and the fuller line in the Habit detail modal. The Home Dashboard's
-Food Insights card is unaffected and still shows weekly trends, which is
-the right scope for a whole-week overview.
-
-**Finance ledger styling toned down.** Removed the red vertical margin
-rule (didn't read as intended, just looked like a stray line) and
-lightened the parchment-green background tint (was mixing in 10%/4% of
-the accent color, now 5%/2%) so the ledger sheet reads as a subtle paper
-tone rather than a visibly darker/greener card.
-
-index.html and sw.js changed (CACHE_NAME bumped to `gp-ledger-v14-2-2`)
-so installed copies actually receive this instead of serving a cached
-v14.2.1.
-
-## v14.2.1
-
-**Bugfix.** The screen-transition animation added in v14.2.0 was visibly
-flickering on navigation.
-
-Root cause: `goToScreen()` triggered the fade-in animation right after
-marking the new screen active, but *before* calling that screen's render
-function. So the animation started by fading in whatever stale content
-the screen still had from its last visit — then, partway through that
-fade, the render call swapped in the real content all at once. An
-instant content-swap happening in the middle of a smooth fade is what
-read as a flicker.
-
-Fix: moved the animation trigger to after the render dispatch, so the
-fresh content is already in the DOM before anything starts fading.
-Same visual effect (the settle-in), just playing over the real screen
-instead of a stale placeholder that gets yanked out from under it partway
-through.
-
-index.html and sw.js changed (CACHE_NAME bumped to `gp-ledger-v14-2-1`)
-so installed copies actually receive this instead of serving a cached
-v14.2.0.
-
-## v14.2.0
-
-Extends v14.1.0's visual pass to more modules — each treatment fitted to
-what that module actually represents, not a generic reskin — plus a
-global navigation polish and one label rename. No architecture change,
-same as v14.1.0.
-
-**Universal screen transition.** Every screen switch now plays a small,
-one-shot "page settle" (fade + slight rise, ~280ms). Deliberately kept to
-opacity/translateY on a class that's added and removed per-navigation —
-not a permanent transform — because v13.17.0 already root-caused a real
-black-screen bug from too many resident GPU-composited layers; this
-learns that lesson rather than repeating it, and is skipped entirely
-under `prefers-reduced-motion`. The literal paper-flip animation stays a
-Journal-only treatment, since Journal is the one module that's actually a
-diary — everywhere else gets this lighter, universal settle instead.
-
-**Finance → ledger book.** The transaction list (both the summary preview
-and the full log) now sits on a ledger-paper sheet: faint green ruling, a
-red margin rule, and red/green ink for out/in amounts — the most natural
-place for a literal ledger look, since this app is named GP Ledger.
-
-**Routine → day planner.** The Now/Upcoming/Completed block list sits on
-an agenda sheet with faint ruling and a date letterhead ("Thursday,
-August 20" style) at the top, echoing a daily planner page.
-
-**Goals → milestone trail.** A small SVG trail (checkpoint dots at 25/
-50/75/100%, a marker at the goal's actual progress, a flag/trophy at the
-end) now sits alongside the existing progress bar and percentage — not
-replacing them. It reads the exact same `pct` the bar already computes,
-so the two can never disagree.
-
-**Subscriptions → membership-card wallet.** Each recurring bill now
-renders as a colored membership/wallet card instead of a plain list row —
-a fixed color+icon per common category (Entertainment, Music, Utilities,
-Insurance, Fitness, Cloud, Software, Recharge, News), and a stable
-hash-based fallback gradient for any custom category, so the same
-category always gets the same card color without needing a color picker
-in the Add/Edit form.
-
-**Documents → manila folder.** Each document card now has a small folder
-tab above it labeled with its category, echoing a folder in a filing
-cabinet.
-
-**Health → clipboard.** The Today's Vitals card gained a clipboard-clip
-graphic and a heartbeat-dashed rule under its header.
-
-**Renamed "Save & Sync" → "Sync"** in the header button, its tooltip, and
-the matching confirm-dialog wording. Label only — it still writes to the
-Google Sheet exactly as before, same trigger, same behavior.
-
-index.html and sw.js changed (CACHE_NAME bumped to `gp-ledger-v14-2-0`)
-so installed copies actually receive this instead of serving a cached
-v14.1.0. apps-script.gs is unchanged — nothing here touches the sync
-payload shape.
+# Changelog — v14.1.0 (thematic module redesigns, Global Clock relocation, Diet↔Habit↔Home integration) → history below
 
 ## v14.1.0
 
-Visual + intelligence pass. Same modules, same navigation, same
-architecture — nothing rebuilt — richer presentation on three modules and
-one new cross-module connection using data that already existed.
+Three feature batches:
 
-**1. Journal → physical diary.** The Journal page now sits inside a
-theme-adaptive parchment "diary shell": faint paper grain, ink-sketch
-botanical corner flourishes, ruled writing lines behind the text, and a
-page-turn flip animation every time you switch date or entry. Print and
-both PDF exports (single entry and "Export whole diary") now carry the
-same diary look — parchment background, ruled lines, a page-number
-footer — via a shared `drawDiaryPageFrame()` helper, so what you export
-matches what you see. Typed content, saving, and the entries-per-day
-architecture are all unchanged.
+### Thematic visual redesigns
+Applied per-module only where a genuine metaphor fit — utility screens
+(Settings, Search, AI Coach, Reports/Trends) were deliberately left
+alone, since decoration there would hurt scanability rather than help it.
 
-**2. Notepad → physical notebook.** Notes now render on a distinct
-notebook-style card — ruled lines, a spiral-binding dot column, a red
-margin rule — deliberately cooler and different from the Journal's warm
-parchment so the two don't read as the same reskinned card. Same for the
-note editor's textarea. No change to note data, categories, pin/archive.
+- **Journal → diary**: warm parchment page, faint ruled lines, a
+  notebook-style red margin rule, a wax-seal ribbon tab, italic serif
+  date heading, and two new handwriting/serif font options (Caveat,
+  Lora). Fixed a real bug along the way: the old default text colour
+  (`#eef1f7`, tuned for a dark background) would've been invisible on
+  the new light paper — added a luminance-based ink fallback so no
+  existing entry goes blank. Print, single-entry PDF, and "Export whole
+  diary" all now render the same decorated parchment/border/ruled page
+  (vector-drawn in jsPDF — no image assets, works offline). Word export
+  gets a toned-down version since Word's HTML-to-.doc converter doesn't
+  support gradients.
+- **Notes → notebook**: ring-binder holes down the left edge, a
+  coloured tab per category, faint blue ruled paper texture — carried
+  into the note editor's textarea too.
+- **Trip Planner → boarding pass**: a new transport-mode field
+  (✈️ Flight / 🚆 Train / 🚗 Road trip / 🚌 Bus / 🚢 Ship), a mode-coloured
+  ticket stub, dashed perforation with rivet-style notches, a decorative
+  barcode strip, and a From→To route line.
+- **Finance's full transaction log → paper receipt**: torn zigzag top/
+  bottom edges, monospace amounts. Fixed a matching contrast bug — the
+  date span's inline `--sub` colour (tuned for dark theme) was close to
+  unreadable on the receipt's light paper.
+- **Tasks**: a restrained sticky-note corner-fold coloured by priority —
+  kept intentionally light-touch since this is a high-frequency,
+  scan-fast checklist, not a browsing screen.
+- **Subscriptions → membership/credit cards**: a gradient hashed
+  deterministically from each service's name, so "Netflix" is always the
+  same colour every time.
+- **Debts → loan document**: a dashed "official" border, and a rotated
+  red "PAID OFF" ink-stamp the moment a loan's balance actually reaches
+  ₹0 (not just "this month's EMI paid").
 
-**3. Trip Planner → journey-type styling.** Trips gained one new optional
-field, "Mostly getting there by" (Flight / Train / Road trip / Other).
-It drives a themed header + list card: a dashed boarding-pass border and
-✈ mark for flights, a ticket-orange 🚆 treatment for trains, a road-map
-green 🛣️ treatment for road trips. Everything else about Trip Planner —
-itinerary, bookings, checklist, linked expenses — is untouched.
+### Global Clock — redesigned, then relocated
+Initially rebuilt as a large reference-image-inspired card (dark face,
+glowing green ring, bold `HH:MM:SS AM/PM`) on Home. Per feedback that
+this was too intrusive, it was moved into the header as a compact styled
+chip instead — same dark/green visual language, same Settings → Clock
+controls (on/off, Analog / Digital / Analog+Digital), just living
+permanently in the header rather than a dedicated Home card. The Home
+card and all its supporting code were fully removed, not just hidden.
 
-**4. Diet ↔ Habits ↔ Home connection.** `classifyFoodCategories()` tags
-every logged meal (manually logged or marked "eaten" from Meal Planner)
-into one or more of Healthy / Junk / Processed / Protein-rich / Fruits /
-Vegetables / Sugary / Other, from the meal name plus a macro fallback for
-photo-analyzed meals — a chicken salad lands in Healthy + Protein-rich +
-Vegetables, not just one bucket. Meal cards in Diet now show these as
-chips. Home Dashboard has a new **Food Insights** card: simple weekly
-bars per category, the most common category this week, and which
-categories are rising or easing off vs last week. Habits whose own
-wording names a food category ("Avoid Junk Food", "Eat More Vegetables")
-now show a real comparison instead of a plain checkmark — e.g. "Junk
-Food: 3× this week (was 5×) · Improving ↓" — both as a compact line on
-the Habit row and a fuller one in the Habit detail modal. All three
-(chips, Food Insights, Habit comparisons) read the same
-`foodCategoryCounts()` aggregation over `S.diet.meals`, so they can never
-disagree with each other, and nothing here is a new module or a new
-storage system — it's one classifier function plus three read-only views
-on data that was already being logged.
+### Diet ↔ Habit ↔ Home integration
+- Meals are now **auto-categorized** — Healthy, Junk, Processed,
+  Protein-rich, Fruits, Vegetables, Sugary, or Other — via local keyword
+  matching on the meal name. Instant, works offline, no AI dependency
+  for something that doesn't need one. A meal can match more than one
+  category (e.g. "fried chicken" → Protein-rich + Junk).
+- Each meal row in Diet shows its category chips with a **"✎ edit"**
+  affordance — tapping opens a small multi-select to manually correct a
+  mis-detected category. A manual correction always takes priority over
+  auto-detection from then on.
+- Habits can optionally **link to a food category** plus a goal
+  direction (avoid it / eat more of it). The habit detail view then
+  compares the habit against actual logged meals: *"Junk Food: 3× this
+  week, was 5× last week, Progress: Improving ↓"* — instead of only the
+  daily checkmark.
+- Home gets a new **🍎 Eating Patterns** card: a healthy-vs-junk split
+  bar, the most frequent categories this week with week-over-week trend
+  arrows, and any linked-habit insights. Only appears once there's real
+  logged data — never a fabricated empty placeholder.
+- Fully additive: existing meal and habit data/functionality is
+  unchanged for anyone who doesn't use the new linking field or the
+  category editor.
 
 index.html and sw.js changed (CACHE_NAME bumped to `gp-ledger-v14-1-0`)
-so installed copies actually receive this instead of serving a cached
-v14.0.2. apps-script.gs is unchanged — no sync payload shape changed
-(the new `categories` array on a meal and `tripType` on a trip both ride
-along automatically the same way every field has since v13.2.0, since the
-backend stores whatever object the client sends).
+so installed copies actually receive all of the above instead of serving
+a cached v14.0.2.
 
 ## v14.0.2
 

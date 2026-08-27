@@ -2463,7 +2463,26 @@ function wireAiSuggestButton(btnId, panelId, onGo){
   });
 }
 
-const APP_VERSION = 'v14.4.0'; // single source of truth for About screen & Settings row
+const APP_VERSION = 'v14.4.1'; // single source of truth for About screen & Settings row
+// v14.4.1 — three targeted fixes:
+// (1) Black screen on open: init() ran as one unguarded sequence, so a
+//     single uncaught exception anywhere in it (a bad saved setting, a
+//     corrupt cached image URL, etc.) aborted the rest of init() — and
+//     since <main> stays hidden until #app gets the .ready class, an
+//     abort before that line was reached showed up as a permanent black
+//     screen with no recovery short of clearing site data. Every step in
+//     init() is now individually try/caught, so one broken piece degrades
+//     gracefully instead of taking the whole app down, and #app.ready
+//     reliably gets added regardless.
+// (2) Bottom nav blocking the keyboard while typing: the kb-open
+//     listeners (which hide the fixed bottom nav/FAB while a field is
+//     focused) used to be set up at the very END of init(), so the same
+//     abort described above could also mean they were never attached for
+//     that session — leaving the nav stuck on screen over the keyboard.
+//     They now live in their own setupKeyboardHandling() function, called
+//     first, before anything in init() that could realistically throw.
+// (3) Journal: new entries now default to whichever font you used last
+//     (remembered in Settings) instead of always starting on Caveat.
 // v14.4.0 — targeted fixes across 5 areas, nothing else touched:
 // (1) Global Clock: added a Size setting (Small/Medium/Large); fixed a
 //     real glitch where the clock briefly jumped position on app open —
@@ -7045,10 +7064,15 @@ function renderJournal(){
   document.getElementById('journalDecoDate').textContent = dDate.toLocaleDateString(undefined,{weekday:'long', month:'long', day:'numeric', year:'numeric'});
   const list = journalEntries(journalDate);
   const editing = journalEditingId ? list.find(e=>e.id===journalEditingId) : null;
+  // v14.4.1 — new entries now default to the font you last picked
+  // (S.settings.journalDefaultFont, set in saveJournalEntry()) instead of
+  // always hardcoding 'Caveat'. Editing an existing entry is unaffected —
+  // it still shows whatever font that entry was actually saved with.
+  const defaultJournalFont = S.settings.journalDefaultFont || 'Caveat';
   document.getElementById('journalText').value = editing ? editing.text : '';
-  document.getElementById('journalFont').value = editing?.font || 'Caveat';
+  document.getElementById('journalFont').value = editing?.font || defaultJournalFont;
   document.getElementById('journalColor').value = editing?.color || '#3b2f2a';
-  document.getElementById('journalText').style.fontFamily = journalFontStack(editing?.font||'Caveat');
+  document.getElementById('journalText').style.fontFamily = journalFontStack(editing?.font || defaultJournalFont);
   document.getElementById('journalText').style.color = journalInkColor(editing?.color || '#3b2f2a');
   document.getElementById('journalSaveBtn').textContent = editing ? 'Save changes' : 'Save entry';
   document.getElementById('journalNewEntryBtn').style.display = editing ? 'inline-block' : 'none';
@@ -7088,6 +7112,9 @@ function saveJournalEntry(){
   const text = document.getElementById('journalText').value;
   if(!text.trim()){ showToast('Nothing to save', '📔'); return; }
   const font = document.getElementById('journalFont').value, color = document.getElementById('journalColor').value;
+  // v14.4.1 — remember whatever font was used on this save as the default
+  // for the next NEW entry (see renderJournal()'s defaultJournalFont).
+  S.settings.journalDefaultFont = font;
   const list = journalEntries(journalDate);
   if(journalEditingId){
     const e = list.find(x=>x.id===journalEditingId);
@@ -8584,7 +8611,12 @@ document.getElementById('clockStyle').addEventListener('change', (e)=>{
   S.settings.clockStyle = e.target.value; saveState(); renderHeaderClock();
 });
 // v14.4.0 — clock size control
-document.getElementById('clockSize').addEventListener('change', (e)=>{
+// v14.4.1 — guarded like the other two listeners just above; this one was
+// missing the null-check, so if #clockSize was ever absent from the DOM at
+// script-parse time this would throw at the top level and silently abort
+// everything after it on the page (a contributing risk to the "black
+// screen on open" reports, since scripts run top-to-bottom).
+document.getElementById('clockSize')?.addEventListener('change', (e)=>{
   S.settings.clockSize = e.target.value; saveState(); renderHeaderClock();
 });
 /* v14.0.0 — Home Quick Actions customization (spec §9.2) */
@@ -9285,93 +9317,20 @@ function renderAll(){
   renderQuote(); renderHabits(); renderFinance(); renderBudgets(); renderTrends(); renderReports(); renderRoutine(); renderDebts(); renderJournal(); renderDiet();
   renderDashboard(); loadSettingsForm(); updateGreeting(); renderBottomNav(); renderMoreCards(); updateBackFab();
 }
-function init(){
-  try{ history.replaceState({ screen:'dashboard' }, '', '#dashboard'); }catch(e){}
-  loadState();
-  // v14.4.0 — fixes the header clock "jumping position on open" glitch:
-  // renderHeaderClock() first ran at top-level script parse time, before
-  // loadState() had loaded the real S.settings (clockStyle/clockEnabled/
-  // clockSize) — so it painted once with defaults, then ~1s later the
-  // setInterval tick re-rendered with the actual saved settings, and if
-  // those differed (e.g. Analog or Both style, which is wider than plain
-  // Digital text) the chip's width changed, visibly shoving the rest of
-  // the header row sideways. Re-rendering immediately here, right after
-  // the real settings are loaded, means the correct size/style paints on
-  // the very first frame instead of a beat later.
-  renderHeaderClock();
-  applyTheme();
-  applyExperiencePack(S.settings.experiencePack || 'glass', {skipBg:true});
-  // v12.2 — kick photo fetches off immediately, before the first render,
-  // instead of deferring to after it. Every render path now has a graceful
-  // instant fallback (see setPhotoCardBg) so there's no perf reason to wait,
-  // and starting the network requests this early gives them the best
-  // possible head start on being warm by the time each screen is opened.
-  preloadTodaysImages();
-  const needsOnboarding = !S.settings.name;
-  // v12.4 — resolve which screen to land on BEFORE the app is revealed
-  // (main is hidden via #app:not(.ready) main until then — see the CSS
-  // comment above), instead of showing Dashboard and then swapping to the
-  // restored screen a beat later. That swap was the actual "random screen"
-  // flash — this makes the correct screen the very first thing shown.
-  let restoreScreen = 'dashboard';
-  try{
-    const saved = localStorage.getItem('gpl_lastScreen');
-    if(saved && document.getElementById('screen-'+saved) && saved!=='settings') restoreScreen = saved;
-  }catch(e){}
-  if(!needsOnboarding && restoreScreen!=='dashboard'){
-    // v12.4 — push (not replace) so Dashboard stays one Back-press behind
-    // the restored screen. Using replaceState here (as before) left only a
-    // single history entry — pressing Back on a freshly-opened, restored
-    // screen had nothing in-app to go back TO, so it fell through to
-    // whatever was in the tab's history before the app (or exited the PWA
-    // outright), which is what showed up as an empty screen on Back.
-    try{ history.pushState({ screen:restoreScreen }, '', '#'+restoreScreen); }catch(e){}
-    goToScreen(restoreScreen, { fromPopstate:true });
-  }
-  if(needsOnboarding){
-    document.getElementById('onboarding').style.display='flex';
-    document.getElementById('onbStart').onclick = ()=>{
-      S.settings.name = document.getElementById('onbName').value.trim() || 'there';
-      saveState(); document.getElementById('onboarding').style.display='none';
-      document.getElementById('app').classList.add('ready'); // v12.3 — nav/FAB/main only appear once onboarding is actually done
-      renderAll();
-    };
-  } else {
-    document.getElementById('app').classList.add('ready'); // v12.3 — no onboarding needed, app is ready immediately
-  }
-  renderAll();
-  scheduleBackgroundRotation();
-  scheduleQuoteRotation();
-  setupPullBounce();
-  if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(()=>{}); }
-  if('Notification' in window && Notification.permission==='default'){ Notification.requestPermission().catch(()=>{}); }
-  // in-app 15s reminder check — pops a modal + browser notification while the app is open.
-  // Background delivery when the app is closed happens server-side via Apps Script + Telegram.
-  setInterval(checkLocalReminders, 15000);
-  /* v9.5: keep the daily quote (and anything else date-keyed) correct if the
-     app is simply left open across midnight, instead of only refreshing on
-     next launch. */
-  setInterval(()=>{
-    const d = todayStr();
-    if(d !== __lastKnownDate){
-      __lastKnownDate = d;
-      // v12.6 — guarantee at least one quote change per day whenever
-      // auto-rotate is on, even if the interval picked is longer than a
-      // day (e.g. someone sets a custom 2-day interval but still expects
-      // "today's quote" to feel fresh each morning).
-      if(S.settings.quoteAuto){ advanceQuote(); advanceAllModuleQuotes(); }
-      saveState();
-      renderQuote(); renderDateStrip(); renderDashboard();
-    }
-  }, 30000);
-  /* v9.5: mobile keyboard covers inline inputs (e.g. habit custom-amount) —
-     scroll the focused field into view once the keyboard has room to animate in. */
-  /* v10.0.1: the font-size/scrollIntoView fix above wasn't enough for iOS
-     installed-app (standalone) mode specifically — see the "iOS installed-PWA
-     keyboard fix" CSS block for why. setVH() keeps #app's real height synced
-     to the actual visible area (visualViewport), and kb-open hides the fixed
-     bottom nav/FAB while typing so they can't strand themselves over the
-     keyboard and steal touches meant for the input. */
+/* v14.4.1 — pulled out of init() and given its own top-level function so
+   it ALWAYS runs, no matter what happens elsewhere in init(). Previously
+   this whole block (setVH + the focusin/focusout listeners that add/remove
+   'kb-open', which is what hides the fixed bottom nav/FAB while typing —
+   see the CSS) sat at the very END of init(), after loadState(),
+   preloadTodaysImages(), renderAll(), scheduleBackgroundRotation(), etc.
+   Since none of those were guarded, a single uncaught exception in ANY of
+   them aborted the rest of init() outright — which meant the keyboard
+   listeners below were simply never attached for that entire session, and
+   the bottom nav could never hide itself while typing, exactly as
+   reported ("stays on screen and blocks the keyboard"). Calling this
+   first, before any of the steps that could realistically throw, means
+   the keyboard behavior no longer depends on the rest of init() succeeding. */
+function setupKeyboardHandling(){
   function setVH(){
     const vv = window.visualViewport;
     const h = vv ? vv.height : window.innerHeight;
@@ -9402,6 +9361,103 @@ function init(){
       }, 120);
     }
   });
+}
+function init(){
+  // v14.4.1 — always attach the keyboard/kb-open handling first (see the
+  // comment on setupKeyboardHandling above), before any step below that
+  // could throw and abort the rest of init().
+  try{ setupKeyboardHandling(); }catch(err){ console.error('setupKeyboardHandling failed', err); }
+  try{ history.replaceState({ screen:'dashboard' }, '', '#dashboard'); }catch(e){}
+  // v14.4.1 — every step from here down that touches saved/derived data is
+  // now individually try/caught. Before this, one uncaught exception
+  // anywhere in this function (a bad saved setting, a corrupt cached image
+  // URL, a broken render path, etc.) aborted init() entirely — and since
+  // <main> stays `visibility:hidden` until #app gets the .ready class (see
+  // the CSS comment above that rule), an abort before .ready was ever
+  // added showed up as exactly what was reported: a black screen right
+  // when the app opens, with no recovery short of clearing site data.
+  // Isolating each step means one broken piece degrades gracefully — and
+  // most importantly, #app.ready reliably gets added regardless — instead
+  // of taking down the whole app.
+  try{ loadState(); }catch(err){ console.error('loadState failed', err); }
+  // v14.4.0 — fixes the header clock "jumping position on open" glitch:
+  // renderHeaderClock() first ran at top-level script parse time, before
+  // loadState() had loaded the real S.settings (clockStyle/clockEnabled/
+  // clockSize) — so it painted once with defaults, then ~1s later the
+  // setInterval tick re-rendered with the actual saved settings, and if
+  // those differed (e.g. Analog or Both style, which is wider than plain
+  // Digital text) the chip's width changed, visibly shoving the rest of
+  // the header row sideways. Re-rendering immediately here, right after
+  // the real settings are loaded, means the correct size/style paints on
+  // the very first frame instead of a beat later.
+  try{ renderHeaderClock(); }catch(err){ console.error('renderHeaderClock failed', err); }
+  try{ applyTheme(); }catch(err){ console.error('applyTheme failed', err); }
+  try{ applyExperiencePack(S.settings.experiencePack || 'glass', {skipBg:true}); }catch(err){ console.error('applyExperiencePack failed', err); }
+  // v12.2 — kick photo fetches off immediately, before the first render,
+  // instead of deferring to after it. Every render path now has a graceful
+  // instant fallback (see setPhotoCardBg) so there's no perf reason to wait,
+  // and starting the network requests this early gives them the best
+  // possible head start on being warm by the time each screen is opened.
+  try{ preloadTodaysImages(); }catch(err){ console.error('preloadTodaysImages failed', err); }
+  const needsOnboarding = !S.settings.name;
+  // v12.4 — resolve which screen to land on BEFORE the app is revealed
+  // (main is hidden via #app:not(.ready) main until then — see the CSS
+  // comment above), instead of showing Dashboard and then swapping to the
+  // restored screen a beat later. That swap was the actual "random screen"
+  // flash — this makes the correct screen the very first thing shown.
+  let restoreScreen = 'dashboard';
+  try{
+    const saved = localStorage.getItem('gpl_lastScreen');
+    if(saved && document.getElementById('screen-'+saved) && saved!=='settings') restoreScreen = saved;
+  }catch(e){}
+  try{
+    if(!needsOnboarding && restoreScreen!=='dashboard'){
+      // v12.4 — push (not replace) so Dashboard stays one Back-press behind
+      // the restored screen. Using replaceState here (as before) left only a
+      // single history entry — pressing Back on a freshly-opened, restored
+      // screen had nothing in-app to go back TO, so it fell through to
+      // whatever was in the tab's history before the app (or exited the PWA
+      // outright), which is what showed up as an empty screen on Back.
+      try{ history.pushState({ screen:restoreScreen }, '', '#'+restoreScreen); }catch(e){}
+      goToScreen(restoreScreen, { fromPopstate:true });
+    }
+  }catch(err){ console.error('restore screen failed', err); }
+  if(needsOnboarding){
+    document.getElementById('onboarding').style.display='flex';
+    document.getElementById('onbStart').onclick = ()=>{
+      S.settings.name = document.getElementById('onbName').value.trim() || 'there';
+      saveState(); document.getElementById('onboarding').style.display='none';
+      document.getElementById('app').classList.add('ready'); // v12.3 — nav/FAB/main only appear once onboarding is actually done
+      try{ renderAll(); }catch(err){ console.error('renderAll failed', err); }
+    };
+  } else {
+    document.getElementById('app').classList.add('ready'); // v12.3 — no onboarding needed, app is ready immediately
+  }
+  try{ renderAll(); }catch(err){ console.error('renderAll failed', err); }
+  try{ scheduleBackgroundRotation(); }catch(err){ console.error('scheduleBackgroundRotation failed', err); }
+  try{ scheduleQuoteRotation(); }catch(err){ console.error('scheduleQuoteRotation failed', err); }
+  try{ setupPullBounce(); }catch(err){ console.error('setupPullBounce failed', err); }
+  if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(()=>{}); }
+  if('Notification' in window && Notification.permission==='default'){ Notification.requestPermission().catch(()=>{}); }
+  // in-app 15s reminder check — pops a modal + browser notification while the app is open.
+  // Background delivery when the app is closed happens server-side via Apps Script + Telegram.
+  setInterval(checkLocalReminders, 15000);
+  /* v9.5: keep the daily quote (and anything else date-keyed) correct if the
+     app is simply left open across midnight, instead of only refreshing on
+     next launch. */
+  setInterval(()=>{
+    const d = todayStr();
+    if(d !== __lastKnownDate){
+      __lastKnownDate = d;
+      // v12.6 — guarantee at least one quote change per day whenever
+      // auto-rotate is on, even if the interval picked is longer than a
+      // day (e.g. someone sets a custom 2-day interval but still expects
+      // "today's quote" to feel fresh each morning).
+      if(S.settings.quoteAuto){ advanceQuote(); advanceAllModuleQuotes(); }
+      saveState();
+      renderQuote(); renderDateStrip(); renderDashboard();
+    }
+  }, 30000);
 }
 let __lastKnownDate = todayStr();
 /* v12.9 — reminder alert tones, generalized to every module that can

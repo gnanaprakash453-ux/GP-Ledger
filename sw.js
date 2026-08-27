@@ -1,4 +1,4 @@
-// GP Ledger service worker — v13.19.0
+// GP Ledger service worker — v14.4.1
 // Bumping CACHE_NAME forces old caches to be dropped on next install,
 // so a re-deploy (e.g. after this update) actually reaches phones.
 // v13.0.0: new app icon set (all 4 files replaced) — bumping the cache
@@ -167,7 +167,22 @@
 // index.html for full detail. index.html changed, so bump so installed
 // copies actually receive all of this instead of serving a cached
 // v14.3.0.
-const CACHE_NAME = 'gp-ledger-v14-4-0';
+// v14.4.1: three targeted fixes — (1) black screen on app open, root
+// cause was init() running as one unguarded sequence where a single
+// uncaught exception anywhere in it aborted everything before #app ever
+// got its .ready class, which is what reveals <main>; every step in
+// init() is now individually try/caught so it always finishes and .ready
+// always gets added; (2) the fixed bottom nav sometimes stayed on screen
+// and blocked the keyboard while typing — its show/hide listeners used to
+// sit at the very end of init(), so the same kind of abort described
+// above could leave them never attached for a whole session; they now
+// live in their own setupKeyboardHandling() function that always runs
+// first; (3) Journal now remembers the font you last used and defaults
+// new entries to it instead of always starting on Caveat. See the
+// APP_VERSION comment block in index.html for full detail. index.html
+// changed, so bump so installed copies actually receive all of this
+// instead of serving a cached v14.4.0.
+const CACHE_NAME = 'gp-ledger-v14-4-1';
 const IMG_CACHE_NAME = 'gp-ledger-images-v1';
 const CORE_ASSETS = [
   './index.html',

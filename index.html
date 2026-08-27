@@ -2463,7 +2463,14 @@ function wireAiSuggestButton(btnId, panelId, onGo){
   });
 }
 
-const APP_VERSION = 'v14.4.1'; // single source of truth for About screen & Settings row
+const APP_VERSION = 'v14.4.2'; // single source of truth for About screen & Settings row
+// v14.4.2 — Meal Planner: found the actual cause of meal names being cut
+// off ("Peanut but…", "Fish curry …") — each input carried a leftover
+// inline style="flex:1;" that outranked the .mp-slot CSS rule meant to
+// give it its own full-width row, so it was still squeezed onto the same
+// row as the ✨/✕/Eaten buttons and left with only a sliver of width.
+// Removed the inline override; the input now wraps onto its own full-width
+// line as the v14.4.0 layout redesign intended.
 // v14.4.1 — three targeted fixes:
 // (1) Black screen on open: init() ran as one unguarded sequence, so a
 //     single uncaught exception anywhere in it (a bad saved setting, a
@@ -11464,7 +11471,7 @@ function renderMealPlanner(){
         return `
         <div class="mp-slot" style="border-left:3px solid ${style.color};">
           <span class="mp-slot-emoji" title="${label}">${style.emoji}</span>
-          <input type="text" data-mpdate="${ds}" data-mpslot="${key}" value="${(day[key]||'').replace(/"/g,'&quot;')}" placeholder="${label}…" style="flex:1;">
+          <input type="text" data-mpdate="${ds}" data-mpslot="${key}" value="${(day[key]||'').replace(/"/g,'&quot;')}" placeholder="${label}…">
           <div class="mp-slot-actions">
             <button class="mp-icon-btn" data-mpai="${ds}:${key}" title="AI suggest">✨</button>
             ${hasText?`<button class="mp-icon-btn" data-mpclear="${ds}:${key}" title="Clear">✕</button>`:''}

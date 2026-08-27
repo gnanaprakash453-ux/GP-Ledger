@@ -182,7 +182,13 @@
 // APP_VERSION comment block in index.html for full detail. index.html
 // changed, so bump so installed copies actually receive all of this
 // instead of serving a cached v14.4.0.
-const CACHE_NAME = 'gp-ledger-v14-4-1';
+// v14.4.2: Meal Planner input fix — a leftover inline style="flex:1;" on
+// each meal input was overriding the .mp-slot CSS rule meant to give it
+// its own full-width row, squeezing it down to a sliver next to the
+// ✨/✕/Eaten buttons and truncating meal names ("Peanut but…"). Removed.
+// index.html changed, so bump so installed copies actually receive this
+// instead of serving a cached v14.4.1.
+const CACHE_NAME = 'gp-ledger-v14-4-2';
 const IMG_CACHE_NAME = 'gp-ledger-images-v1';
 const CORE_ASSETS = [
   './index.html',

@@ -147,7 +147,27 @@
 // see the APP_VERSION comment block in index.html for the complete
 // summary. index.html changed, so bump so installed copies actually
 // receive all of this instead of serving a cached v14.1.0.
-const CACHE_NAME = 'gp-ledger-v14-2-0';
+// v14.3.0: premium Journal customization — 3 artwork styles (Quill & Ink,
+// Stipple Tree, and Botanical & Skyline — a full page-framing border of
+// original branch/vine/skyline line art), all 6 spec'd page-transition
+// modes via a new "🎨 Customize diary" modal, the Default Font dropdown
+// renamed to 5 named categories with corrected per-font fallbacks, and a
+// real grain/fibre paper texture on both the diary page and notebook
+// editor. See the APP_VERSION comment block in index.html for full
+// detail. index.html changed, so bump so installed copies actually
+// receive all of this instead of serving a cached v14.2.0.
+// v14.4.0: targeted fixes — Clock size setting + position-jump-on-open
+// glitch fixed; Meal Planner's real "tomorrow always empty" bug fixed
+// (Auto-fill was filling a stale, invisible week) plus real per-slot AI
+// suggestions, Clear, and larger/responsive cards; Goals/Learning AI
+// suggestions now available while adding a new entry, not only after
+// it's saved; Journal's Botanical & Skyline artwork gained blossoms and
+// ink-hatching shading; notification volume is now adjustable (was a
+// fixed, quiet hardcoded level). See the APP_VERSION comment block in
+// index.html for full detail. index.html changed, so bump so installed
+// copies actually receive all of this instead of serving a cached
+// v14.3.0.
+const CACHE_NAME = 'gp-ledger-v14-4-0';
 const IMG_CACHE_NAME = 'gp-ledger-images-v1';
 const CORE_ASSETS = [
   './index.html',

@@ -20,7 +20,9 @@
      from here), cutting the visible delay on first paint of each. -->
 <link rel="preconnect" href="https://picsum.photos" crossorigin>
 <link rel="dns-prefetch" href="https://picsum.photos">
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Manrope:wght@400;500;600;700;800&family=Fraunces:ital,wght@0,600;0,700;1,500;1,600&family=Nunito:wght@400;600;700&family=Sora:wght@500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&family=Space+Mono:wght@500;700&family=IBM+Plex+Mono:wght@500;600&family=Playfair+Display:wght@600;700;800&family=Space+Grotesk:wght@500;600;700&family=Quicksand:wght@500;600;700&family=Outfit:wght@500;600;700;800&family=Syne:wght@600;700;800&family=DM+Serif+Display&family=Bricolage+Grotesque:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Roboto:wght@400;500;700;900&family=DM+Sans:wght@400;500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=Geist:wght@400;500;600;700;800&family=Nunito+Sans:wght@400;600;700;800&family=Caveat:wght@500;600;700&family=Lora:ital,wght@0,500;0,600;1,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Manrope:wght@400;500;600;700;800&family=Fraunces:ital,wght@0,600;0,700;1,500;1,600&family=Nunito:wght@400;600;700&family=Sora:wght@500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&family=Space+Mono:wght@500;700&family=IBM+Plex+Mono:wght@500;600&family=Playfair+Display:wght@600;700;800&family=Space+Grotesk:wght@500;600;700&family=Quicksand:wght@500;600;700&family=Outfit:wght@500;600;700;800&family=Syne:wght@600;700;800&family=DM+Serif+Display&family=Bricolage+Grotesque:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Roboto:wght@400;500;700;900&family=DM+Sans:wght@400;500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=Geist:wght@400;500;600;700;800&family=Nunito+Sans:wght@400;600;700;800&family=Caveat:wght@500;600;700&family=Lora:ital,wght@0,500;0,600;1,400&family=Special+Elite&display=swap" rel="stylesheet">
+<!-- v14.3.0 — Special Elite (vintage typewriter) added for the Journal's
+     5 named Default Font categories — everything else unchanged. -->
 <!-- v14.1.0 — Caveat (handwriting) + Lora (readable diary serif) added for
      the Journal's new diary look (see .diary-page CSS) — everything else
      in this link is unchanged. -->
@@ -661,11 +663,18 @@ body{ background:var(--bg-gradient); }
 }
 .diary-page{
   position:relative; border-radius:16px; padding:22px 20px 18px 34px; margin-bottom:2px;
+  /* v14.3.0 — added a genuine grain/fibre texture layer (a tiny tiled
+     feTurbulence noise SVG, very low internal opacity) under the
+     existing tint gradients, for a more realistic paper feel per
+     feedback — previously just flat colour gradients with no texture. */
   background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.35'/%3E%3C/svg%3E"),
     linear-gradient(to bottom, rgba(255,255,255,.4), transparent 10px),
     radial-gradient(ellipse at 15% 15%, rgba(180,140,90,.10), transparent 55%),
     radial-gradient(ellipse at 85% 75%, rgba(140,100,60,.08), transparent 55%),
     linear-gradient(160deg, var(--diary-paper-1), var(--diary-paper-2));
+  background-repeat: repeat, no-repeat, no-repeat, no-repeat, no-repeat;
+  background-size: 100px 100px, auto, auto, auto, auto;
   box-shadow: 0 14px 34px -16px rgba(0,0,0,.45), 0 1px 0 rgba(255,255,255,.5) inset;
   border:1px solid rgba(120,90,50,.28);
   overflow:hidden;
@@ -688,11 +697,23 @@ body{ background:var(--bg-gradient); }
 /* v14.1.0 — pencil-sketch background illustration (spec §2). Positioned
    bottom-right, behind the ruled writing area, low-opacity so it reads
    as a watermark rather than competing with the text — "clean and
-   readable rather than overly decorative" per the spec's own wording. */
+   readable rather than overly decorative" per the spec's own wording.
+   v14.3.0 — .style-branch overrides position to top-left (matching the
+   reference mockup's corner-branch placement); quill/stipple keep the
+   original bottom-right spot. */
 .diary-sketch{
   position:absolute; right:-10px; bottom:-6px; width:150px; height:150px;
-  color:var(--diary-ink); opacity:.09; pointer-events:none; z-index:0;
+  color:var(--diary-ink); opacity:.1; pointer-events:none; z-index:0;
 }
+/* v14.3.0 — "Botanical Branch" is now a full page-framing border (see
+   buildBotanicalFrameSVG()), not a small corner icon like quill/stipple,
+   so it covers the whole page (inset:0) rather than a 130px box. Opacity
+   raised slightly from the shared .10 default — this style has much more
+   linework (skyline + vines + branch all at once), and at the same low
+   opacity as a single small corner icon it read as too faint to actually
+   see the detail; still comfortably behind the ruled lines/text (z-index
+   0, and every real diary-page child sits in normal flow above it). */
+.diary-sketch.style-branch{ inset:0; right:auto; bottom:auto; top:0; left:0; width:100%; height:100%; opacity:.16; }
 /* v14.1.0 — smoother date-navigation transition (spec §2's "Date
    Navigation"): a brief fade+slide instead of an instant content swap —
    see navigateJournalDate() for the JS half. */
@@ -727,6 +748,45 @@ body{ background:var(--bg-gradient); }
 /* Note editor: same wave, played once on open only (no leave phase needed
    — closing already has the modal backdrop's own dismiss animation). */
 .page-turn-modal{ animation:pageTurnEnter .5s cubic-bezier(.2,.85,.3,1); transform-origin:left center; }
+/* v14.3.0 — the other 5 selectable Page Transition modes (spec: Classic
+   Page Turn / Soft Slide / Crossfade / Paper Curl / Ink Reveal / None —
+   Classic Page Turn is the .page-turn-leave/.page-turn-enter pair above,
+   already built; None simply skips animating at all, handled in JS by
+   never adding a class). Each pair follows the same leave-then-enter
+   shape as Classic Page Turn so navigateJournalDate() can swap which
+   pair it applies without changing its own logic. */
+@keyframes slideLeave{ 0%{ opacity:1; transform:translateX(0); } 100%{ opacity:0; transform:translateX(calc(var(--dir,1) * -14%)); } }
+@keyframes slideEnter{ 0%{ opacity:0; transform:translateX(calc(var(--dir,1) * 14%)); } 100%{ opacity:1; transform:translateX(0); } }
+.slide-leave{ animation:slideLeave .22s ease forwards; }
+.slide-enter{ animation:slideEnter .26s cubic-bezier(.2,.8,.3,1) forwards; }
+
+@keyframes fadeLeave{ 0%{ opacity:1; } 100%{ opacity:0; } }
+@keyframes fadeEnter{ 0%{ opacity:0; } 100%{ opacity:1; } }
+.fade-leave{ animation:fadeLeave .18s ease forwards; }
+.fade-enter{ animation:fadeEnter .28s ease forwards; }
+
+/* Paper Curl — approximated with a clip-path corner peel + a light tilt,
+   since a true per-pixel curl isn't possible in flat CSS transforms; the
+   clip-path sweep plus the shadow reads as a corner lifting and folding
+   over rather than a plain slide/fade. */
+@keyframes curlLeave{
+  0%   { clip-path:polygon(0 0,100% 0,100% 100%,0 100%); transform:perspective(900px) rotate3d(1,-1,0,0deg); opacity:1; box-shadow:0 0 0 rgba(0,0,0,0); }
+  100% { clip-path:polygon(0 0,62% 0,88% 30%,100% 100%,0 100%); transform:perspective(900px) rotate3d(1,-1,0,28deg); opacity:0; box-shadow:-14px 14px 30px -10px rgba(0,0,0,.4); }
+}
+@keyframes curlEnter{
+  0%   { clip-path:polygon(0 0,62% 0,88% 30%,100% 100%,0 100%); transform:perspective(900px) rotate3d(1,-1,0,28deg); opacity:0; }
+  100% { clip-path:polygon(0 0,100% 0,100% 100%,0 100%); transform:perspective(900px) rotate3d(1,-1,0,0deg); opacity:1; box-shadow:0 14px 34px -16px rgba(0,0,0,.45); }
+}
+.curl-leave{ animation:curlLeave .4s cubic-bezier(.4,0,.4,1) forwards; transform-origin:top right; }
+.curl-enter{ animation:curlEnter .42s cubic-bezier(.2,.8,.3,1) forwards; transform-origin:top right; }
+
+/* Ink Reveal — content dissolves/spreads like ink rather than sliding,
+   via an expanding-circle clip-path plus a brief blur for a "wet ink
+   spreading" feel. */
+@keyframes inkLeave{ 0%{ clip-path:circle(140% at 20% 15%); filter:blur(0); opacity:1; } 100%{ clip-path:circle(0% at 20% 15%); filter:blur(2px); opacity:0; } }
+@keyframes inkEnter{ 0%{ clip-path:circle(0% at 20% 15%); filter:blur(3px); opacity:0; } 60%{ filter:blur(0.5px); } 100%{ clip-path:circle(140% at 20% 15%); filter:blur(0); opacity:1; } }
+.ink-leave{ animation:inkLeave .32s ease-in forwards; }
+.ink-enter{ animation:inkEnter .44s ease-out forwards; }
 .journal-toolbar{ display:flex; gap:8px; align-items:center; margin-bottom:10px; flex-wrap:wrap; }
 .journal-toolbar select{ width:auto; padding:8px 10px; font-size:12.5px; }
 .journal-toolbar input[type=color]{ width:38px; height:38px; padding:2px; border-radius:10px; border:1px solid var(--line); background:var(--card2); }
@@ -1016,7 +1076,12 @@ body{ background:var(--bg-gradient); }
 .note-meta{ font-size:11px; color:#7a8aa8; margin-top:6px; display:flex; gap:8px; align-items:center; }
 /* v14.1.0 — notebook look for the note editor modal (see openNoteModal) */
 .notebook-textarea{
-  background:repeating-linear-gradient(to bottom, #fbfcff, #fbfcff 23px, rgba(90,120,180,.14) 24px);
+  /* v14.3.0 — matching grain texture from the diary page, same reasoning */
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.25'/%3E%3C/svg%3E"),
+    repeating-linear-gradient(to bottom, #fbfcff, #fbfcff 23px, rgba(90,120,180,.14) 24px);
+  background-repeat: repeat, no-repeat;
+  background-size: 100px 100px, auto;
   border:1px solid #d7dfeb !important; border-left:14px solid #e7ecf5 !important;
   color:#1f2a44; line-height:24px; padding:8px 10px !important;
 }
@@ -1082,6 +1147,18 @@ body{ background:var(--bg-gradient); }
 .hclock-time{ font-family:var(--font-time); font-weight:800; font-size:12.5px; color:var(--text); letter-spacing:.01em; white-space:nowrap; }
 .hclock-sec{ opacity:.7; font-weight:600; }
 .hclock-ampm{ font-family:var(--font-time); font-weight:700; font-size:8.5px; color:var(--accent); margin-left:2px; }
+/* v14.4.0 — adjustable clock size (Settings → Clock → Size). Medium
+   matches the previous fixed sizing exactly (no visual change for
+   anyone who doesn't touch this new setting); Small/Large scale the
+   analog face and every text element together, proportionally. */
+.hclock-size-small .hclock-svg{ width:20px; height:20px; }
+.hclock-size-small .hclock-date{ font-size:8px; }
+.hclock-size-small .hclock-time{ font-size:10.5px; }
+.hclock-size-small .hclock-ampm{ font-size:7.5px; }
+.hclock-size-large .hclock-svg{ width:36px; height:36px; }
+.hclock-size-large .hclock-date{ font-size:11px; }
+.hclock-size-large .hclock-time{ font-size:17px; }
+.hclock-size-large .hclock-ampm{ font-size:10.5px; }
 /* v14.1.0 — Finance full transaction log restyled as a paper receipt.
    Zigzag torn edges are a mask cut into the receipt's own paper colour
    (not a background-colour match trick), so they read correctly
@@ -1106,22 +1183,36 @@ body{ background:var(--bg-gradient); }
 .progress-fill{ height:100%; background:var(--accent); border-radius:999px; }
 .checklist-row{ display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--line); }
 .checklist-row:last-child{ border-bottom:none; }
-.mp-day-card{ background:var(--card); border:1px solid var(--line); border-radius:var(--radius-sm); padding:12px; margin-bottom:8px; }
-.mp-day-head{ font-weight:700; font-size:12.5px; margin-bottom:8px; }
+.mp-day-card{ background:var(--card); border:1px solid var(--line); border-radius:var(--radius-sm); padding:14px; margin-bottom:10px; }
+.mp-day-head{ font-weight:700; font-size:13px; margin-bottom:9px; }
 /* v14.0.0 — Meal Planner visual improvement (spec §14): colour-coded left
    accent bar per meal type (see MEAL_SLOT_STYLE), an emoji chip replacing
    the old plain text label, and a visual day-total calorie bar. */
-.mp-day-calbar{ height:5px; border-radius:3px; background:var(--line); overflow:hidden; margin-bottom:10px; }
+.mp-day-calbar{ height:5px; border-radius:3px; background:var(--line); overflow:hidden; margin-bottom:11px; }
 .mp-day-calbar-fill{ height:100%; background:linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 60%, #f59e0b)); border-radius:3px; }
-.mp-slot{ display:flex; align-items:center; gap:8px; margin-bottom:6px; padding:4px 0 4px 8px; border-radius:8px; }
-.mp-slot-emoji{ width:26px; flex-shrink:0; font-size:16px; text-align:center; }
-.mp-slot input{ flex:1; }
+/* v14.4.0 — larger, wrap-friendly slot layout so the full meal name and
+   all its actions stay usable on narrow phones instead of squeezing
+   everything into one cramped row (spec: "increase size/responsiveness
+   so the complete content can be viewed properly on mobile"). The input
+   now gets its own full-width line; the action buttons sit on the row
+   below it, wrapping naturally rather than overflowing/truncating. */
+.mp-slot{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:10px; padding:8px 10px; border-radius:10px; background:var(--card2); }
+.mp-slot-emoji{ width:22px; flex-shrink:0; font-size:17px; text-align:center; }
+.mp-slot input{ flex:1 1 100%; min-width:0; font-size:14px; padding:9px 10px; }
+.mp-slot-actions{ display:flex; gap:6px; margin-left:30px; flex-wrap:wrap; }
 /* v14.0.0 — Meal Planner ↔ Diet completion toggle (spec §13) */
 .mp-eaten-btn{
-  flex-shrink:0; font-size:11px; font-weight:700; padding:8px 10px; border-radius:10px;
-  background:var(--card2); border:1px solid var(--line); color:var(--sub); white-space:nowrap;
+  flex-shrink:0; font-size:11.5px; font-weight:700; padding:8px 11px; border-radius:10px;
+  background:var(--card); border:1px solid var(--line); color:var(--sub); white-space:nowrap;
 }
 .mp-eaten-btn.done{ background:color-mix(in srgb, var(--good) 18%, transparent); border-color:var(--good); color:var(--good); }
+/* v14.4.0 — AI-suggest (✨) and Clear (✕) per-slot buttons */
+.mp-icon-btn{
+  flex-shrink:0; width:34px; height:34px; border-radius:9px; font-size:14px;
+  background:var(--card); border:1px solid var(--line); color:var(--sub);
+}
+.mp-icon-btn[data-mpai]{ color:var(--accent); border-color:color-mix(in srgb, var(--accent) 40%, var(--line)); }
+.mp-icon-btn.loading{ opacity:.5; pointer-events:none; }
 
 /* ============ v9: DOCUMENTS ============ */
 .doc-card{ display:flex; align-items:center; gap:11px; background:var(--card); border:1px solid var(--line); border-radius:var(--radius-sm); padding:12px; margin-bottom:8px; }
@@ -1583,15 +1674,17 @@ nav.bottom, .fab{ transition:transform .18s ease; }
         </div>
         <div class="journal-toolbar">
           <select id="journalFont">
-            <option value="Caveat">Handwritten</option>
-            <option value="Lora">Diary serif</option>
-            <option value="Fraunces">Fraunces</option>
-            <option value="Manrope">Manrope</option>
-            <option value="Nunito">Nunito</option>
-            <option value="Inter">Inter</option>
-            <option value="JetBrains Mono">Mono</option>
+            <option value="Caveat">Elegant Handwriting</option>
+            <option value="Nunito">Clean Journal</option>
+            <option value="Lora">Classic Serif</option>
+            <option value="Inter">Modern Minimal</option>
+            <option value="Special Elite">Vintage Typewriter</option>
           </select>
           <input type="color" id="journalColor" value="#3b2f2a">
+          <!-- v14.3.0 — premium diary customization (artwork style + page
+               transition), opened in its own modal rather than crowding
+               this already-busy toolbar further. -->
+          <button class="journal-navbtn" id="diaryCustomizeBtn" title="Customize diary">🎨</button>
           <button class="link-btn" id="journalExportAllBtn">Export whole diary</button>
         </div>
         <textarea id="journalText" class="diary-textarea" placeholder="Dear diary…"></textarea>
@@ -1992,6 +2085,9 @@ nav.bottom, .fab{ transition:transform .18s ease; }
         <select id="clockEnabled"><option value="1">On</option><option value="0">Off</option></select>
         <label class="fl">Style</label>
         <select id="clockStyle"><option value="digital">Digital only</option><option value="analog">Analog only</option><option value="both">Analog + Digital</option></select>
+        <!-- v14.4.0 — clock size control -->
+        <label class="fl">Size</label>
+        <select id="clockSize"><option value="small">Small</option><option value="medium">Medium</option><option value="large">Large</option></select>
       </div>
 
       <!-- v14.0.0 — Home Quick Actions customization (spec §9.2) -->
@@ -2185,6 +2281,12 @@ nav.bottom, .fab{ transition:transform .18s ease; }
         <div class="settings-list">
           <div class="hint" style="padding:14px 16px 0;">Every reminder module can sound different, so you know which one it is without looking: Habit, Finance (EMI due, subscription renewal), Health (appointment today), Documents (expiring within 7 days), and Goals (deadline today) — all checked once a day at 9 AM except Habit, which fires at its own set time.</div>
           <div class="settings-row"><div class="sr-label">Sound on reminders</div><button class="switch" id="setSoundOn"></button></div>
+          <!-- v14.4.0 — adjustable notification volume -->
+          <div class="settings-row"><div class="sr-label">Volume<div class="sr-sub" id="notifVolumeLabel">50%</div></div></div>
+          <div style="padding:0 16px 14px; display:flex; align-items:center; gap:10px;">
+            <input type="range" id="setNotifVolume" min="10" max="100" step="5" style="flex:1;">
+            <button class="btn secondary" id="testNotifVolumeBtn" style="width:auto; padding:8px 14px;">🔊 Test</button>
+          </div>
           <div id="alertToneList" style="padding:0 16px 14px;"></div>
           <div class="settings-row" style="border-top:1px solid var(--line);"><div class="sr-label">Notification history<div class="sr-sub">See every reminder that's fired, even after you dismissed it</div></div><button class="link-btn" id="viewNotifHistBtn">View</button></div>
         </div>
@@ -2361,7 +2463,63 @@ function wireAiSuggestButton(btnId, panelId, onGo){
   });
 }
 
-const APP_VERSION = 'v14.2.0'; // single source of truth for About screen & Settings row
+const APP_VERSION = 'v14.4.0'; // single source of truth for About screen & Settings row
+// v14.4.0 — targeted fixes across 5 areas, nothing else touched:
+// (1) Global Clock: added a Size setting (Small/Medium/Large); fixed a
+//     real glitch where the clock briefly jumped position on app open —
+//     it rendered once with empty/default settings before loadState()
+//     finished, then ~1s later the interval re-rendered with your actual
+//     saved style, and if that differed in width (e.g. Analog/Both vs
+//     Digital) the header visibly reflowed. Now renders once with the
+//     real settings from the start.
+// (2) Meal Planner: found and fixed the actual cause of "tomorrow's
+//     field is always empty" — Auto-fill always filled a fixed calendar
+//     week tracked by a variable that drifts permanently the first time
+//     you ever browse the Week view, so it was silently filling an
+//     invisible week that wasn't what was on screen. Now fills exactly
+//     what's currently displayed. Added real per-slot AI suggestions
+//     (context: target calories, weekday, diet goal, avoiding repeats
+//     already planned in view), a Clear button, kept manual entry via
+//     the existing text field, and rebuilt the slot layout to be larger
+//     and wrap-friendly on mobile instead of cramming into one row.
+// (3) Data Entry & AI: found the Goals and Learning "✨ Get AI
+//     suggestions" buttons only appeared AFTER the entry was already
+//     manually saved — invisible during the actual data-entry moment
+//     they were meant to help with. Both now work immediately while
+//     adding something new.
+// (4) Journal Artwork: added more leaf density, small 5-petal blossoms
+//     along the vines/branch, and hatching/shading strokes (the classic
+//     ink-illustration depth technique) under the dome/tower/wheel in
+//     the Botanical & Skyline style.
+// (5) Notifications: volume was hardcoded to a fixed, quiet level with
+//     no way to change it — added an adjustable Volume slider (Settings
+//     → Reminder sounds), defaulting to roughly double the old fixed
+//     level, with a Test button.
+// v14.3.0 — premium Journal customization: 3 refined artwork styles
+// (Quill & Ink, Stipple Tree — the exact reference photo style, built
+// from a deterministically-seeded pointillism dot generator so it's
+// stable across reloads rather than randomizing — and Botanical &
+// Skyline, upgraded after feedback from a small corner branch into a
+// full page-framing border: an extended branch with birds across the
+// top, thin flowering vines climbing both side margins, and a delicate
+// generic skyline — clock tower, domed hall, bridge, wheel, ordinary
+// buildings, deliberately original rather than any specific real
+// landmark — along the bottom, all built from a small reusable leaf/vine
+// primitive rather than dozens of hand-written near-duplicate paths),
+// all mature hand-drawn-style line art, none of them covering or
+// obstructing actual content; all 6 spec'd page-transition modes
+// (Classic Page Turn/Soft Slide/Crossfade/Paper Curl/Ink Reveal/None),
+// picked from a new "🎨 Customize diary" modal alongside artwork style,
+// both persisted; the Default Font dropdown renamed to the 5 exact named
+// categories (Elegant Handwriting/Clean Journal/Classic Serif/Modern
+// Minimal/Vintage Typewriter — added Special Elite for a genuine
+// typewriter face) with correct per-font CSS fallbacks fixed across all
+// 5 places the journal font gets applied (editor, live preview, Print,
+// single-entry PDF export — previously every one hardcoded a cursive
+// fallback regardless of the actual font); and a real grain/fibre
+// texture (tiled feTurbulence noise, very low opacity) added to both the
+// diary page and the notebook editor for a more realistic paper feel,
+// replacing the previous flat colour gradients.
 // v14.2.0 — closes out the full "GP Hub UI/AI/Module Integration" spec:
 // Home (clock recoloured to theme vars, then made fully border/box-free
 // per feedback so it blends into the header instead of looking like a
@@ -6622,16 +6780,33 @@ document.getElementById('addDebtBtn').addEventListener('click', ()=>openDebtModa
 
 /* ---------- v8: journal / diary ---------- */
 let journalDate = todayStr();
+/* v14.3.0 — correct generic CSS fallback per journal font category
+   (previously every call site hardcoded ", cursive" regardless of which
+   font was selected — harmless while the Google Font loads normally,
+   but wrong for Lora/Inter/Special Elite if it ever doesn't). */
+const JOURNAL_FONT_FALLBACK = { Caveat:'cursive', Nunito:'sans-serif', Lora:'serif', Inter:'sans-serif', 'Special Elite':'monospace' };
+function journalFontStack(font){ return `'${font}', ${JOURNAL_FONT_FALLBACK[font] || 'sans-serif'}`; }
 /* v14.1.0 — Journal §2: subtle black-and-white pencil-sketch illustration
-   in the diary page background (a quill + ink drop — classic, understated
-   diary imagery, not childish/decorative). Pure inline SVG line art, no
-   image file, so it's instant and works offline; injected once at boot
-   into the static #diarySketch container rather than regenerated on every
-   renderJournal() call, since it never changes. Coloured via currentColor
-   so it automatically follows --diary-ink (see .diary-sketch CSS) — always
-   "matching-color", per the spec's own wording, rather than a separate
-   hardcoded palette. */
-const DIARY_SKETCH_SVG = `<svg viewBox="0 0 200 200" width="100%" height="100%" preserveAspectRatio="xMidYMid meet">
+   in the diary page background. Pure inline SVG line art, no image file,
+   so it's instant and works offline. Coloured via currentColor so it
+   automatically follows --diary-ink (see .diary-sketch CSS) — always
+   "matching-color" rather than a separate hardcoded palette.
+   v14.3.0 — expanded from the one fixed quill illustration into three
+   selectable, refined artwork styles (spec: "realistic, premium... NOT
+   childish scribbling"), each rendered once and cached, not regenerated
+   per keystroke/render:
+   - 'quill': the original ink quill + drop (unchanged)
+   - 'stipple': a pointillism tree canopy — the exact reference style
+     requested (the attached hand-holding-pen photo), built from a
+     deterministically-seeded dot scatter (same seed every time, so the
+     illustration is stable across sessions/reloads rather than
+     regenerating into a different random pattern each time)
+   - 'branch': a thin botanical branch with leaves and two birds in
+     flight, top-left corner — matches the reference mockup's decoration
+   Position (bottom-right vs top-left) is also style-specific — see
+   .diary-sketch.style-branch below — since the branch reference is a
+   top-corner motif while quill/stipple sit bottom-right. */
+const DIARY_SKETCH_QUILL = `<svg viewBox="0 0 200 200" width="100%" height="100%" preserveAspectRatio="xMidYMid meet">
   <g fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
     <path d="M60 170 C 40 150, 35 110, 55 70 C 70 40, 100 20, 130 15 C 110 35, 95 55, 88 80 C 100 65, 118 52, 140 45 C 120 65, 105 85, 98 108 C 112 96, 128 88, 145 84 C 125 100, 108 118, 100 140 C 92 148, 80 158, 60 170 Z"/>
     <path d="M62 168 C 80 140, 100 100, 128 20"/>
@@ -6642,8 +6817,190 @@ const DIARY_SKETCH_SVG = `<svg viewBox="0 0 200 200" width="100%" height="100%" 
     <circle cx="44" cy="190" r="2.6"/>
   </g>
 </svg>`;
-const diarySketchEl = document.getElementById('diarySketch');
-if(diarySketchEl) diarySketchEl.innerHTML = DIARY_SKETCH_SVG;
+/* Small seeded PRNG (mulberry32) — same seed every call, so the dot
+   scatter below is identical every time this renders, not a fresh
+   random pattern on every reload (which would look unintentional/buggy
+   rather than like a fixed piece of artwork). */
+function seededRandom(seed){
+  return function(){
+    seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function buildStippleTreeSVG(){
+  const rand = seededRandom(1337);
+  const branches = [
+    ['M100 195 C 98 165, 96 132, 95 100', 3.2],
+    ['M95 132 C 80 116, 64 106, 48 96', 1.7],
+    ['M95 116 C 111 100, 126 90, 142 81', 1.7],
+    ['M96 100 C 87 79, 79 63, 68 48', 1.3],
+    ['M96 100 C 106 81, 117 66, 130 53', 1.3],
+    ['M78 90 C 70 82, 60 78, 50 78', 1],
+    ['M115 88 C 124 82, 133 80, 143 82', 1],
+  ].map(([d,w])=>`<path d="${d}" stroke-width="${w}"/>`).join('');
+  let dots = '';
+  for(let i=0;i<170;i++){
+    const angle = rand()*Math.PI*2;
+    const r = Math.pow(rand(), 0.55) * 50;
+    const cx = 95 + Math.cos(angle)*r*1.15;
+    const cy = 48 + Math.sin(angle)*r*0.8 - 4;
+    const size = (0.45 + rand()*1.05).toFixed(2);
+    dots += `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${size}"/>`;
+  }
+  return `<svg viewBox="0 0 200 200" width="100%" height="100%" preserveAspectRatio="xMidYMid meet">
+    <g fill="none" stroke="currentColor" stroke-linecap="round">${branches}</g>
+    <g fill="currentColor" stroke="none">${dots}</g>
+  </svg>`;
+}
+/* v14.3.0 (revised) — "Botanical Branch" upgraded from a small corner
+   sprig into a full page-framing border (spec: reference image showed
+   an elaborate branch+bird top corner, flowering vines climbing the
+   side margins, and a detailed skyline along the bottom, all delicate
+   line art, NOT a small watermark icon). This is original artwork
+   inspired only by that reference's STYLE (composition, linework
+   density, botanical-plus-skyline framing) — no specific landmark is
+   reproduced; the skyline below is deliberately generic (a plain clock
+   tower, a domed hall, a suspension bridge, a big wheel, ordinary
+   building blocks) rather than any real named building. Built from a
+   small leaf/vine primitive helper (leafShape) to keep the many repeated
+   leaf clusters compact rather than hand-writing dozens of near-
+   identical paths. Runs the full page border (see .diary-sketch.style-
+   branch's inset:0 in CSS) instead of a small corner box like the other
+   two styles — the empty centre is where the real ruled writing lines
+   and actual entry text always render, on top, fully legible. */
+function leafShape(x, y, angle, size){
+  size = size || 6;
+  return `<g transform="translate(${x},${y}) rotate(${angle})">
+    <path d="M0 0 C ${(size*0.3).toFixed(1)} ${(-size*0.55).toFixed(1)}, ${size.toFixed(1)} ${(-size*0.4).toFixed(1)}, ${(size*1.5).toFixed(1)} 0 C ${size.toFixed(1)} ${(size*0.4).toFixed(1)}, ${(size*0.3).toFixed(1)} ${(size*0.55).toFixed(1)}, 0 0 Z" fill="currentColor" stroke="none" opacity="0.88"/>
+    <path d="M0 0 L ${(size*1.4).toFixed(1)} 0" stroke="currentColor" stroke-width="0.35" fill="none"/>
+  </g>`;
+}
+function birdMark(x, y, scale){
+  scale = scale || 1;
+  return `<path d="M${x} ${y} C ${x+5*scale} ${y-5*scale}, ${x+10*scale} ${y-5*scale}, ${x+12*scale} ${y-1*scale} C ${x+14*scale} ${y-5*scale}, ${x+19*scale} ${y-5*scale}, ${x+24*scale} ${y}" stroke="currentColor" stroke-width="0.9" fill="none" stroke-linecap="round"/>`;
+}
+/* v14.4.0 — small 5-petal blossom, scattered along the vines/branch for a
+   more elegant, floral, "sophisticated botanical" feel (spec: current
+   artwork was "too simple/basic" — added density and variety here
+   rather than changing the overall composition, which was already
+   reference-matched). */
+function flowerShape(x, y, size){
+  size = size || 4;
+  let petals = '';
+  for(let i=0;i<5;i++){
+    const a = i*72;
+    petals += `<ellipse cx="${x}" cy="${y}" rx="${(size*0.42).toFixed(1)}" ry="${size.toFixed(1)}" fill="currentColor" opacity="0.75" transform="rotate(${a} ${x} ${y}) translate(0 -${(size*0.55).toFixed(1)})"/>`;
+  }
+  return `<g>${petals}<circle cx="${x}" cy="${y}" r="${(size*0.32).toFixed(1)}" fill="currentColor"/></g>`;
+}
+/* Short parallel hatching strokes — the classic ink-illustration shading
+   technique, used sparingly under domes/canopy/roof edges for a sense of
+   depth rather than flat outlines. */
+function hatchShade(x, y, angle, count, length, gap){
+  let out = '';
+  for(let i=0;i<count;i++){
+    const off = i*gap;
+    const rad = angle*Math.PI/180;
+    const dx = Math.cos(rad)*off, dy = Math.sin(rad)*off;
+    const perpRad = rad+Math.PI/2;
+    const lx = Math.cos(perpRad)*length/2, ly = Math.sin(perpRad)*length/2;
+    out += `<line x1="${(x+dx-lx).toFixed(1)}" y1="${(y+dy-ly).toFixed(1)}" x2="${(x+dx+lx).toFixed(1)}" y2="${(y+dy+ly).toFixed(1)}" stroke="currentColor" stroke-width="0.4" opacity="0.6"/>`;
+  }
+  return out;
+}
+function buildBotanicalFrameSVG(){
+  // ---- top-left branch, extended further across the top edge, denser
+  // leaf clusters + a few blossoms + 2 birds in flight ----
+  const branch = `<path d="M4 10 C 40 18, 78 10, 108 38 C 128 57, 138 78, 128 104 C 122 118, 112 128, 100 136" stroke-width="1.3" fill="none" stroke="currentColor" stroke-linecap="round"/>
+    <path d="M70 26 C 76 16, 86 12, 96 14" stroke-width="1" fill="none" stroke="currentColor" stroke-linecap="round"/>
+    <path d="M95 58 C 103 52, 113 51, 121 55" stroke-width="1" fill="none" stroke="currentColor" stroke-linecap="round"/>
+    <path d="M112 90 C 120 86, 129 87, 135 92" stroke-width="1" fill="none" stroke="currentColor" stroke-linecap="round"/>
+    <path d="M50 20 C 54 12, 62 9, 70 11" stroke-width="0.8" fill="none" stroke="currentColor" stroke-linecap="round"/>`;
+  const branchLeaves = [
+    [16,9,-30],[22,12,-25],[30,8,15],[38,17,10],[46,10,-20],[55,13,-15],[62,20,30],[73,25,25],
+    [85,15,-30],[92,22,15],[100,32,20],[78,25,50],[105,53,-10],[112,48,25],[118,53,35],
+    [130,80,10],[122,85,-35],[126,95,15],[133,105,25],[118,112,-20],[108,120,10]
+  ].map(([x,y,a])=>leafShape(x,y,a,5.5)).join('');
+  const branchBlossoms = [ [58,15,3.6], [96,40,3.2], [124,72,3.4] ].map(([x,y,s])=>flowerShape(x,y,s)).join('');
+  const birds = birdMark(150,28,0.9) + birdMark(168,42,0.75) + birdMark(140,60,0.6);
+
+  // ---- generic skyline along the bottom edge (original silhouettes — no real landmark reproduced), with hatch shading for depth ----
+  const baseline = 388;
+  const skyline = `
+    <g fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+      <!-- bridge, left -->
+      <path d="M0 ${baseline} L0 ${baseline-10} C 12 ${baseline-28}, 26 ${baseline-28}, 38 ${baseline-10} C 50 ${baseline-28}, 64 ${baseline-28}, 76 ${baseline-10} L76 ${baseline}"/>
+      <line x1="14" y1="${baseline-6}" x2="14" y2="${baseline}"/><line x1="38" y1="${baseline-4}" x2="38" y2="${baseline}"/><line x1="62" y1="${baseline-6}" x2="62" y2="${baseline}"/>
+      <!-- clock tower -->
+      <rect x="92" y="${baseline-96}" width="14" height="96"/>
+      <path d="M92 ${baseline-96} L99 ${baseline-112} L106 ${baseline-96}"/>
+      <circle cx="99" cy="${baseline-80}" r="4.5"/>
+      <line x1="99" y1="${baseline-80}" x2="99" y2="${baseline-83}" stroke-width="0.7"/><line x1="99" y1="${baseline-80}" x2="101" y2="${baseline-79}" stroke-width="0.7"/>
+      <line x1="95" y1="${baseline-64}" x2="103" y2="${baseline-64}" stroke-width="0.5"/><line x1="95" y1="${baseline-48}" x2="103" y2="${baseline-48}" stroke-width="0.5"/><line x1="95" y1="${baseline-32}" x2="103" y2="${baseline-32}" stroke-width="0.5"/>
+      <!-- domed hall -->
+      <path d="M114 ${baseline} L114 ${baseline-40} C 114 ${baseline-58}, 140 ${baseline-58}, 140 ${baseline-40} L140 ${baseline}"/>
+      <line x1="127" y1="${baseline-58}" x2="127" y2="${baseline-65}" stroke-width="0.8"/><circle cx="127" cy="${baseline-67}" r="1.6"/>
+      <line x1="118" y1="${baseline-8}" x2="118" y2="${baseline-36}" stroke-width="0.4"/><line x1="127" y1="${baseline-8}" x2="127" y2="${baseline-40}" stroke-width="0.4"/><line x1="136" y1="${baseline-8}" x2="136" y2="${baseline-36}" stroke-width="0.4"/>
+      <!-- plain building blocks, with window texture -->
+      <rect x="145" y="${baseline-30}" width="16" height="30"/>
+      <rect x="163" y="${baseline-46}" width="13" height="46"/>
+      <line x1="167" y1="${baseline-38}" x2="167" y2="${baseline-8}" stroke-width="0.5"/>
+      <line x1="148" y1="${baseline-24}" x2="151" y2="${baseline-24}" stroke-width="0.4"/><line x1="153" y1="${baseline-24}" x2="156" y2="${baseline-24}" stroke-width="0.4"/>
+      <line x1="148" y1="${baseline-14}" x2="151" y2="${baseline-14}" stroke-width="0.4"/><line x1="153" y1="${baseline-14}" x2="156" y2="${baseline-14}" stroke-width="0.4"/>
+      <!-- big wheel -->
+      <circle cx="215" cy="${baseline-48}" r="42"/>
+      <circle cx="215" cy="${baseline-48}" r="3"/>
+      <line x1="215" y1="${baseline-90}" x2="215" y2="${baseline-6}" stroke-width="0.5"/>
+      <line x1="173" y1="${baseline-48}" x2="257" y2="${baseline-48}" stroke-width="0.5"/>
+      <line x1="185" y1="${baseline-19}" x2="245" y2="${baseline-77}" stroke-width="0.5"/>
+      <line x1="185" y1="${baseline-77}" x2="245" y2="${baseline-19}" stroke-width="0.5"/>
+      <line x1="215" y1="${baseline-6}" x2="215" y2="${baseline}"/>
+      <!-- tapering buildings, right -->
+      <rect x="262" y="${baseline-34}" width="14" height="34"/>
+      <rect x="278" y="${baseline-22}" width="12" height="22"/>
+      <rect x="292" y="${baseline-14}" width="8" height="14"/>
+      <line x1="269" y1="${baseline-28}" x2="269" y2="${baseline-6}" stroke-width="0.4"/>
+    </g>
+    <line x1="0" y1="${baseline}" x2="300" y2="${baseline}" stroke="currentColor" stroke-width="0.7" fill="none"/>
+    ${hatchShade(99,baseline-100,90,5,7,1.6)}
+    ${hatchShade(127,baseline-42,90,6,8,1.8)}
+    ${hatchShade(215,baseline-48,45,7,10,2.2)}`;
+
+  // ---- thin flowering vines climbing both side margins, denser with blossoms ----
+  const vineLeft = `<path d="M6 ${baseline} C -2 ${baseline-40}, 10 ${baseline-90}, 4 ${baseline-140} C -1 ${baseline-175}, 8 ${baseline-205}, 3 ${baseline-235}" stroke="currentColor" stroke-width="1" fill="none" stroke-linecap="round"/>`;
+  const vineLeftLeaves = [
+    [4,baseline-12,-70],[9,baseline-30,55],[4,baseline-20,-70],[9,baseline-55,60],[2,baseline-70,-55],[2,baseline-85,-60],[8,baseline-105,50],[8,baseline-120,55],
+    [1,baseline-140,-60],[1,baseline-155,-65],[7,baseline-175,55],[7,baseline-190,60],[3,baseline-208,-60],[3,baseline-222,-55]
+  ].map(([x,y,a])=>leafShape(x,y,a,5)).join('');
+  const vineLeftBlossoms = [ [7,baseline-45,3], [1,baseline-98,3.2], [6,baseline-165,2.8] ].map(([x,y,s])=>flowerShape(x,y,s)).join('');
+  const vineRight = `<path d="M294 ${baseline} C 302 ${baseline-40}, 290 ${baseline-90}, 296 ${baseline-140} C 301 ${baseline-175}, 292 ${baseline-205}, 297 ${baseline-235}" stroke="currentColor" stroke-width="1" fill="none" stroke-linecap="round"/>`;
+  const vineRightLeaves = [
+    [296,baseline-12,70],[291,baseline-30,-55],[296,baseline-20,70],[291,baseline-55,-60],[298,baseline-70,55],[298,baseline-85,60],[292,baseline-105,-50],[292,baseline-120,-55],
+    [299,baseline-140,60],[299,baseline-155,65],[293,baseline-175,-55],[293,baseline-190,-60],[297,baseline-208,60],[297,baseline-222,55]
+  ].map(([x,y,a])=>leafShape(x,y,a,5)).join('');
+  const vineRightBlossoms = [ [293,baseline-45,3], [299,baseline-98,3.2], [294,baseline-165,2.8] ].map(([x,y,s])=>flowerShape(x,y,s)).join('');
+
+  return `<svg viewBox="0 0 300 400" width="100%" height="100%" preserveAspectRatio="none">
+    ${branch}${branchLeaves}${branchBlossoms}${birds}
+    ${vineLeft}${vineLeftLeaves}${vineLeftBlossoms}${vineRight}${vineRightLeaves}${vineRightBlossoms}
+    ${skyline}
+  </svg>`;
+}
+function diaryArtSVG(style){
+  if(style==='stipple') return buildStippleTreeSVG();
+  if(style==='branch') return buildBotanicalFrameSVG();
+  if(style==='none') return '';
+  return DIARY_SKETCH_QUILL; // default/'quill'
+}
+function renderDiarySketch(){
+  const el = document.getElementById('diarySketch'); if(!el) return;
+  const style = S.settings.diaryArtStyle || 'quill';
+  el.innerHTML = diaryArtSVG(style);
+  el.className = 'diary-sketch' + (style==='branch' ? ' style-branch' : '');
+}
+renderDiarySketch();
 function monthName(m){ return ['January','February','March','April','May','June','July','August','September','October','November','December'][m]; }
 function fmtDiaryDate(ds){
   const d = new Date(ds+'T00:00:00');
@@ -6691,7 +7048,7 @@ function renderJournal(){
   document.getElementById('journalText').value = editing ? editing.text : '';
   document.getElementById('journalFont').value = editing?.font || 'Caveat';
   document.getElementById('journalColor').value = editing?.color || '#3b2f2a';
-  document.getElementById('journalText').style.fontFamily = `'${editing?.font||'Caveat'}', cursive`;
+  document.getElementById('journalText').style.fontFamily = journalFontStack(editing?.font||'Caveat');
   document.getElementById('journalText').style.color = journalInkColor(editing?.color || '#3b2f2a');
   document.getElementById('journalSaveBtn').textContent = editing ? 'Save changes' : 'Save entry';
   document.getElementById('journalNewEntryBtn').style.display = editing ? 'inline-block' : 'none';
@@ -6744,34 +7101,88 @@ function saveJournalEntry(){
   showToast(`Saved to ${fmtDiaryDate(journalDate)}`, '📔');
 }
 document.getElementById('journalSaveBtn').addEventListener('click', saveJournalEntry);
-/* v14.1.0 (revised) — Journal §2 "Date Navigation": now a real page-turn-
-   with-wave animation (see .page-turn-leave/.page-turn-enter CSS) instead
-   of the earlier plain fade+slide, per feedback. --dir: 1 for a later
-   date (page turns forward, as if flipping to the next page), -1 for an
-   earlier date (flips back); neutral (Today/date-picker) defaults to a
-   forward-style turn since there's no natural "direction" for a jump. */
+/* v14.3.0 (revised) — now supports all 6 Page Transition modes (spec),
+   not just Classic Page Turn. Each mode is a {leave, enter, leaveMs,
+   enterMs} pair of CSS class names + durations; 'none' skips the whole
+   dance and just re-renders instantly. transform-origin is only relevant
+   to the two 3D modes (pageturn/curl) — the others ignore it harmlessly. */
+const JOURNAL_TRANSITIONS = {
+  pageturn: { leave:'page-turn-leave', enter:'page-turn-enter', leaveMs:420, enterMs:500, use3dOrigin:true },
+  slide:    { leave:'slide-leave',     enter:'slide-enter',     leaveMs:220, enterMs:260 },
+  crossfade:{ leave:'fade-leave',      enter:'fade-enter',      leaveMs:180, enterMs:280 },
+  curl:     { leave:'curl-leave',      enter:'curl-enter',      leaveMs:400, enterMs:420, use3dOrigin:true },
+  ink:      { leave:'ink-leave',       enter:'ink-enter',       leaveMs:320, enterMs:440 },
+  none:     null,
+};
 function navigateJournalDate(newDate, direction){
   const page = document.getElementById('diaryPage');
   journalDate = newDate; journalEditingId = null;
-  if(!page){ renderJournal(); return; }
+  const mode = JOURNAL_TRANSITIONS[S.settings.journalTransition] !== undefined ? S.settings.journalTransition : 'pageturn';
+  const cfg = JOURNAL_TRANSITIONS[mode];
+  if(!page || !cfg){ renderJournal(); return; } // 'none', or page not in DOM yet
   const dir = direction<0 ? -1 : 1;
   page.style.setProperty('--dir', dir);
-  page.style.transformOrigin = dir>0 ? 'right center' : 'left center';
-  page.classList.remove('page-turn-enter');
-  page.classList.add('page-turn-leave');
+  if(cfg.use3dOrigin) page.style.transformOrigin = dir>0 ? 'right center' : 'left center';
+  page.className = page.className.replace(/\b(page-turn|slide|fade|curl|ink)-(leave|enter)\b/g, '').trim();
+  page.classList.add('diary-page', cfg.leave);
   setTimeout(()=>{
     renderJournal();
-    page.classList.remove('page-turn-leave');
-    page.style.transformOrigin = dir>0 ? 'left center' : 'right center';
-    page.classList.add('page-turn-enter');
-    setTimeout(()=> page.classList.remove('page-turn-enter'), 500);
-  }, 420);
+    page.classList.remove(cfg.leave);
+    if(cfg.use3dOrigin) page.style.transformOrigin = dir>0 ? 'left center' : 'right center';
+    page.classList.add(cfg.enter);
+    setTimeout(()=> page.classList.remove(cfg.enter), cfg.enterMs+20);
+  }, cfg.leaveMs);
 }
 document.getElementById('journalDateInput').addEventListener('change', (e)=> navigateJournalDate(e.target.value, 0));
 document.getElementById('jPrevDay').addEventListener('click', ()=> navigateJournalDate(addDays(journalDate,-1), -1));
 document.getElementById('jNextDay').addEventListener('click', ()=> navigateJournalDate(addDays(journalDate,1), 1));
 document.getElementById('jTodayBtn').addEventListener('click', ()=> navigateJournalDate(todayStr(), 0));
-document.getElementById('journalFont').addEventListener('change', (e)=>{ document.getElementById('journalText').style.fontFamily = `'${e.target.value}', cursive`; });
+/* v14.3.0 — "Customize diary" modal: artwork style (3 refined options +
+   None) and page transition (all 6 spec'd modes), both persisted to
+   S.settings so they apply the next time the Journal is opened too, not
+   just for the current session. */
+const DIARY_ART_OPTIONS = [
+  { key:'quill',   label:'Quill & Ink', desc:'A classic ink quill, bottom corner' },
+  { key:'stipple', label:'Stipple Tree', desc:'A pointillism tree canopy — the reference style' },
+  { key:'branch',  label:'Botanical & Skyline', desc:'A full page border — branch, vines, and a delicate skyline' },
+  { key:'none',    label:'None', desc:'No illustration' },
+];
+const JOURNAL_TRANSITION_OPTIONS = [
+  { key:'pageturn', label:'Classic Page Turn', desc:'A real 3D turn with a paper wave' },
+  { key:'slide',    label:'Soft Slide', desc:'Gentle horizontal slide' },
+  { key:'crossfade',label:'Crossfade', desc:'Simple fade, no movement' },
+  { key:'curl',     label:'Paper Curl', desc:'A lifting corner peel' },
+  { key:'ink',      label:'Ink Reveal', desc:'Spreads in like ink' },
+  { key:'none',     label:'None', desc:'Instant, no animation' },
+];
+function openDiaryCustomizeModal(){
+  const curArt = S.settings.diaryArtStyle || 'quill';
+  const curTrans = S.settings.journalTransition || 'pageturn';
+  openModal(`
+    <div class="modal-head"><h3>🎨 Customize diary</h3><button class="modal-close" data-close>✕</button></div>
+    <div class="ep-top-label" style="margin-top:0;">Artwork style</div>
+    ${DIARY_ART_OPTIONS.map(o=>`
+      <div class="settings-row" data-artpick="${o.key}" style="cursor:pointer; ${curArt===o.key?'background:color-mix(in srgb, var(--accent) 10%, transparent); border-radius:10px;':''}">
+        <div class="sr-label">${curArt===o.key?'✓ ':''}${o.label}<div class="sr-sub">${o.desc}</div></div>
+      </div>`).join('')}
+    <div class="ep-top-label">Page transition</div>
+    ${JOURNAL_TRANSITION_OPTIONS.map(o=>`
+      <div class="settings-row" data-transpick="${o.key}" style="cursor:pointer; ${curTrans===o.key?'background:color-mix(in srgb, var(--accent) 10%, transparent); border-radius:10px;':''}">
+        <div class="sr-label">${curTrans===o.key?'✓ ':''}${o.label}<div class="sr-sub">${o.desc}</div></div>
+      </div>`).join('')}
+    <button class="btn secondary" data-close style="margin-top:14px;">Done</button>
+  `);
+  document.querySelectorAll('#modalBody [data-artpick]').forEach(row=> row.addEventListener('click', ()=>{
+    S.settings.diaryArtStyle = row.dataset.artpick;
+    saveState(); renderDiarySketch(); openDiaryCustomizeModal();
+  }));
+  document.querySelectorAll('#modalBody [data-transpick]').forEach(row=> row.addEventListener('click', ()=>{
+    S.settings.journalTransition = row.dataset.transpick;
+    saveState(); openDiaryCustomizeModal();
+  }));
+}
+document.getElementById('diaryCustomizeBtn').addEventListener('click', openDiaryCustomizeModal);
+document.getElementById('journalFont').addEventListener('change', (e)=>{ document.getElementById('journalText').style.fontFamily = journalFontStack(e.target.value); });
 document.getElementById('journalColor').addEventListener('input', (e)=>{ document.getElementById('journalText').style.color = journalInkColor(e.target.value); });
 /* v14.1.0 — shared diary-page decoration for jsPDF exports (this-entry PDF
    and the full diary export below): parchment fill, a double-line
@@ -6811,7 +7222,7 @@ document.getElementById('journalPrintBtn').addEventListener('click', ()=>{
     <style>
       @page{ margin:0; }
       body{ margin:0; padding:36px 34px 34px 50px; background:linear-gradient(160deg,#f8f0dc,#efe1bf);
-            font-family:'${entry.font}',cursive; color:${ink}; }
+            font-family:${journalFontStack(entry.font)}; color:${ink}; }
       .page{ position:relative; }
       .page::before{ content:''; position:absolute; left:-22px; top:-6px; bottom:-6px; width:1px; background:rgba(178,58,58,.4); }
       h2{ font-family:Georgia,serif; font-style:italic; font-size:24px; margin:0 0 4px; color:#3b2f2a; }
@@ -6843,7 +7254,7 @@ document.getElementById('journalWordBtn').addEventListener('click', ()=>{
   // ::before/::after, but flat background-color + a border survive fine,
   // so this gets a toned-down parchment look rather than the full CSS
   // treatment used for Print/PDF.
-  const html = `<html><head><meta charset="utf-8"></head><body style="background:#f4ecd8; padding:30px 30px 30px 44px; border:1px solid #c9a35c;"><h2 style="font-family:Georgia,serif; font-style:italic; color:#3b2f2a; border-bottom:2px solid #a9823a; padding-bottom:6px; display:inline-block;">${dateStr}</h2><p style="white-space:pre-wrap; font-family:${font},cursive; color:#3b2f2a; line-height:1.8; font-size:14pt;">${text.replace(/</g,'&lt;')}</p></body></html>`;
+  const html = `<html><head><meta charset="utf-8"></head><body style="background:#f4ecd8; padding:30px 30px 30px 44px; border:1px solid #c9a35c;"><h2 style="font-family:Georgia,serif; font-style:italic; color:#3b2f2a; border-bottom:2px solid #a9823a; padding-bottom:6px; display:inline-block;">${dateStr}</h2><p style="white-space:pre-wrap; font-family:${journalFontStack(font)}; color:#3b2f2a; line-height:1.8; font-size:14pt;">${text.replace(/</g,'&lt;')}</p></body></html>`;
   const blob = new Blob(['\ufeff', html], { type:'application/msword' });
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `Journal-${journalDate}.doc`; a.click();
 });
@@ -8056,6 +8467,10 @@ function loadSettingsForm(){
   }
   document.getElementById('setQuoteOrder').value = st.quoteOrder==='random' ? 'random' : 'sequential';
   document.getElementById('setSoundOn').classList.toggle('on', st.soundOn!==false);
+  // v14.4.0 — adjustable notification volume
+  const volPct = Math.round((st.notifVolume ?? 0.5) * 100);
+  document.getElementById('setNotifVolume').value = volPct;
+  document.getElementById('notifVolumeLabel').textContent = volPct + '%';
   drawAlertToneList();
   drawModuleToggleList();
   drawMotivationModuleList();
@@ -8156,16 +8571,21 @@ document.getElementById('smResetBtn').addEventListener('click', ()=>{
 });
 /* v14.0.0 — Global clock (spec §20) */
 function loadClockSettingsForm(){
-  const el1 = document.getElementById('clockEnabled'), el2 = document.getElementById('clockStyle');
+  const el1 = document.getElementById('clockEnabled'), el2 = document.getElementById('clockStyle'), el3 = document.getElementById('clockSize');
   if(!el1 || !el2) return;
   el1.value = S.settings.clockEnabled===false ? '0' : '1';
   el2.value = S.settings.clockStyle || 'digital';
+  if(el3) el3.value = S.settings.clockSize || 'medium'; // v14.4.0
 }
 document.getElementById('clockEnabled').addEventListener('change', (e)=>{
   S.settings.clockEnabled = e.target.value==='1'; saveState(); renderHeaderClock();
 });
 document.getElementById('clockStyle').addEventListener('change', (e)=>{
   S.settings.clockStyle = e.target.value; saveState(); renderHeaderClock();
+});
+// v14.4.0 — clock size control
+document.getElementById('clockSize').addEventListener('change', (e)=>{
+  S.settings.clockSize = e.target.value; saveState(); renderHeaderClock();
 });
 /* v14.0.0 — Home Quick Actions customization (spec §9.2) */
 /* v14.1.0 — Home Quick Actions reordering added (was toggle-only before —
@@ -8430,6 +8850,13 @@ function drawAlertToneList(){
 document.getElementById('setSoundOn').addEventListener('click', function(){
   S.settings.soundOn = S.settings.soundOn===false ? true : false; this.classList.toggle('on', S.settings.soundOn); saveState();
 });
+// v14.4.0 — adjustable notification volume
+document.getElementById('setNotifVolume').addEventListener('input', function(){
+  S.settings.notifVolume = Number(this.value) / 100;
+  document.getElementById('notifVolumeLabel').textContent = this.value + '%';
+  saveState();
+});
+document.getElementById('testNotifVolumeBtn').addEventListener('click', ()=> playAlertTone('habit'));
 document.getElementById('viewNotifHistBtn').addEventListener('click', openNotificationHistoryModal);
 function updateGreeting(){
   document.getElementById('greetName').textContent = S.settings.name ? `Hey ${S.settings.name}` : 'Hey there';
@@ -8467,6 +8894,7 @@ function renderHeaderClock(){
   el.style.display='flex';
   const now = new Date();
   const style = S.settings.clockStyle || 'digital';
+  const size = S.settings.clockSize || 'medium'; // v14.4.0
   const dateShort = now.toLocaleDateString(undefined,{weekday:'short', month:'short', day:'numeric'});
   const h24 = now.getHours(), ampm = h24>=12?'PM':'AM', h12 = ((h24+11)%12)+1;
   const timeHtml = `<span class="hclock-time">${String(h12).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}<span class="hclock-sec">:${String(now.getSeconds()).padStart(2,'0')}</span></span><span class="hclock-ampm">${ampm}</span>`;
@@ -8474,7 +8902,7 @@ function renderHeaderClock(){
   if(style==='analog') inner = `${miniAnalogClockSvg(now)}<span class="hclock-date">${dateShort}</span>`;
   else if(style==='both') inner = `${miniAnalogClockSvg(now)}<span class="hclock-textwrap"><span class="hclock-date">${dateShort}</span>${timeHtml}</span>`;
   else inner = `<span class="hclock-textwrap"><span class="hclock-date">${dateShort}</span>${timeHtml}</span>`; // 'digital' (default)
-  el.innerHTML = `<span class="hclock-chip">${inner}</span>`;
+  el.innerHTML = `<span class="hclock-chip hclock-size-${size}">${inner}</span>`;
 }
 /* Compact analog face for the header chip. Every colour is a theme
    variable (see comment above) — the accent ring specifically follows
@@ -8860,6 +9288,17 @@ function renderAll(){
 function init(){
   try{ history.replaceState({ screen:'dashboard' }, '', '#dashboard'); }catch(e){}
   loadState();
+  // v14.4.0 — fixes the header clock "jumping position on open" glitch:
+  // renderHeaderClock() first ran at top-level script parse time, before
+  // loadState() had loaded the real S.settings (clockStyle/clockEnabled/
+  // clockSize) — so it painted once with defaults, then ~1s later the
+  // setInterval tick re-rendered with the actual saved settings, and if
+  // those differed (e.g. Analog or Both style, which is wider than plain
+  // Digital text) the chip's width changed, visibly shoving the rest of
+  // the header row sideways. Re-rendering immediately here, right after
+  // the real settings are loaded, means the correct size/style paints on
+  // the very first frame instead of a beat later.
+  renderHeaderClock();
   applyTheme();
   applyExperiencePack(S.settings.experiencePack || 'glass', {skipBg:true});
   // v12.2 — kick photo fetches off immediately, before the first render,
@@ -9008,6 +9447,12 @@ function playAlertTone(kind){
   const name = (S.settings.alertSounds && S.settings.alertSounds[kind]) || DEFAULT_ALERT_TONES[kind] || 'chime';
   if(name==='none') return;
   const tone = TONE_LIBRARY[name] || TONE_LIBRARY.chime;
+  // v14.4.0 — notification volume was hardcoded to a fixed 0.22 peak gain
+  // (quite quiet) with no way to change it. Now driven by
+  // S.settings.notifVolume (0–1, default 0.5 — a more noticeable but
+  // still pleasant level, roughly double the old fixed value), adjustable
+  // via Settings → Reminder sounds → Volume.
+  const peak = Math.max(0.05, Math.min(1, S.settings.notifVolume ?? 0.5)) * 0.4; // 0.4 ceiling keeps even 100% from clipping/distorting the oscillator
   try{
     if(!__alertAudioCtx) __alertAudioCtx = new (window.AudioContext||window.webkitAudioContext)();
     const ctx = __alertAudioCtx;
@@ -9018,7 +9463,7 @@ function playAlertTone(kind){
       osc.type = tone.wave || 'sine';
       osc.frequency.value = freq;
       gain.gain.setValueAtTime(0.0001, now+delay);
-      gain.gain.exponentialRampToValueAtTime(0.22, now+delay+0.02);
+      gain.gain.exponentialRampToValueAtTime(peak, now+delay+0.02);
       gain.gain.exponentialRampToValueAtTime(0.0001, now+delay+dur);
       osc.connect(gain); gain.connect(ctx.destination);
       osc.start(now+delay); osc.stop(now+delay+dur+0.02);
@@ -9832,15 +10277,14 @@ function openGoalModal(id){
       <div class="hint" id="goalCustomHint" style="display:none;">Custom goals are always tracked manually — update "Current progress" yourself as you make progress.</div>
     </div>
     <label class="fl">Deadline (optional)</label><input type="date" id="goalDeadline" value="${g?g.deadline||'':''}">
-    ${g ? `
-    <!-- v14.1.0 — AI assistance (spec §4): reads this goal + your actual
-         existing habits/diet data, suggests concrete next steps. Only
-         shown once the goal is saved (needs a real title + progress to
-         reason about) — the person accepts/rejects each suggestion
-         individually, nothing is created automatically. -->
+    <!-- v14.4.0 — AI assistance now available immediately while adding a
+         NEW goal, not only after it's already been saved (spec: AI
+         should actively help with entries, not just be a decorative
+         button gated behind an existing record — the previous version
+         only appeared once you'd already manually saved the goal, i.e.
+         after the actual data-entry moment it would have helped with). -->
     <button class="btn secondary" id="goalAiBtn" type="button" style="margin-top:14px;">✨ Get AI suggestions</button>
     <div id="goalAiPanel" style="display:none; margin-top:10px;"></div>
-    ` : ''}
     <button class="btn primary" id="goalSave" style="margin-top:16px;">Save</button>
     ${g?'<button class="btn danger" id="goalDel" style="margin-top:10px;">Delete</button>':''}
   `);
@@ -9868,27 +10312,33 @@ function openGoalModal(id){
   modeSel.onchange = syncWraps; syncWraps();
   // v14.1.0 — Goal AI suggestions (spec §4's worked example: "Lose 10 kg"
   // → habits, activity targets, meal/diet actions, milestones).
-  if(g){
-    wireAiSuggestButton('goalAiBtn', 'goalAiPanel', async ()=>{
-      const progress = goalProgressCalc(g);
-      const existingHabitNames = S.habits.map(h=>h.name).join(', ') || 'none yet';
-      const prompt = `You are helping someone plan concrete steps toward a personal goal inside a life-management app. Goal: "${g.title}" (type: ${g.mode}). Current progress: ${progress.current} of ${progress.target}${g.unit?' '+g.unit:''}${g.deadline?`, deadline ${g.deadline}`:''}. Their existing habits: ${existingHabitNames}.
+  // v14.4.0 — now works for a brand-new, not-yet-saved goal too: reads
+  // the title/type/deadline straight from the form fields instead of
+  // requiring a saved `g` object. Falls back to live progress data only
+  // when editing an existing goal (a new one has no progress yet).
+  wireAiSuggestButton('goalAiBtn', 'goalAiPanel', async ()=>{
+    const title = document.getElementById('goalTitle').value.trim();
+    if(!title){ throw new Error('Type a goal title first so there\'s something to suggest steps for.'); }
+    const mode = document.getElementById('goalMode').value;
+    const deadline = document.getElementById('goalDeadline').value;
+    const progressLine = g ? (()=>{ const p = goalProgressCalc(g); return `Current progress: ${p.current} of ${p.target}${g.unit?' '+g.unit:''}.`; })() : 'Just being created — no progress yet.';
+    const existingHabitNames = S.habits.map(h=>h.name).join(', ') || 'none yet';
+    const prompt = `You are helping someone plan concrete steps toward a personal goal inside a life-management app. Goal: "${title}" (type: ${mode}). ${progressLine}${deadline?` Deadline: ${deadline}.`:''} Their existing habits: ${existingHabitNames}.
 
 Suggest concrete, specific next steps — not generic advice. Reply with ONLY compact JSON, no markdown: {"habits":["1-4 short new habit names, max 5 words each, that don't duplicate their existing habits"],"milestones":["2-4 short milestone checkpoints toward this goal, each with a rough number/date if sensible"],"nextAction":"ONE short, specific, doable-this-week action, max 20 words"}`;
-      const result = await aiSuggest(prompt);
-      const habitsHtml = (result.habits||[]).map(h=>`
-        <div class="settings-row"><div class="sr-label">🎯 ${h}</div><button class="btn secondary" data-addhabit="${h.replace(/"/g,'&quot;')}" style="width:auto; padding:6px 12px; font-size:11px;">+ Add</button></div>`).join('');
-      const milestonesHtml = (result.milestones||[]).map(m=>`<li>${m}</li>`).join('');
-      setTimeout(()=>{ // wire the per-suggestion Add buttons after this HTML is actually inserted
-        document.querySelectorAll('#goalAiPanel [data-addhabit]').forEach(b=> b.onclick = ()=> openAddHabitModal(b.dataset.addhabit));
-      }, 0);
-      return `
-        ${habitsHtml ? `<div class="ep-top-label" style="margin-top:0;">Suggested habits</div>${habitsHtml}` : ''}
-        ${milestonesHtml ? `<div class="ep-top-label">Milestones</div><ul style="margin:0 0 10px 18px; font-size:12.5px; color:var(--text);">${milestonesHtml}</ul>` : ''}
-        ${result.nextAction ? `<div class="food-insight-card" style="margin-top:6px;"><div class="food-insight-head">➡️ This week</div><div style="font-size:12.5px;">${result.nextAction}</div></div>` : ''}
-      `;
-    });
-  }
+    const result = await aiSuggest(prompt);
+    const habitsHtml = (result.habits||[]).map(h=>`
+      <div class="settings-row"><div class="sr-label">🎯 ${h}</div><button class="btn secondary" data-addhabit="${h.replace(/"/g,'&quot;')}" style="width:auto; padding:6px 12px; font-size:11px;">+ Add</button></div>`).join('');
+    const milestonesHtml = (result.milestones||[]).map(m=>`<li>${m}</li>`).join('');
+    setTimeout(()=>{ // wire the per-suggestion Add buttons after this HTML is actually inserted
+      document.querySelectorAll('#goalAiPanel [data-addhabit]').forEach(b=> b.onclick = ()=> openAddHabitModal(b.dataset.addhabit));
+    }, 0);
+    return `
+      ${habitsHtml ? `<div class="ep-top-label" style="margin-top:0;">Suggested habits</div>${habitsHtml}` : ''}
+      ${milestonesHtml ? `<div class="ep-top-label">Milestones</div><ul style="margin:0 0 10px 18px; font-size:12.5px; color:var(--text);">${milestonesHtml}</ul>` : ''}
+      ${result.nextAction ? `<div class="food-insight-card" style="margin-top:6px;"><div class="food-insight-head">➡️ This week</div><div style="font-size:12.5px;">${result.nextAction}</div></div>` : ''}
+    `;
+  });
   document.getElementById('goalSave').onclick = ()=>{
     const title = document.getElementById('goalTitle').value.trim(); if(!title){ alert('Enter a title'); return; }
     const mode = modeSel.value;
@@ -10543,34 +10993,40 @@ function openLearningModal(id){
     <label class="fl">Target / completion date (optional)</label><input type="date" id="lrnTargetDate" value="${item?item.targetDate||'':''}">
     <label class="fl">Next action (optional)</label><input type="text" id="lrnNextAction" value="${item?(item.nextAction||'').replace(/"/g,'&quot;'):''}" placeholder="e.g. Finish chapter 3">
     <label class="fl">Notes (optional)</label><textarea id="lrnNotes" rows="3">${item?(item.notes||''):''}</textarea>
-    ${item ? `
     <!-- v14.1.0 — AI assistance (spec §4's worked example): what to learn
-         next, topic sequence, weekly actions, revision schedule. -->
+         next, topic sequence, weekly actions, revision schedule.
+         v14.4.0 — now works while ADDING a new item too, not only after
+         it's already saved (same fix as Goals — reads straight from the
+         form fields when there's no saved item yet). -->
     <button class="btn secondary" id="lrnAiBtn" type="button" style="margin-top:14px;">✨ Get AI suggestions</button>
     <div id="lrnAiPanel" style="display:none; margin-top:10px;"></div>
-    ` : ''}
     <button class="btn primary" id="lrnSave" style="margin-top:16px;">Save</button>
     ${item?'<button class="btn danger" id="lrnDel" style="margin-top:10px;">Delete</button>':''}
   `);
   document.getElementById('lrnProgress').addEventListener('input', (e)=>{ document.getElementById('lrnProgressVal').textContent = e.target.value; });
-  if(item){
-    wireAiSuggestButton('lrnAiBtn', 'lrnAiPanel', async ()=>{
-      const prompt = `You are a learning coach helping someone plan their next steps for something they're learning inside a personal life-management app. Skill/topic: "${item.title}" (type: ${item.type}). Current status: ${item.status}, progress: ${item.progress||0}%.${item.source?` Source: ${item.source}.`:''}${item.notes?` Notes: ${item.notes}.`:''}
+  wireAiSuggestButton('lrnAiBtn', 'lrnAiPanel', async ()=>{
+    const title = document.getElementById('lrnTitle').value.trim();
+    if(!title){ throw new Error('Type a title/skill first so there\'s something to suggest steps for.'); }
+    const type = document.getElementById('lrnType').value;
+    const status = document.getElementById('lrnStatus').value;
+    const progress = document.getElementById('lrnProgress').value;
+    const source = document.getElementById('lrnSource').value.trim();
+    const notes = document.getElementById('lrnNotes').value.trim();
+    const prompt = `You are a learning coach helping someone plan their next steps for something they're learning inside a personal life-management app. Skill/topic: "${title}" (type: ${type}). Current status: ${status}, progress: ${progress}%.${source?` Source: ${source}.`:''}${notes?` Notes: ${notes}.`:''}
 
 Reply with ONLY compact JSON, no markdown: {"whatNext":"one short specific thing to learn/do next, max 15 words","topics":["3-5 short specific sub-topics in a sensible learning sequence, max 6 words each"],"weeklyAction":"one concrete, doable-this-week action, max 18 words","revisionTip":"one short spaced-repetition/revision suggestion specific to this skill, max 20 words"}`;
-      const result = await aiSuggest(prompt);
-      setTimeout(()=>{
-        const useBtn = document.getElementById('lrnUseNextActionBtn');
-        if(useBtn) useBtn.onclick = ()=>{ document.getElementById('lrnNextAction').value = result.whatNext || result.weeklyAction || ''; };
-      }, 0);
-      return `
-        ${result.whatNext ? `<div class="food-insight-card"><div class="food-insight-head">➡️ What's next</div><div style="font-size:12.5px; margin-bottom:8px;">${result.whatNext}</div><button class="link-btn" id="lrnUseNextActionBtn">Use as "Next action" above ↑</button></div>` : ''}
-        ${(result.topics||[]).length ? `<div class="ep-top-label">Suggested sequence</div><ul style="margin:0 0 10px 18px; font-size:12.5px; color:var(--text);">${result.topics.map(t=>`<li>${t}</li>`).join('')}</ul>` : ''}
-        ${result.weeklyAction ? `<div class="ep-top-label">This week</div><div style="font-size:12.5px; margin-bottom:8px;">${result.weeklyAction}</div>` : ''}
-        ${result.revisionTip ? `<div class="ep-top-label">Revision</div><div style="font-size:12.5px;">${result.revisionTip}</div>` : ''}
-      `;
-    });
-  }
+    const result = await aiSuggest(prompt);
+    setTimeout(()=>{
+      const useBtn = document.getElementById('lrnUseNextActionBtn');
+      if(useBtn) useBtn.onclick = ()=>{ document.getElementById('lrnNextAction').value = result.whatNext || result.weeklyAction || ''; };
+    }, 0);
+    return `
+      ${result.whatNext ? `<div class="food-insight-card"><div class="food-insight-head">➡️ What's next</div><div style="font-size:12.5px; margin-bottom:8px;">${result.whatNext}</div><button class="link-btn" id="lrnUseNextActionBtn">Use as "Next action" above ↑</button></div>` : ''}
+      ${(result.topics||[]).length ? `<div class="ep-top-label">Suggested sequence</div><ul style="margin:0 0 10px 18px; font-size:12.5px; color:var(--text);">${result.topics.map(t=>`<li>${t}</li>`).join('')}</ul>` : ''}
+      ${result.weeklyAction ? `<div class="ep-top-label">This week</div><div style="font-size:12.5px; margin-bottom:8px;">${result.weeklyAction}</div>` : ''}
+      ${result.revisionTip ? `<div class="ep-top-label">Revision</div><div style="font-size:12.5px;">${result.revisionTip}</div>` : ''}
+    `;
+  });
   document.getElementById('lrnSave').onclick = ()=>{
     const title = document.getElementById('lrnTitle').value.trim();
     if(!title){ alert('Enter a title'); return; }
@@ -10953,7 +11409,11 @@ function renderMealPlanner(){
         <div class="mp-slot" style="border-left:3px solid ${style.color};">
           <span class="mp-slot-emoji" title="${label}">${style.emoji}</span>
           <input type="text" data-mpdate="${ds}" data-mpslot="${key}" value="${(day[key]||'').replace(/"/g,'&quot;')}" placeholder="${label}…" style="flex:1;">
-          <button class="mp-eaten-btn${done?' done':''}" data-mpdone="${ds}" data-mpdoneslot="${key}" title="${done?'Marked eaten — tap to undo':'Mark as eaten'}" ${hasText?'':'disabled style="opacity:.35;"'}>${done?'✓ Eaten':'☐ Eaten'}</button>
+          <div class="mp-slot-actions">
+            <button class="mp-icon-btn" data-mpai="${ds}:${key}" title="AI suggest">✨</button>
+            ${hasText?`<button class="mp-icon-btn" data-mpclear="${ds}:${key}" title="Clear">✕</button>`:''}
+            <button class="mp-eaten-btn${done?' done':''}" data-mpdone="${ds}" data-mpdoneslot="${key}" title="${done?'Marked eaten — tap to undo':'Mark as eaten'}" ${hasText?'':'disabled style="opacity:.35;"'}>${done?'✓ Eaten':'☐ Eaten'}</button>
+          </div>
         </div>`;
       }).join('')}
     </div>`;
@@ -10972,6 +11432,32 @@ function renderMealPlanner(){
       const ds = btn.dataset.mpdone, slot = btn.dataset.mpdoneslot;
       const doneRec = S.mealPlanDone[ds] && S.mealPlanDone[ds][slot];
       if(doneRec && doneRec.done) unmarkMealSlotDone(ds, slot); else markMealSlotDone(ds, slot);
+    });
+  });
+  // v14.4.0 — per-slot AI suggest (✨) and Clear (✕)
+  wrap.querySelectorAll('[data-mpai]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const [ds, slot] = btn.dataset.mpai.split(':');
+      btn.classList.add('loading'); btn.textContent = '⏳';
+      try{
+        const food = await aiSuggestMealSlot(ds, slot);
+        if(!S.mealPlan[ds]) S.mealPlan[ds] = {};
+        S.mealPlan[ds][slot] = `${food.name} (~${food.cal} kcal)`;
+        syncDoneMealEdit(ds, slot, S.mealPlan[ds][slot]);
+        saveState(); renderMealPlanner(); renderDiet();
+      }catch(e){
+        alert(`Could not get a suggestion (${e.message}).`);
+        btn.classList.remove('loading'); btn.textContent = '✨';
+      }
+    });
+  });
+  wrap.querySelectorAll('[data-mpclear]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const [ds, slot] = btn.dataset.mpclear.split(':');
+      const doneRec = S.mealPlanDone[ds] && S.mealPlanDone[ds][slot];
+      if(doneRec && doneRec.done) unmarkMealSlotDone(ds, slot); // clean up the linked Diet entry properly instead of leaving an empty-named one behind
+      if(S.mealPlan[ds]) S.mealPlan[ds][slot] = '';
+      saveState(); renderMealPlanner(); renderDiet();
     });
   });
 }
@@ -10998,8 +11484,53 @@ function suggestFoodForSlot(slot, targetCal, usedNames){
   candidates.forEach(f=>{ const diff = Math.abs(f.cal-targetCal); if(diff<bestDiff){ bestDiff=diff; best=f; } });
   return best;
 }
+/* v14.4.0 — real AI-powered per-slot meal suggestions (spec §2), using
+   the shared aiSuggest() Gemini helper — distinct from
+   suggestFoodForSlot() above, which is the offline local-lookup fallback
+   used by "Auto-fill" and by this function itself if the AI call fails
+   (no key set, no connection, etc). Context sent: the slot type, its
+   calorie target, which day/weekday this is, the person's diet goal if
+   set, and whatever's already planned elsewhere this view — so it
+   avoids repeating the same suggestion across a Today+Tomorrow or Next-5
+   view instead of suggesting the same thing for every slot. */
+async function aiSuggestMealSlot(ds, slotKey){
+  const label = (MEAL_SLOTS.find(s=>s[0]===slotKey)||[,slotKey])[1];
+  const targets = mealSlotTargets();
+  const weekday = new Date(ds+'T00:00:00').toLocaleDateString(undefined,{weekday:'long'});
+  const goal = S.diet.settings.goal || 'maintain';
+  const others = [];
+  mpDatesForView().forEach(d2=>{
+    MEAL_SLOTS.forEach(([k2])=>{ const v=(S.mealPlan[d2]||{})[k2]; if(v) others.push(v.replace(/\s*\(~\d+\s*kcal\)$/,'')); });
+  });
+  const prompt = `You are a helpful nutrition assistant suggesting ONE specific meal for a meal-planning app. Slot: ${label}, for ${weekday} (${ds}). Target: about ${targets.perSlot[slotKey]} kcal for this slot (daily goal: ${goal}). ${others.length?`Already planned elsewhere this view (avoid repeating these): ${others.slice(0,12).join(', ')}.`:''}
+
+Suggest ONE realistic, appetizing, specific meal appropriate for ${label.toLowerCase()} — not a generic category, an actual dish or combination (e.g. "Grilled chicken with quinoa and steamed broccoli", not "protein and vegetables"). Reply with ONLY compact JSON, no markdown: {"name":"the meal, max 8 words","calories": a_number_near_the_target}`;
+  try{
+    const result = await aiSuggest(prompt);
+    if(result && result.name && result.calories) return { name: result.name, cal: Math.round(Number(result.calories)) };
+    throw new Error('empty');
+  }catch(e){
+    // graceful fallback to the offline local suggestion — never leaves the slot untouched just because the AI call failed
+    const used = new Set(others);
+    const local = suggestFoodForSlot(slotKey, targets.perSlot[slotKey], used);
+    if(!local) throw e;
+    return local;
+  }
+}
+/* v14.4.0 — fixed a real, consistent bug: this always filled
+   weekDates(mpWeekStart) — a fixed calendar week — regardless of which
+   dates were actually on screen. mpWeekStart only changes when the Week
+   view's prev/next buttons are used, and never resets afterward — so
+   the moment someone browsed the Week view even once, mpWeekStart drifted
+   away from "this week" permanently, and every later Auto-fill (even
+   from the default Today+Tomorrow view) silently filled that stale,
+   invisible week instead of what was actually on screen. This is what
+   showed up as "tomorrow's meal field is always empty": the fill was
+   landing somewhere else entirely. Now fills exactly the dates
+   mpDatesForView() is currently showing — Today+Tomorrow, Week, Next 5,
+   whatever's actually visible — so what you see is what gets filled. */
 function autoFillWeekByCalories(){
-  const dates = weekDates(mpWeekStart);
+  const dates = mpDatesForView();
   const targets = mealSlotTargets();
   const usedThisWeek = { breakfast:new Set(), lunch:new Set(), dinner:new Set(), snacks:new Set() };
   let filled = 0;
@@ -11031,7 +11562,7 @@ document.getElementById('mpRepeatWeekBtn').addEventListener('click', ()=>{
 });
 document.getElementById('mpAutoFillBtn').addEventListener('click', ()=>{
   const {filled, personalized} = autoFillWeekByCalories();
-  if(filled===0){ alert('Every slot this week already has something planned. Clear a slot first if you want a new suggestion for it.'); return; }
+  if(filled===0){ alert('Every slot currently shown already has something planned. Clear a slot first if you want a new suggestion for it.'); return; }
   if(!personalized) alert(`Filled ${filled} empty meal${filled===1?'':'s'} using a general 2,000 kcal/day target. Add your height/weight/age in Diet → Settings for suggestions personalized to you.`);
 });
 document.getElementById('exportMealPlanBtn').addEventListener('click', exportMealPlanExcel);

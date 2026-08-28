@@ -378,6 +378,24 @@ nav.bottom button{
 nav.bottom button .ic{ font-size:18px; }
 nav.bottom button.active{ color:var(--text); background:var(--card2); }
 
+/* v14.4.3 — see the HTML comment above #navSafeFill for the full reasoning.
+   Sits directly behind the floating nav, painted the same colour as the
+   nav card, filling the safe-area gap so it reads as the nav's own base
+   instead of exposed raw page background. z-index is one below nav's so
+   the nav itself still renders on top; pointer-events:none so it can never
+   intercept a touch even if a pack's own nav override shrinks nav's
+   footprint. exp-nav-dock's flush nav already covers this same area on its
+   own, so the plate just sits invisibly behind it there. */
+.nav-safe-fill{
+  position:absolute; left:0; right:0; bottom:0;
+  height:calc(10px + var(--safe-b) + 16px);
+  background:var(--card); border-radius:22px 22px 0 0;
+  z-index:29; pointer-events:none;
+}
+body.exp-nav-lifeos .nav-safe-fill{ height:calc(14px + var(--safe-b) + 16px); border-radius:28px 28px 0 0; }
+body.exp-nav-glass .nav-safe-fill{ background:color-mix(in srgb, var(--card) 45%, transparent); }
+body.exp-nav-dock .nav-safe-fill{ display:none; }
+
 /* ============ CARDS ============ */
 .card{ background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:16px; margin-bottom:12px; }
 .stat-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
@@ -2365,6 +2383,20 @@ nav.bottom, .fab{ transition:transform .18s ease; }
   </main>
 
   <nav class="bottom" id="bottomNav"></nav>
+  <!-- v14.4.3 — the floating pill nav sits above the true bottom edge with a
+       gap (10px + safe-area-inset-bottom, more on packs like lifeos) so its
+       rounded corners read as "floating". That gap was never painted with
+       anything but the plain page background (a flat, muted theme colour
+       under a very faint 16%-opacity photo layer) — every other part of the
+       screen has an opaque white card sitting on top of that same colour,
+       so it goes unnoticed, but this one strip has nothing covering it and
+       reads as a flat grey patch stuck to the bottom of every screen. This
+       backing plate sits just behind the nav, painted the same colour as
+       the nav card itself, so that strip now reads as part of the nav's
+       own base instead of a mismatched grey box. exp-nav-dock is
+       unaffected — its nav already sits flush at the true edge with no
+       gap, so this plate stays fully hidden behind it. -->
+  <div class="nav-safe-fill" id="navSafeFill"></div>
 
   <!-- ============ v12.0: ONE universal FAB — replaces the 9 screen-scoped fabAdd*
        buttons. Fixed at app-shell level so it's present on every screen. ============ -->
@@ -2463,7 +2495,22 @@ function wireAiSuggestButton(btnId, panelId, onGo){
   });
 }
 
-const APP_VERSION = 'v14.4.2'; // single source of truth for About screen & Settings row
+const APP_VERSION = 'v14.4.3'; // single source of truth for About screen & Settings row
+// v14.4.3 — fixed the grey strip sitting below the bottom nav on every
+// screen, always in the same spot, from the moment the app opens. The
+// floating pill nav sits above the true bottom edge with a safe-area gap
+// (10px + safe-area-inset-bottom, more on the lifeos pack) so it reads as
+// "floating" — but that gap was never painted with anything but the plain
+// page background: a flat, muted theme colour under a very faint
+// 16%-opacity photo layer. Everywhere else on screen an opaque white card
+// sits on top of that same colour, so it's never noticed there, but this
+// one strip has nothing covering it, so it reads as a flat grey patch
+// glued to the bottom of every screen. Added a backing plate (see
+// #navSafeFill in the HTML, styled in the .nav-safe-fill CSS block) that
+// sits just behind the nav and is painted the nav's own card colour
+// (adjusted for the glass pack's translucency, hidden entirely on the
+// dock pack whose nav already sits flush with no gap) so that strip now
+// reads as part of the nav's base instead of a mismatched grey box.
 // v14.4.2 — Meal Planner: found the actual cause of meal names being cut
 // off ("Peanut but…", "Fish curry …") — each input carried a leftover
 // inline style="flex:1;" that outranked the .mp-slot CSS rule meant to

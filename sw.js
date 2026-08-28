@@ -188,7 +188,14 @@
 // ✨/✕/Eaten buttons and truncating meal names ("Peanut but…"). Removed.
 // index.html changed, so bump so installed copies actually receive this
 // instead of serving a cached v14.4.1.
-const CACHE_NAME = 'gp-ledger-v14-4-2';
+// v14.4.3: fixed the grey strip below the bottom nav — the safe-area gap
+// under the floating nav was never painted with anything but the plain
+// page background, exposed on every screen since nothing covers it there.
+// Added a backing plate matching the nav's own card colour behind it. See
+// the APP_VERSION comment block in index.html for full detail. index.html
+// changed, so bump so installed copies actually receive this instead of
+// serving a cached v14.4.2.
+const CACHE_NAME = 'gp-ledger-v14-4-3';
 const IMG_CACHE_NAME = 'gp-ledger-images-v1';
 const CORE_ASSETS = [
   './index.html',

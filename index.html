@@ -1411,7 +1411,24 @@ body.exp-layout-gamified .dash-tile .dt-fill{ background:linear-gradient(90deg, 
    setVH() below). While any input/textarea is focused we also hide the
    fixed bottom nav + FAB instead of letting them float stranded mid-screen
    above the keyboard and swallow touches meant for the field. ------------ */
-body.kb-open nav.bottom, body.kb-open .fab{ transform:translateY(140%); pointer-events:none; transition:transform .18s ease; }
+body.kb-open nav.bottom, body.kb-open .fab, body.kb-open .nav-safe-fill{ transform:translateY(140%); pointer-events:none; transition:transform .18s ease; }
+/* v14.4.4 — while typing, the header (clock/search/Save & Sync row) used
+   to just sit there above the keyboard doing nothing useful, on top of
+   whatever native keyboard-accessory bar the OS/WebView itself adds — two
+   stacked bars of clutter above the actual text field, reported as
+   "annoying" while typing in Journal specifically, though it applies to
+   every text field. header.top isn't a floating overlay like nav.bottom
+   (it's a normal flex child that takes real layout space above <main>),
+   so it's collapsed via max-height/padding/opacity rather than translated
+   off-screen, which also lets <main> reclaim that space for the field
+   itself instead of just hiding a gap. The 260px max-height ceiling is
+   comfortably above the header's real height in every state so nothing
+   clips while expanded. Note: the OS's own keyboard accessory bar
+   (Previous/Next/Done, the QuickType word-suggestion strip) is native
+   WebView/keyboard UI — not part of this app — and can't be removed from
+   here; this only controls the app's own header. */
+header.top{ overflow:hidden; max-height:260px; transition:max-height .2s ease, opacity .15s ease, padding .2s ease; }
+body.kb-open header.top{ max-height:0; padding-top:0; padding-bottom:0; opacity:0; pointer-events:none; }
 nav.bottom, .fab{ transition:transform .18s ease; }
 </style>
 </head>
@@ -2495,7 +2512,17 @@ function wireAiSuggestButton(btnId, panelId, onGo){
   });
 }
 
-const APP_VERSION = 'v14.4.3'; // single source of truth for About screen & Settings row
+const APP_VERSION = 'v14.4.4'; // single source of truth for About screen & Settings row
+// v14.4.4 — while typing anywhere in the app, the header (clock/search/
+// Save & Sync row) now collapses away along with the bottom nav, instead
+// of staying put above the keyboard doing nothing. Also fixed a gap from
+// v14.4.3: the new nav safe-area backing plate wasn't included in the
+// kb-open rule, so it stayed visible as a plain card-coloured bar even
+// after nav.bottom itself slid away — it now hides together with nav.
+// Note: the native keyboard accessory bar (Previous/Next/Done, the
+// QuickType word-suggestion strip) is OS/WebView UI, not part of this
+// app, and isn't something a web app can remove — reducing our own
+// header+nav clutter is what's actually in reach here.
 // v14.4.3 — fixed the grey strip sitting below the bottom nav on every
 // screen, always in the same spot, from the moment the app opens. The
 // floating pill nav sits above the true bottom edge with a safe-area gap

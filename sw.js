@@ -195,7 +195,13 @@
 // the APP_VERSION comment block in index.html for full detail. index.html
 // changed, so bump so installed copies actually receive this instead of
 // serving a cached v14.4.2.
-const CACHE_NAME = 'gp-ledger-v14-4-3';
+// v14.4.4: header now collapses along with the bottom nav while typing,
+// and the v14.4.3 nav safe-area plate now hides together with nav.bottom
+// instead of staying visible on its own. See the APP_VERSION comment
+// block in index.html for full detail. index.html changed, so bump so
+// installed copies actually receive this instead of serving a cached
+// v14.4.3.
+const CACHE_NAME = 'gp-ledger-v14-4-4';
 const IMG_CACHE_NAME = 'gp-ledger-images-v1';
 const CORE_ASSETS = [
   './index.html',

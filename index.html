@@ -4578,6 +4578,22 @@ function applyTheme(){
   root.setProperty('--card', theme.card); root.setProperty('--card2', theme.card2);
   root.setProperty('--text', theme.text); root.setProperty('--sub', theme.sub);
   root.setProperty('--sub2', theme.sub2); root.setProperty('--line', theme.line);
+  /* v15.0.1 — bugfix: the page-wide background (body/#app, via
+     --bg-gradient) only ever got set from applyExperiencePack(), never
+     from here. header.top pulls its own gradient from --bg/--bg2 (both
+     updated above), so the header always tracked a theme switch — but
+     the rest of the page kept showing whatever --bg-gradient was left
+     over from the last time a pack was applied (often the *previous*
+     theme's flat color, or a pack default that no longer matches).
+     That's the mismatched/grey patch reported at the bottom of screens
+     with short content: header looks right, page background behind it
+     doesn't. Recompute it the same way applyExperiencePack() does —
+     the pack's own gradient if it defines one (e.g. Skyglass keeps its
+     signature blue-to-pink look regardless of theme), otherwise the
+     newly-selected theme's flat bg — so switching themes now also
+     keeps the page background in sync. */
+  const pack = currentPack();
+  root.setProperty('--bg-gradient', pack.bgGradient || theme.bg);
   const accent = st.customAccent || st.accent || theme.accent;
   root.setProperty('--accent', accent);
   root.setProperty('--accent2', st.customAccent ? accent : theme.accent2);

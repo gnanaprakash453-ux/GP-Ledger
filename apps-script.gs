@@ -119,7 +119,7 @@ const SS = SpreadsheetApp.getActiveSpreadsheet();
 // Bump this every time you paste updated code, so the app's "Test connection"
 // and sync-failure messages can tell you when a deployment is stale (i.e. you
 // edited/pasted new code but forgot Deploy > Manage deployments > New version).
-const SCRIPT_VERSION = 'v10.0.0';
+const SCRIPT_VERSION = 'v10.1.0';
 
 // v10.0.0 — checkReminders() gained a Tasks due-today check. Tasks has had
 // dueDate/dueTime fields since it shipped, and the client's own
@@ -128,6 +128,14 @@ const SCRIPT_VERSION = 'v10.0.0';
 // the same client logic here so a task due today also reaches Telegram on
 // the existing 5-minute trigger, same as debts/subscriptions/health/
 // documents/goals already do. No new trigger needed.
+// v10.1.0 — Nudges (journal inactivity, overdue-tasks pileup,
+// subscriptions-renewing-while-over-budget) now also fire in the
+// background, closing the "Known limitation, not yet addressed" noted in
+// BLUEPRINT.md since v13.5.0. checkNudges_() is a direct port of
+// index.html's checkNudges(), reading/writing the same
+// settings.nudgeLastShown dedupe object the client uses (via
+// writeNudgeLastShown_()) so an in-app nudge and a background one never
+// both fire for the same day.
 
 // v9.7.0 — the Data tab's full JSON snapshot used to live in ONE cell,
 // which Google Sheets caps at ~50,000 characters. Once total synced history
@@ -633,6 +641,126 @@ function checkReminders() {
     sendTelegram(settings.tgToken, settings.tgChatId, `📝 ${t.title} is due today${t.dueTime ? ' at ' + t.dueTime : ''}`);
     markSent(key);
   });
+
+  checkNudges_(payload, settings, today, alreadySent, markSent);
+}
+
+/**
+ * v15.1.0 — background mirror of index.html's checkNudges(). That
+ * function was documented (BLUEPRINT.md, "Known limitation, not yet
+ * addressed") as in-app/foreground-only: its own dedupe lives in
+ * S.settings.nudgeLastShown (synced, so this reads the same state the
+ * client already writes), keyed per-nudge per-day exactly like the
+ * client's nudgeAlreadyShownToday()/markNudgeShown() pair — this
+ * function reads that same object instead of ReminderLog, so a nudge
+ * already shown in-app today won't also fire a duplicate Telegram
+ * message, and vice versa. Each of the three conditions below is a
+ * direct port of its client counterpart (journal inactivity,
+ * overdue-tasks pileup, subscriptions-renewing-while-over-budget) —
+ * same thresholds, same data shape. NOTE: unlike the ReminderLog-backed
+ * checks above, marking a nudge shown here writes back into the Data
+ * tab's JSON snapshot (not just ReminderLog), since nudgeLastShown is
+ * genuinely part of synced settings and the client reads it on its own
+ * next sync/load — see writeNudgeLastShown_() below.
+ */
+function checkNudges_(payload, settings, today, alreadySent, markSent) {
+  const nudgeShown = (settings.nudgeLastShown || {});
+  const shownToday = function (key) { return nudgeShown[key] === today; };
+  const dirty = { v: false };
+  const markShown = function (key) { nudgeShown[key] = today; dirty.v = true; };
+
+  // 1. Journal inactivity — 7+ days since the last entry (or none ever)
+  if (!shownToday('journal_inactive')) {
+    const journalDates = Object.keys(payload.journal || {})
+      .filter(d => ((payload.journal[d] || []).length))
+      .sort();
+    const last = journalDates.length ? journalDates[journalDates.length - 1] : null;
+    const daysSince = last ? Math.round((new Date(today + 'T00:00:00') - new Date(last + 'T00:00:00')) / 86400000) : null;
+    if (daysSince === null || daysSince >= 7) {
+      markShown('journal_inactive');
+      const msg = last
+        ? `📔 It's been ${daysSince} days since your last Journal entry`
+        : `📔 You haven't written a Journal entry yet`;
+      sendTelegram(settings.tgToken, settings.tgChatId, msg);
+    }
+  }
+
+  // 2. Overdue tasks piling up (3+)
+  if (!shownToday('tasks_overdue')) {
+    const overdueCount = (payload.tasks || []).filter(t => !t.done && t.dueDate && t.dueDate < today).length;
+    if (overdueCount >= 3) {
+      markShown('tasks_overdue');
+      sendTelegram(settings.tgToken, settings.tgChatId, `📝 ${overdueCount} tasks are overdue`);
+    }
+  }
+
+  // 3. Subscriptions renewing within 5 days while a budget category is already over its limit
+  if (!shownToday('subs_over_budget')) {
+    const subNextRenewDaysAway = function (s) {
+      const now = new Date(today + 'T00:00:00');
+      if (s.cycle === 'monthly') {
+        let next = new Date(now.getFullYear(), now.getMonth(), Number(s.renewDay) || 1);
+        if (next < now) next = new Date(now.getFullYear(), now.getMonth() + 1, Number(s.renewDay) || 1);
+        return Math.round((next - now) / 86400000);
+      } else {
+        const parts = (s.renewDate || '01-01').split('-').map(Number);
+        let next = new Date(now.getFullYear(), parts[0] - 1, parts[1]);
+        if (next < now) next = new Date(now.getFullYear() + 1, parts[0] - 1, parts[1]);
+        return Math.round((next - now) / 86400000);
+      }
+    };
+    const dueSubs = (payload.subscriptions || []).filter(s => subNextRenewDaysAway(s) <= 5);
+    if (dueSubs.length) {
+      const ym = today.slice(0, 7);
+      const monthSpendByCategory = function (cat) {
+        return (payload.transactions || [])
+          .filter(t => t.type === 'out' && (t.category || 'Other') === cat && String(t.date).slice(0, 7) === ym)
+          .reduce((a, t) => a + Number(t.amount || 0), 0);
+      };
+      const overBudgetCat = (payload.budgets || []).find(b => monthSpendByCategory(b.category) > b.limit);
+      if (overBudgetCat) {
+        markShown('subs_over_budget');
+        sendTelegram(settings.tgToken, settings.tgChatId,
+          `🔁 ${dueSubs.length} subscription${dueSubs.length > 1 ? 's renew' : ' renews'} this week — you're already over budget in "${overBudgetCat.category}"`);
+      }
+    }
+  }
+
+  if (dirty.v) writeNudgeLastShown_(nudgeShown);
+}
+
+/**
+ * Persists this trigger's nudge-dedupe writes back into the Data tab's
+ * settings snapshot so the client (which reads nudgeLastShown from its
+ * own next sync/Load from Sheet) sees the same "already shown today"
+ * state this trigger just wrote — otherwise a nudge sent here overnight
+ * would fire again in-app the next time the user opens the app.
+ * Best-effort: read-modify-write against the same chunked Data tab
+ * storage handleSync() uses; any failure here is non-fatal (the nudge
+ * message already sent is not undone, just the dedupe flag might not
+ * stick — same trade-off ReminderLog already accepts for the checks
+ * above).
+ */
+function writeNudgeLastShown_(nudgeLastShown) {
+  try {
+    const dataSheet = SS.getSheetByName('Data');
+    if (!dataSheet) return;
+    const raw = readDataSnapshotRaw_(dataSheet);
+    if (!raw) return;
+    const obj = JSON.parse(raw);
+    if (!obj.settings) obj.settings = {};
+    obj.settings.nudgeLastShown = nudgeLastShown;
+    const snapshot = JSON.stringify(obj);
+    const chunks = chunkSnapshot_(snapshot);
+    dataSheet.clearContents();
+    dataSheet.getRange(1, 1).setValue(
+      'Full JSON snapshot (do not edit by hand) — split into ' + chunks.length +
+      ' row' + (chunks.length === 1 ? '' : 's') + ' below (' + snapshot.length + ' chars total).'
+    );
+    dataSheet.getRange(2, 1, chunks.length, 1).setValues(chunks.map(function (c) { return [c]; }));
+  } catch (e) {
+    // best-effort — see comment above
+  }
 }
 
 /**

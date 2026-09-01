@@ -1656,10 +1656,13 @@ nav.bottom, .fab{ transition:transform .18s ease; }
 
     <!-- ===================== MORE (menu) ===================== -->
     <section class="screen" id="screen-more">
+      <div class="search-box" style="margin-bottom:12px;"><span class="sicon">🔍</span><input type="text" id="moreFilterInput" placeholder="Find a section…"></div>
+      <div class="more-card" id="moreCustomizeBar" data-open="settings-modules" style="margin-bottom:14px;"><div class="mc-icon">🧩</div><div class="mc-mid"><div class="mc-title">Customize your Home bar</div><div class="mc-sub">Pin the 4 sections you use most so they're one tap away</div></div><span class="chev">›</span></div>
       <div id="moreModuleCards"></div>
-      <div class="section-head"><h2>System</h2></div>
-      <div class="more-card" data-open="settings"><div class="mc-icon">⚙️</div><div class="mc-mid"><div class="mc-title">Settings</div><div class="mc-sub">Sheet, Telegram, theme, modules, backup</div></div><span class="chev">›</span></div>
-      <div class="more-card" data-open="trash"><div class="mc-icon">🗑️</div><div class="mc-mid"><div class="mc-title">Trash</div><div class="mc-sub" id="trashCountSub">Deleted items — restore within 30 days</div></div><span class="chev">›</span></div>
+      <div class="section-head" data-more-section="system"><h2>System</h2></div>
+      <div class="more-card" data-open="settings" data-search="settings sheet telegram theme modules backup"><div class="mc-icon">⚙️</div><div class="mc-mid"><div class="mc-title">Settings</div><div class="mc-sub">Sheet, Telegram, theme, modules, backup</div></div><span class="chev">›</span></div>
+      <div class="more-card" data-open="trash" data-search="trash deleted restore"><div class="mc-icon">🗑️</div><div class="mc-mid"><div class="mc-title">Trash</div><div class="mc-sub" id="trashCountSub">Deleted items — restore within 30 days</div></div><span class="chev">›</span></div>
+      <div id="moreNoResults" class="hint" style="display:none; padding:16px 4px;">No sections match "<span id="moreNoResultsQuery"></span>".</div>
     </section>
 
     <!-- ===================== TRASH ===================== -->
@@ -2499,7 +2502,60 @@ function wireAiSuggestButton(btnId, panelId, onGo){
   });
 }
 
-const APP_VERSION = 'v15.0.0'; // single source of truth for About screen & Settings row
+const APP_VERSION = 'v15.4.0'; // single source of truth for About screen & Settings row
+// v15.4.0 — real, verifiable staleness fix, prompted by actually checking
+// the About modal instead of assuming it was fine. It claimed "14
+// trackers" and showcased 13 module chips — both stale copy from an
+// earlier version that never got updated as modules were added since;
+// the app actually has MODULE_DEFS.length (22) modules, and 9 of them
+// (Tasks, Notes, Travel, Learning, Content & Ideas, Meal Planner,
+// People, Trends, Reports) were missing from the chip cloud entirely.
+// The "7 Styles" claim, checked against EXPERIENCE_PACKS.length, was
+// actually correct — left as-is other than making it dynamic too so it
+// can't drift the same way. Both the count and the chip list now read
+// straight from MODULE_DEFS/EXPERIENCE_PACKS at render time instead of
+// being hand-typed, so this specific staleness can't recur next time a
+// module is added — same root-cause-over-patch approach as the
+// CHANGELOG/sw.js version-drift fixes in v15.0.0.
+// v15.3.0 — one-line description fix, nothing else. Content & Ideas'
+// MODULE_DEFS sub used to read "Capture an idea before it disappears" —
+// near-identical wording to Notes' "Quick capture, separate from
+// Journal", which read as a duplicate feature even though the two are
+// actually unrelated (Notes is generic freeform notes; Content & Ideas
+// is a content-creator pipeline with platform/content-type/status
+// idea→in-progress→published fields, links, publish link). Reworded to
+// "Content pipeline: idea → published, with platform & status" so it
+// reads as what it actually is at a glance, on both the More screen and
+// Settings → Modules (same MODULE_DEFS array feeds both, one edit,
+// nothing duplicated). No feature merged, removed, or renamed — no data
+// model touched.
+// v15.2.0 — real UX fix, not a bug: with all 22 modules enabled by
+// default and only 4 fitting the bottom nav (MAX_NAV_SLOTS), up to 18
+// sections sat in one long ungrouped-feeling scroll on the More screen
+// with no way to jump to one directly — this was the #1 "I can't find
+// things" complaint. Added a live filter box at the top of More
+// (filterMoreCards()) that matches against each card's label+sub text,
+// hiding empty section headers as it goes so you never see a bare
+// "Money" heading with nothing under it. Also added a "Customize your
+// Home bar" shortcut card that jumps straight into Settings → Modules
+// (openSettingsCategory('modules')) — the actual lever for pinning your
+// most-used sections onto the bottom nav already existed, it just wasn't
+// discoverable from the screen where the crowding is actually felt.
+// No navigation architecture changed (still 4 pinned + More), no module
+// removed or hidden — purely additive, findability-only.
+// v15.1.0 — closes the one gap v15.0.0 explicitly deferred: Nudges
+// (journal inactivity, overdue-tasks pileup, subscriptions-renewing-
+// while-over-budget — checkNudges() below) now also fire in the
+// background, not just while the app is open. apps-script.gs's
+// checkReminders() gained checkNudges_(), a direct port of this file's
+// checkNudges() that reads/writes the same S.settings.nudgeLastShown
+// dedupe object this file already syncs, so an in-app nudge and a
+// background Telegram nudge never both fire for the same day — whichever
+// happens first (app open vs. the 5-minute trigger) marks it shown for
+// both. SCRIPT_VERSION bumped to v10.1.0 (see APP_SCRIPT_VERSION below);
+// apps-script.gs must be redeployed for this to take effect. No client
+// (this file) logic changed — checkNudges() itself is untouched, only
+// its server-side mirror is new.
 // v15.0.0 — maintenance/architecture release, no visual redesign. Three
 // real gaps closed: (1) Tasks due-today reminders used to only fire while
 // the app was open (checkTaskReminders(), client-side popup only) — the
@@ -2907,7 +2963,7 @@ const MODULE_DEFS = [
   { key:'notes',         label:'Notes',         icon:'🗒️',  iconKey:'notes',    screen:'notes',         core:false, group:'Plan',   sub:'Quick capture, separate from Journal' },
   { key:'travel',        label:'Travel',        icon:'✈️',  iconKey:'travel',   screen:'travel',        core:false, group:'Plan',   sub:'Trips, itinerary, bookings & checklist' },
   { key:'learning',      label:'Learning',      icon:'📚',  iconKey:'learning', screen:'learning',      core:false, group:'Plan',   sub:'Courses, books & skills — with real progress' },
-  { key:'content',       label:'Content & Ideas', icon:'💡', iconKey:'content',  screen:'content',       core:false, group:'Plan',   sub:'Capture an idea before it disappears' },
+  { key:'content',       label:'Content & Ideas', icon:'💡', iconKey:'content',  screen:'content',       core:false, group:'Plan',   sub:'Content pipeline: idea → published, with platform & status' },
   { key:'mealplanner',   label:'Meal Planner',  icon:'🍽️',  iconKey:'mealplanner', screen:'mealplanner', core:false, group:'Track',  sub:'Plan the week — separate from Diet' },
   { key:'people',        label:'People',        icon:'👥',  iconKey:'people',   screen:'people',        core:false, group:'Plan',   sub:'The people behind the tasks, trips & expenses' },
   { key:'goals',         label:'Goals',         icon:'🎯',  iconKey:'goals',    screen:'goals',         core:false, group:'Plan',   sub:'Debt-free, savings, weight, habits & more' },
@@ -8253,12 +8309,12 @@ function openAboutModal(){
       <div class="hint" style="margin-top:6px;">Version ${APP_VERSION}</div>
     </div>
     <div style="display:flex; flex-direction:column; gap:9px; margin-bottom:14px;">
-      <div style="display:flex; gap:10px; align-items:flex-start; font-size:12.5px; color:var(--text);"><span>🔗</span><span>14 trackers that actually talk to each other — log a meal, your habit and goal update too.</span></div>
+      <div style="display:flex; gap:10px; align-items:flex-start; font-size:12.5px; color:var(--text);"><span>🔗</span><span>${MODULE_DEFS.length} trackers that actually talk to each other — log a meal, your habit and goal update too.</span></div>
       <div style="display:flex; gap:10px; align-items:flex-start; font-size:12.5px; color:var(--text);"><span>🔒</span><span>Your data stays on your device — sync goes only to your own Sheet, bot, and API key.</span></div>
       <div style="display:flex; gap:10px; align-items:flex-start; font-size:12.5px; color:var(--text);"><span>📴</span><span>Works fully offline. Installs to your home screen like a native app.</span></div>
     </div>
     <div style="display:flex; flex-wrap:wrap; gap:6px; margin:2px 0 14px;">
-      ${['✅ Habits','🎯 Goals','⏱️ Routine','💰 Finance','🏦 Debts','🥗 Diet','📔 Journal','📆 Calendar','🔁 Subs','🏛️ Net Worth','💊 Health','🗂️ Docs','🤖 AI Coach','🔍 Search','🎨 7 Styles'].map(t=>`<span style="font-size:10.5px; font-weight:700; padding:4px 9px; border-radius:999px; background:var(--card2); color:var(--sub);">${t}</span>`).join('')}
+      ${[...MODULE_DEFS.map(m=>`${m.icon} ${m.label}`), '🔍 Search', `🎨 ${EXPERIENCE_PACKS.length} Styles`].map(t=>`<span style="font-size:10.5px; font-weight:700; padding:4px 9px; border-radius:999px; background:var(--card2); color:var(--sub);">${t}</span>`).join('')}
     </div>
     <p style="font-size:12.5px; color:var(--sub); margin:0;">Founder — <b style="color:var(--text)">GP</b>.</p>
     <button class="btn secondary" data-close style="margin-top:16px;">Close</button>
@@ -8324,9 +8380,51 @@ function renderMoreCards(){
   const groups = {};
   hidden.forEach(m=>{ (groups[m.group]=groups[m.group]||[]).push(m); });
   wrap.innerHTML = Object.keys(groups).map(g=>`
-    <div class="section-head" style="margin-top:2px;"><h2>${g}</h2></div>
-    ${groups[g].map(m=>`<div class="more-card" data-open="${m.screen}"><div class="mc-icon">${chromeIcon(m.iconKey,18)}</div><div class="mc-mid"><div class="mc-title">${m.label}</div><div class="mc-sub">${m.sub}</div></div><span class="chev">${icon('chevron',14)}</span></div>`).join('')}
+    <div class="section-head" style="margin-top:2px;" data-more-section="${g}"><h2>${g}</h2></div>
+    ${groups[g].map(m=>`<div class="more-card" data-open="${m.screen}" data-search="${(m.label+' '+m.sub).toLowerCase()}"><div class="mc-icon">${chromeIcon(m.iconKey,18)}</div><div class="mc-mid"><div class="mc-title">${m.label}</div><div class="mc-sub">${m.sub}</div></div><span class="chev">${icon('chevron',14)}</span></div>`).join('')}
   `).join('') || `<div class="hint" style="padding:0 4px 12px;">Everything's already on your Home bar. Turn more sections on in Settings → Modules.</div>`;
+  // v15.2.0 — a fresh render replaces these nodes, so re-apply whatever
+  // filter is currently typed instead of it silently resetting to
+  // "show everything" on the next re-render (e.g. after toggling a
+  // module in Settings and coming back).
+  filterMoreCards(document.getElementById('moreFilterInput')?.value || '');
+}
+/* v15.2.0 — live filter for the More screen. With all 22 modules enabled
+   by default and only 4 fitting the bottom nav (MAX_NAV_SLOTS), up to 18
+   sections used to sit in one long ungrouped scroll with no way to jump
+   to one directly — the #1 "can't find things" complaint. Matches each
+   card's pre-baked data-search string (label + sub, lowercased) against
+   the typed query; empty query shows everything. Section headers (both
+   the dynamic module groups and the static "System" one) hide themselves
+   whenever every card under them is filtered out, so you never see a
+   bare "Money" heading with nothing under it. */
+function filterMoreCards(query){
+  const q = (query||'').trim().toLowerCase();
+  const cards = document.querySelectorAll('#screen-more .more-card[data-search]');
+  let anyVisible = false;
+  cards.forEach(c=>{
+    const match = !q || c.dataset.search.includes(q);
+    c.style.display = match ? '' : 'none';
+    if(match) anyVisible = true;
+  });
+  // hide a section-head if every card that follows it (up to the next
+  // section-head) is hidden — cards render as flat siblings, not nested,
+  // so walk forward from each heading rather than querying a container.
+  document.querySelectorAll('#screen-more .section-head[data-more-section]').forEach(head=>{
+    let sib = head.nextElementSibling, hasVisible = false;
+    while(sib && !sib.matches('.section-head')){
+      if(sib.matches('.more-card') && sib.style.display!=='none') hasVisible = true;
+      sib = sib.nextElementSibling;
+    }
+    head.style.display = hasVisible ? '' : 'none';
+  });
+  const customizeBar = document.getElementById('moreCustomizeBar');
+  if(customizeBar) customizeBar.style.display = q ? 'none' : '';
+  const noResults = document.getElementById('moreNoResults');
+  if(noResults){
+    noResults.style.display = (q && !anyVisible) ? 'block' : 'none';
+    document.getElementById('moreNoResultsQuery').textContent = query;
+  }
 }
 /* ---------- v12.0.5: floating back button — reachable one-handed,
    mirrors whichever top-of-screen back link (or settings drill-in) is
@@ -8507,8 +8605,16 @@ document.getElementById('bottomNav').addEventListener('click', (e)=>{
   const btn = e.target.closest('button[data-screen]'); if(btn) goToScreen(btn.dataset.screen);
 });
 document.getElementById('screen-more').addEventListener('click', (e)=>{
-  const card = e.target.closest('.more-card'); if(card) goToScreen(card.dataset.open);
+  const card = e.target.closest('.more-card'); if(!card) return;
+  // v15.2.0 — the "Customize your Home bar" shortcut needs to land on
+  // Settings AND already be drilled into the Modules category, not just
+  // the Settings hub — openSettingsCategory() only touches this
+  // (already-in-DOM) screen's own display toggles, so it's safe to call
+  // right after goToScreen swaps to it, no render race to wait out.
+  if(card.dataset.open==='settings-modules'){ goToScreen('settings'); openSettingsCategory('modules'); return; }
+  goToScreen(card.dataset.open);
 });
+document.getElementById('moreFilterInput').addEventListener('input', (e)=> filterMoreCards(e.target.value));
 // v12.5.1 fix — real cause of the occasional black/stuck screen when
 // backing out of Settings (and any other "‹ More"-style link) the first
 // time. Every forward navigation (goToScreen) pushes one history entry,
@@ -9210,7 +9316,7 @@ document.getElementById('testTgBtn').addEventListener('click', async ()=>{
 });
 
 /* ---------- Google Sheets sync ---------- */
-const APP_SCRIPT_VERSION = 'v10.0.0'; // must match SCRIPT_VERSION at the top of apps-script.gs — v10.0.0 added the Tasks due-today background reminder (see apps-script.gs checkReminders())
+const APP_SCRIPT_VERSION = 'v10.1.0'; // must match SCRIPT_VERSION at the top of apps-script.gs — v10.1.0 added the background Nudges mirror (see apps-script.gs checkNudges_())
 function debugLog(msg){
   const box = document.getElementById('syncDebug'); box.style.display='block';
   box.textContent = `[${new Date().toLocaleTimeString()}] ${msg}\n` + box.textContent;

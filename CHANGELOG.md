@@ -1,4 +1,102 @@
-# Changelog — v15.0.0 (maintenance/architecture release: background Tasks reminders, changelog backfill, version-doc cleanup) → history below
+# Changelog — v15.4.0 (About modal was stale — showed 14 trackers, app actually has 22) → history below
+
+## v15.4.0
+
+Prompted by a direct "is the About screen okay?" check rather than
+assuming it was fine — and it wasn't, quite.
+
+The About modal (Settings → About) claimed **"14 trackers"** and
+showcased 13 module chips. The app actually has **22 modules**. Nine
+were missing from the chip cloud entirely: Tasks, Notes, Travel,
+Learning, Content & Ideas, Meal Planner, People, Trends, Reports. This
+was stale copy, hand-typed at some earlier version, that never got
+updated as later modules shipped — a real, user-visible inaccuracy, not
+a cosmetic nitpick, since About is the one place that's supposed to
+tell you what the app actually does.
+
+**Fixed at the root**, not just the numbers: both the count and the chip
+list are now generated live from `MODULE_DEFS` (and the "Styles" count
+from `EXPERIENCE_PACKS.length`, which — checked — was already correct,
+now just dynamic too) instead of being hand-typed. This specific kind of
+drift can't happen again; the next module added automatically shows up
+here.
+
+index.html and sw.js changed (CACHE_NAME bumped to `gp-ledger-v15-4-0`)
+so installed copies actually receive this. No apps-script.gs change, no
+redeploy needed.
+
+## v15.3.0
+
+**Follow-up to the "is anything redundant" audit.** Notes and Content &
+Ideas sounded like the same feature ("Quick capture, separate from
+Journal" vs. "Capture an idea before it disappears"), but their actual
+data models aren't related at all: Notes is generic freeform reference
+notes; Content & Ideas is a content-creator pipeline (platform,
+content-type, idea → in-progress → published status, links, publish
+link). The overlap was in the *wording*, not the feature. Reworded
+Content & Ideas' one-line description to "Content pipeline: idea →
+published, with platform & status" — it now reads as what it actually
+is on both the More screen and Settings → Modules (one shared source,
+`MODULE_DEFS`, so a single edit fixes both places).
+
+**Nothing else changed** — no module merged, removed, renamed, or
+disabled; no data model touched; no other file (sw.js's CACHE_NAME
+excepted) affected.
+
+index.html and sw.js changed (CACHE_NAME bumped to `gp-ledger-v15-3-0`)
+so installed copies actually receive this. No apps-script.gs change, no
+redeploy needed.
+
+## v15.2.0
+
+**Real UX fix, addressing "the app feels clumsy/hard to navigate."**
+
+Root cause: all 22 modules are enabled by default, but only 4 fit the
+bottom nav (`MAX_NAV_SLOTS`). That means up to **18 sections** were
+sitting behind "More" in one long, grouped-but-unfiltered scroll — the
+single biggest reason things felt hard to find, especially on phone.
+
+Two additive changes, no navigation architecture changed:
+
+- **Live filter box on the More screen.** Type a few letters of a
+  section's name and everything else hides — including empty group
+  headings, so you never see a bare "Money" heading with nothing left
+  under it.
+- **"Customize your Home bar" shortcut**, right at the top of More, that
+  jumps straight into Settings → Modules. The ability to pin your 4
+  most-used sections to the bottom nav already existed — it just wasn't
+  discoverable from the screen where the crowding is actually felt.
+
+Nothing was removed, hidden, or reorganized — this is purely a
+findability layer on top of the existing structure.
+
+index.html and sw.js changed (CACHE_NAME bumped to `gp-ledger-v15-2-0`)
+so installed copies actually receive this. No apps-script.gs change this
+time — no redeploy needed for this update.
+
+## v15.1.0
+
+Closes the one gap v15.0.0 explicitly deferred: **Nudges now also fire in
+the background**, not just while the app is open.
+
+`checkNudges()` in index.html (journal inactivity 7+ days, 3+ overdue
+tasks, subscriptions renewing within 5 days while a budget category is
+already over its limit) has been in-app/foreground-only since it shipped
+in v13.5.0 — flagged in BLUEPRINT.md the whole time as a "known
+limitation, not yet addressed." `apps-script.gs`'s background trigger now
+has `checkNudges_()`, a direct port of the same three conditions, reading
+and writing the exact same `settings.nudgeLastShown` dedupe object the
+client already syncs — so whichever fires first (the app being open, or
+the 5-minute trigger) marks that nudge shown for the day, and the other
+side won't send a duplicate. `SCRIPT_VERSION` bumped to `v10.1.0`.
+
+**apps-script.gs must be redeployed** (Deploy → Manage deployments → ✏️ →
+New version → Deploy) for this to take effect — no client (index.html)
+logic changed, `checkNudges()` itself is untouched, only its server-side
+mirror is new.
+
+index.html, sw.js, and apps-script.gs all changed (CACHE_NAME bumped to
+`gp-ledger-v15-1-0`) so installed copies actually receive this.
 
 ## v15.0.0
 

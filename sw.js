@@ -1,4 +1,4 @@
-// GP Ledger service worker — v15.0.0
+// GP Ledger service worker — v15.4.0
 // Bumping CACHE_NAME forces old caches to be dropped on next install,
 // so a re-deploy (e.g. after this update) actually reaches phones.
 // v13.0.0: new app icon set (all 4 files replaced) — bumping the cache
@@ -247,7 +247,30 @@
 // that part to take effect). index.html and sw.js changed, so bump so
 // installed copies actually receive this instead of serving a cached
 // v14.4.8.
-const CACHE_NAME = 'gp-ledger-v15-0-0';
+// v15.1.0: closes the one gap v15.0.0 deferred — Nudges (journal
+// inactivity, overdue tasks, subscriptions-over-budget) now also fire in
+// the background via a new checkNudges_() in apps-script.gs, a direct
+// port of index.html's checkNudges() sharing the same
+// settings.nudgeLastShown dedupe. index.html and apps-script.gs changed;
+// bump so installed copies pick up the version-string match (apps-script.gs
+// must also be redeployed separately).
+// v15.2.0: More-screen findability fix — a live filter box plus a
+// "Customize your Home bar" shortcut into Settings → Modules. No
+// apps-script.gs change this time, no redeploy needed. index.html
+// changed, so bump so installed copies actually receive this instead of
+// serving a cached v15.1.0.
+// v15.3.0: one-line description fix — Content & Ideas' MODULE_DEFS sub
+// reworded so it stops reading as a Notes duplicate (see the
+// APP_VERSION comment block in index.html for the full reasoning). No
+// feature/data change. index.html changed, so bump so installed copies
+// actually receive this instead of serving a cached v15.2.0.
+// v15.4.0: About modal was showing stale "14 trackers" / 13 module
+// chips against an actual 22 modules — 9 missing entirely. Count and
+// chip list now generated from MODULE_DEFS/EXPERIENCE_PACKS at render
+// time instead of hand-typed, so it can't go stale again. index.html
+// changed, so bump so installed copies actually receive this instead of
+// serving a cached v15.3.0.
+const CACHE_NAME = 'gp-ledger-v15-4-0';
 const IMG_CACHE_NAME = 'gp-ledger-images-v1';
 const CORE_ASSETS = [
   './index.html',

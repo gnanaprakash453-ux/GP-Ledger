@@ -14,12 +14,13 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<!-- v12.1.1 — preconnect to the background-photo host so the DNS/TLS
-     handshake is already warm before the first picsum.photos request
-     fires (Home hero, Diet/Habits motivation cards, Quote card all pull
-     from here), cutting the visible delay on first paint of each. -->
-<link rel="preconnect" href="https://picsum.photos" crossorigin>
-<link rel="dns-prefetch" href="https://picsum.photos">
+<!-- v14.4.6 — background-photo host switched from picsum.photos to
+     loremflickr.com (picsum was confirmed blocked/timing out on the
+     user's own network+device — see photoUrl() for the full reasoning);
+     preconnect updated to match so the DNS/TLS handshake is still warm
+     before the first photo request fires. -->
+<link rel="preconnect" href="https://loremflickr.com" crossorigin>
+<link rel="dns-prefetch" href="https://loremflickr.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Manrope:wght@400;500;600;700;800&family=Fraunces:ital,wght@0,600;0,700;1,500;1,600&family=Nunito:wght@400;600;700&family=Sora:wght@500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&family=Space+Mono:wght@500;700&family=IBM+Plex+Mono:wght@500;600&family=Playfair+Display:wght@600;700;800&family=Space+Grotesk:wght@500;600;700&family=Quicksand:wght@500;600;700&family=Outfit:wght@500;600;700;800&family=Syne:wght@600;700;800&family=DM+Serif+Display&family=Bricolage+Grotesque:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Roboto:wght@400;500;700;900&family=DM+Sans:wght@400;500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=Geist:wght@400;500;600;700;800&family=Nunito+Sans:wght@400;600;700;800&family=Caveat:wght@500;600;700&family=Lora:ital,wght@0,500;0,600;1,400&family=Special+Elite&display=swap" rel="stylesheet">
 <!-- v14.3.0 — Special Elite (vintage typewriter) added for the Journal's
      5 named Default Font categories — everything else unchanged. -->
@@ -2480,7 +2481,19 @@ function wireAiSuggestButton(btnId, panelId, onGo){
   });
 }
 
-const APP_VERSION = 'v14.4.5'; // single source of truth for About screen & Settings row
+const APP_VERSION = 'v14.4.6'; // single source of truth for About screen & Settings row
+// v14.4.6 — photo provider switched from picsum.photos to loremflickr.com.
+// picsum.photos was confirmed genuinely unreachable on the user's own
+// network and device — a Cloudflare rate-limit page on one network, a
+// raw connection timeout (ERR_TIMED_OUT) on another — tested by opening
+// picsum.photos directly in the phone's browser both times, nothing to
+// do with this app's code. Centralized every photo URL (previously built
+// inline at 6 different call sites) through one new photoUrl(seed,w,h)
+// helper so any future provider swap only needs to happen in one place.
+// Same deterministic contract as before: a given seed always returns the
+// same photo, a different seed returns a different one. sw.js's picsum
+// caching rule and the <head> preconnect/dns-prefetch tags updated to
+// match the new host.
 // v14.4.5 — real root cause found for photos never loading: picsum.photos
 // was actively rate-limiting the device's IP (Cloudflare "Error 1200 —
 // temporarily rate limited"), confirmed by opening picsum.photos directly
@@ -3367,6 +3380,24 @@ function stringToHue(str){
   for(let i=0;i<(str||'').length;i++){ hash = (hash*31 + str.charCodeAt(i)) & 0xffffffff; }
   return Math.abs(hash) % 360;
 }
+/* v14.4.6 — photo provider swap. picsum.photos was confirmed blocked/
+   unreliable on this user's own network+device (Cloudflare "Error 1200 —
+   rate limited" on one network, ERR_TIMED_OUT on another, tested directly
+   in the phone's browser, nothing to do with this app's code) — every
+   picsum.photos URL used to be built inline at 6 different call sites, so
+   swapping provider meant editing all 6 and risking missing one. Centralized
+   through this one function instead: same seed string always returns the
+   same photo (deterministic, same contract picsum's seed had, via loremflickr's
+   `lock` param), different seed returns a different one, and any future
+   provider swap only needs to happen here. */
+function photoUrl(seed, w, h){
+  w = w||700; h = h||500;
+  let hash = 0;
+  const s = String(seed||'gpledger');
+  for(let i=0;i<s.length;i++){ hash = (hash*31 + s.charCodeAt(i)) & 0xffffffff; }
+  const lock = Math.abs(hash) % 100000;
+  return `https://loremflickr.com/${w}/${h}?lock=${lock}`;
+}
 /* v13.9.0 — Trash. Wired into the 7 modules built this session (Tasks,
    Notes, Trips, Learning, Ideas, People, Documents) — a delete now moves
    the record here instead of destroying it outright, recoverable for 30
@@ -4180,8 +4211,7 @@ function motivationCardHtml(moduleKey){
   if(S.settings && (S.settings.motivationDisabledModules||[]).includes(moduleKey)) return '';
   const q = currentModuleQuoteObj(moduleKey); if(!q) return '';
   const photoKey = q.img || q.id || (moduleKey+'-'+(q.text||'').slice(0,24));
-  const seed = encodeURIComponent((S.settings.bgSeed||'gpledger')+'-'+moduleKey+'-'+photoKey);
-  const url = `https://picsum.photos/seed/${seed}/700/500`;
+  const url = photoUrl((S.settings.bgSeed||'gpledger')+'-'+moduleKey+'-'+photoKey, 700, 500);
   return `<div class="quote-card hero-photo-card" data-photo-url="${url}" style="margin-bottom:12px;">
     <div class="qtext">${q.text}</div>
   </div>`;
@@ -4525,7 +4555,7 @@ function applyBackground(){
   // failed load — that's the correct place for this check, not an
   // upfront guess.
   const seed = st.bgSeed || 1;
-  const url = `https://picsum.photos/seed/gpledger${seed}/800/1600`;
+  const url = photoUrl('gpledger'+seed, 800, 1600);
   const img = new Image();
   img.onload = ()=>{ bg.style.backgroundImage = `url('${url}')`; bg.classList.add('on'); };
   img.onerror = ()=>{ bg.classList.remove('on'); };
@@ -4696,9 +4726,9 @@ function preloadTodaysImages(){
   const bgSeed = S.settings.bgSeed || 'gpledger';
   const urls = [];
   ['focus','health','productivity','finance'].forEach(tab=>{
-    urls.push(`https://picsum.photos/seed/${encodeURIComponent(bgSeed+'-hero-'+tab)}/700/500`);
+    urls.push(photoUrl(bgSeed+'-hero-'+tab, 700, 500));
   });
-  urls.push(`https://picsum.photos/seed/${encodeURIComponent(bgSeed+'-habitquote-'+today)}/700/500`);
+  urls.push(photoUrl(bgSeed+'-habitquote-'+today, 700, 500));
   // v14.4.5 — real bug found: this used to ALSO eagerly preload one photo
   // per module (12 modules = 12 more requests), on every single app boot,
   // even for modules never opened that session. Combined with the 5
@@ -4949,7 +4979,7 @@ function renderQuote(){
     const list = activeQuoteList();
     const qIdx = list.length ? (((S.settings.quoteRotIdx||0)%list.length)+list.length)%list.length : 0;
     const photoKey = (list[qIdx]&&list[qIdx].id) || ('day-'+todayStr());
-    const url = `https://picsum.photos/seed/${encodeURIComponent((S.settings.bgSeed||'gpledger')+'-habitquote-'+photoKey)}/700/500`;
+    const url = photoUrl((S.settings.bgSeed||'gpledger')+'-habitquote-'+photoKey, 700, 500);
     setPhotoCardBg(qCard, url); // v12.2 — no-flash load, see setPhotoCardBg
   }
 }
@@ -10129,7 +10159,7 @@ function renderDashboard(){
   document.getElementById('hfQuote').textContent = HERO_LINES[tab];
   setPhotoCardBg(
     document.getElementById('heroFocusCard'),
-    `https://picsum.photos/seed/${encodeURIComponent((S.settings.bgSeed||'gpledger')+'-hero-'+tab)}/700/500`,
+    photoUrl((S.settings.bgSeed||'gpledger')+'-hero-'+tab, 700, 500),
     'linear-gradient(180deg, rgba(0,0,0,.05), rgba(0,0,0,.68))'
   ); // v12.2 — no-flash load; CSS default gradient shows instantly until the photo is ready (see .hero-focus-card)
   document.getElementById('pcStats').innerHTML = tabStats(tab).map(r=>

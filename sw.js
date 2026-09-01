@@ -216,7 +216,15 @@
 // module's screen is opened — down to 5 requests on boot. index.html
 // changed, so bump so installed copies actually receive this instead of
 // serving a cached v14.4.4.
-const CACHE_NAME = 'gp-ledger-v14-4-5';
+// v14.4.6: photo provider switched from picsum.photos to loremflickr.com
+// — picsum was confirmed genuinely unreachable on the user's own network
+// and device (a rate-limit page on one network, ERR_TIMED_OUT on
+// another, tested directly), unrelated to anything in this app. Every
+// photo URL now goes through one central photoUrl() helper in
+// index.html; this file's caching rule updated to match the new host.
+// index.html changed, so bump so installed copies actually receive this
+// instead of serving a cached v14.4.5.
+const CACHE_NAME = 'gp-ledger-v14-4-6';
 const IMG_CACHE_NAME = 'gp-ledger-images-v1';
 const CORE_ASSETS = [
   './index.html',
@@ -248,15 +256,19 @@ self.addEventListener('fetch', (event) => {
   if (req.method !== 'GET') return; // never cache POSTs to Apps Script
 
   // v12.1.1 — background photos (Home hero, Diet/Habits motivation cards,
-  // Quote card) all pull from picsum.photos with a seed that already bakes
-  // in today's date, so the exact same URL is requested every time that
-  // screen is revisited on the same day. Cache-first here means the first
-  // load of each still pays real network latency, but every repeat visit
-  // that day is instant instead of re-fetching. The old blanket
-  // network-first handler below was treating these exactly like the app
-  // shell — refetching every single time — which was the main cause of
-  // the visible image delay on every screen, not just the first visit.
-  if (req.url.includes('picsum.photos')) {
+  // Quote card) all pull from a seed that already bakes in today's date,
+  // so the exact same URL is requested every time that screen is
+  // revisited on the same day. Cache-first here means the first load of
+  // each still pays real network latency, but every repeat visit that
+  // day is instant instead of re-fetching. The old blanket network-first
+  // handler below was treating these exactly like the app shell —
+  // refetching every single time — which was the main cause of the
+  // visible image delay on every screen, not just the first visit.
+  // v14.4.6 — provider switched from picsum.photos to loremflickr.com
+  // (picsum was confirmed blocked/timing out on the user's own
+  // network+device — see photoUrl() in index.html); matched here so the
+  // new provider's requests still get this same caching treatment.
+  if (req.url.includes('loremflickr.com')) {
     event.respondWith(
       caches.open(IMG_CACHE_NAME).then((cache) =>
         cache.match(req).then((cached) => {

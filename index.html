@@ -2612,7 +2612,7 @@ function wireAiSuggestButton(btnId, panelId, onGo){
   });
 }
 
-const APP_VERSION = 'v15.6.0'; // single source of truth for About screen & Settings row
+const APP_VERSION = 'v15.6.1'; // single source of truth for About screen & Settings row
 // v15.5.0 — Finance/Reports Calendar & Journal Customization upgrade:
 // (1) Finance gained a real Day/Month/Year period selector with ‹›/jump
 //     navigation through history (previously it only ever showed a fixed
@@ -10010,6 +10010,32 @@ function setupKeyboardHandling(){
       }, 120);
     }
   });
+  // v15.6.1 — real bug: the v14.4.8 fix (#app uses native 100dvh except
+  // while body.kb-open is set, since dvh alone can't track the on-screen
+  // keyboard) assumed kb-open always gets cleared by a normal focusout.
+  // It doesn't when the app is backgrounded while a field is focused —
+  // switching to another app (e.g. to share a screenshot) and back is a
+  // routine way to do that on Android/iOS alike, and neither the OS
+  // dismissing the keyboard nor the tab losing focus reliably fires
+  // focusout on return. kb-open is then stuck true with #app pinned to
+  // whatever --vvh happened to measure last (often a shorter,
+  // keyboard-open height), which is exactly the "grey strip of the
+  // page's own background below the nav" report from v14.4.8 — just
+  // reached via backgrounding instead of the load/navigation timing gap
+  // that fix already covers. Re-checking on visibilitychange/pageshow
+  // (the events that fire when the app becomes visible again) means a
+  // stuck kb-open can't survive a round trip through another app: if
+  // nothing is actually focused when the app comes back, the class is
+  // cleared and setVH() re-synced immediately, before the person ever
+  // sees the gap.
+  function healKbOpen(){
+    const active = document.activeElement;
+    const focused = active && (active.tagName==='INPUT' || active.tagName==='TEXTAREA' || active.tagName==='SELECT');
+    if(!focused && document.body.classList.contains('kb-open')) document.body.classList.remove('kb-open');
+    setVH();
+  }
+  document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) healKbOpen(); });
+  window.addEventListener('pageshow', healKbOpen);
 }
 function init(){
   // v14.4.1 — always attach the keyboard/kb-open handling first (see the

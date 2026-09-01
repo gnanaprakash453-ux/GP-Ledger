@@ -1,4 +1,8 @@
-// GP Ledger service worker — v15.6.0
+// GP Ledger service worker — v15.6.1
+// v15.6.1: kb-open self-heal fix (index.html JS only) — real bug, the
+// grey-strip-below-nav report was kb-open getting stuck after
+// backgrounding the app with a field focused, pinning #app to a stale
+// --vvh. Bump so installed copies pick up the fix.
 // v15.6.0: Journal focus-mode layout change (index.html CSS/JS only,
 // no new assets) — bump so installed copies pick up the new index.html
 // instead of serving the cached v15.5.0 copy indefinitely.
@@ -273,7 +277,7 @@
 // time instead of hand-typed, so it can't go stale again. index.html
 // changed, so bump so installed copies actually receive this instead of
 // serving a cached v15.3.0.
-const CACHE_NAME = 'gp-ledger-v15-6-0';
+const CACHE_NAME = 'gp-ledger-v15-6-1';
 const IMG_CACHE_NAME = 'gp-ledger-images-v1';
 const CORE_ASSETS = [
   './index.html',

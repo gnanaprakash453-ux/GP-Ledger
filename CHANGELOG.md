@@ -1,4 +1,27 @@
-# Changelog — v15.6.0 (Journal focus-mode layout) → history below
+# Changelog — v15.6.1 (grey-strip-below-nav bugfix) → history below
+
+## v15.6.1
+
+**Real bug fix — grey strip below the bottom nav, on any screen.**
+Reported as a solid grey box below "Quick Actions" on Home, not
+tappable. Root cause: v14.4.8 already fixed one cause of this (`#app`
+now uses native `100dvh` normally, only falling back to a JS-measured
+`--vvh` snapshot while `body.kb-open` is set, for the on-screen
+keyboard) — but that fix assumed `kb-open` always gets cleared by a
+normal focusout, which it doesn't when the app is backgrounded while a
+field is still focused. Switching away to another app (e.g. to share a
+screenshot) and back is a completely routine way to do that, and
+neither the OS dismissing the keyboard nor the tab losing focus
+reliably fires focusout on return — so `kb-open` was left stuck true,
+pinning `#app` to whichever `--vvh` it happened to measure last
+(usually shorter, from when the keyboard was still up), exposing a
+strip of the raw page background below the nav that isn't part of any
+actual app content — which is exactly why it didn't respond to taps.
+The app now also re-checks on `visibilitychange`/`pageshow` (fired
+whenever the app becomes visible again): if nothing is actually
+focused at that point, `kb-open` is cleared and the height re-synced
+immediately, before the gap can ever be seen. No visual/layout changes
+otherwise.
 
 ## v15.6.0
 

@@ -147,6 +147,29 @@ header.top{
    bar stays comfortable without ever compressing the tap targets unevenly
    relative to each other — .icon-btn and .sync-btn keep the same height
    as one another at every width. */
+/* v15.6.0 — Journal "focus" layout (see the journal-focus toggle in
+   goToScreen). The app header and bottom nav were both taking a fixed
+   chunk of vertical space on every screen including Journal; combined
+   with the keyboard, that left only a few visible lines to actually
+   write in — the "difficult and uncomfortable to type in" report. On
+   Journal specifically, both are removed outright rather than just
+   shrunk, and the freed space goes straight to the diary page: #app is
+   already a column flexbox (header/main/nav), so hiding header+nav here
+   is enough for main to expand into their space on its own, no separate
+   sizing math needed. The diary content itself (date heading, font/color
+   toolbar, "Export whole diary", the entries list below) is untouched —
+   only the app chrome around it goes. */
+body.journal-focus header.top,
+body.journal-focus nav.bottom,
+body.journal-focus .fab{ display:none; }
+body.journal-focus #screen-journal{
+  /* .screen's default padding reserves 96px at the bottom for the now-
+     hidden nav/FAB, and a flat 14px at the top for the now-hidden
+     header's safe-area handling — both reclaimed here so the diary page
+     sits close to the real edges of the screen instead of leaving that
+     space empty. */
+  padding:calc(14px + var(--safe-t)) 16px calc(16px + var(--safe-b));
+}
 @media (max-width:360px){
   header.top{ padding-left:14px; padding-right:14px; }
   .hclock-svg{ width:22px; height:22px; }
@@ -843,9 +866,14 @@ body{ background:var(--bg-gradient); }
   width:100%; min-height:42vh; background:
     repeating-linear-gradient(to bottom, transparent, transparent 27px, var(--diary-line) 28px);
   background-attachment:local;
-  border:none; border-radius:8px; padding:2px 4px 16px 2px;
+  border:none; border-radius:8px; padding:6px 10px 16px 8px;
   font-size:16px; line-height:28px; resize:vertical;
 }
+/* v15.6.0 — with the header/nav hidden (journal-focus), there's real
+   room to write in now, so the textarea grows to actually use it instead
+   of staying capped at the old 42vh (which was sized for a screen that
+   still had a header and nav eating into it). */
+body.journal-focus #journalText.diary-textarea{ min-height:58vh; }
 .journal-datebar{ display:flex; align-items:center; gap:8px; margin-bottom:12px; }
 .journal-datebar input[type=date]{ flex:1; }
 .journal-navbtn{ width:38px; height:38px; border-radius:11px; border:1px solid var(--line); background:var(--card2); flex-shrink:0; }
@@ -2584,7 +2612,7 @@ function wireAiSuggestButton(btnId, panelId, onGo){
   });
 }
 
-const APP_VERSION = 'v15.5.0'; // single source of truth for About screen & Settings row
+const APP_VERSION = 'v15.6.0'; // single source of truth for About screen & Settings row
 // v15.5.0 — Finance/Reports Calendar & Journal Customization upgrade:
 // (1) Finance gained a real Day/Month/Year period selector with ‹›/jump
 //     navigation through history (previously it only ever showed a fixed
@@ -8783,6 +8811,16 @@ function goToScreen(name, opts){
   document.body.classList.remove('kb-open');
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   target.classList.add('active');
+  // v15.6.0 — Journal gets a distraction-free "focus" layout: the app
+  // header (clock/search/Save & Sync) and bottom nav bar are hidden
+  // entirely while on this screen, so the diary page gets the full
+  // viewport instead of being squeezed into a small sliver once the
+  // on-screen keyboard is also up (the "difficult and uncomfortable to
+  // type in" report — see .diary-textarea/body.journal-focus CSS).
+  // Toggled (not just added) so leaving Journal for any other screen
+  // restores the normal chrome immediately, with no separate cleanup
+  // path needed.
+  document.body.classList.toggle('journal-focus', name==='journal');
   try{ localStorage.setItem('gpl_lastScreen', name); }catch(e){} // v12.3 — see init()'s restore logic
   if(!opts.fromPopstate){
     try{ history.pushState({ screen:name }, '', '#'+name); }catch(e){}

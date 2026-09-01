@@ -1,4 +1,23 @@
-# Changelog — v15.5.0 (Finance/Reports Calendar & Journal Customization upgrade) → history below
+# Changelog — v15.6.0 (Journal focus-mode layout) → history below
+
+## v15.6.0
+
+**Journal — distraction-free "focus" layout.** The app header (clock,
+search, Save & Sync) and the bottom nav bar used to stay on screen the
+whole time you were in Journal, even with the keyboard up — between
+the two of them and the keyboard, the actual writing area shrank down
+to just a couple of visible lines, which is what made it feel cramped
+and uncomfortable to type in. Both are now hidden completely while
+you're on the Journal screen, and the diary page expands into the
+space they leave behind — the `‹ More` back button at the top of the
+screen still gets you out. The diary page itself (date navigation,
+font/color toolbar, artwork picker, "Export whole diary", the saved
+entries list) is unchanged. The writing box also got a bit more
+breathing room on its own — real left/right padding instead of text
+sitting almost flush against the edge, and it now grows to fill the
+newly-freed vertical space (58vh) instead of staying capped at the old
+42vh, which was sized for a screen that still had a header and nav
+eating into it.
 
 ## v15.5.0
 

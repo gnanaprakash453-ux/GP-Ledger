@@ -48,6 +48,10 @@
   --font-time:'JetBrains Mono',monospace; /* v14.0.0 — spec §7: Time/Clock font is its own category, independent of --font-mono (stats/timers). Defaults to the same stack so nobody sees a change until they visit Settings → Typography. */
   --font-weight-head:700; --font-style-head:normal; /* v12.3 — heading weight/style, independent of family (see applyFontChoice()) */
   --safe-t:env(safe-area-inset-top,0px); --safe-b:env(safe-area-inset-bottom,0px);
+  /* v15.7.0 — shared horizontal offset from the TRUE viewport edge to #app's edge
+     (#app is max-width:560px, centered). Used to fixed-position the bottom nav
+     directly against the real screen edges — see nav.bottom below. */
+  --edge-gap:calc((100vw - min(100vw,560px))/2);
   --radius:18px; --radius-sm:12px;
   /* ===== Experience Engine tokens (v10.0) — defaults = 'Minimal' pack ===== */
   --icon-stroke:1.75; --anim-speed:220ms; --anim-ease:cubic-bezier(.4,0,.2,1);
@@ -159,10 +163,23 @@ header.top{
    sizing math needed. The diary content itself (date heading, font/color
    toolbar, "Export whole diary", the entries list below) is untouched —
    only the app chrome around it goes. */
-body.journal-focus header.top,
-body.journal-focus nav.bottom,
-body.journal-focus .fab{ display:none; }
-body.journal-focus #screen-journal{
+/* v15.8.0 — real bug: journal-focus was tied to *being on the Journal
+   screen at all*, not to actually typing — so the header (welcome/time,
+   Save & Sync) and bottom nav disappeared the moment you opened Journal,
+   even just to browse past entries with no keyboard up, and the textarea
+   reserved a fixed 58vh of blank space before a single character was
+   typed — together reported as "too much empty page, can't see the
+   home/welcome/time header". The whole point of this layout was to give
+   the keyboard-open writing state more room, not to hide chrome while
+   idly reading — so it now only engages once the on-screen keyboard is
+   actually up (body.kb-open, set by the existing focusin/focusout
+   handling), the same moment the textarea's own space genuinely gets
+   tight. Just having Journal open with nothing focused now looks like
+   every other screen: header and nav both visible. */
+body.journal-focus.kb-open header.top,
+body.journal-focus.kb-open nav.bottom,
+body.journal-focus.kb-open .fab{ display:none; }
+body.journal-focus.kb-open #screen-journal{
   /* .screen's default padding reserves 96px at the bottom for the now-
      hidden nav/FAB, and a flat 14px at the top for the now-hidden
      header's safe-area handling — both reclaimed here so the diary page
@@ -425,8 +442,24 @@ body.kb-open .back-fab{ top:calc(10px + var(--safe-t)); bottom:auto; left:auto; 
 /* ============ BOTTOM NAV ============ */
 /* ============ v12.0.5: gap added between nav buttons — they were
    touching edge-to-edge on mobile with no breathing room ============ */
+/* v15.7.0 — real bug: nav.bottom was `position:absolute`, anchored to #app
+   (its nearest positioned ancestor) — so its on-screen position was only
+   ever as correct as #app's height. #app's height is 100dvh, which is
+   usually right but isn't guaranteed to be: the v14.4.8/v15.6.1 fixes
+   patched specific cases where it briefly read short (mid keyboard
+   transition, stuck kb-open after backgrounding), and each showed up
+   exactly the same way — a strip of the page's own background visible
+   below the nav, because the nav was sitting wherever #app's bottom
+   edge happened to be, not where the real screen edge was. The FAB
+   never had this problem because it was already `position:fixed` with
+   its offset measured straight from the true viewport (see .fab above)
+   — completely independent of #app's height. Nav now uses the identical
+   pattern (env(safe-area-inset-bottom) + the same --edge-gap centering
+   math), so it's glued to the real screen edge regardless of what #app
+   is doing. This closes the whole class of bug at the root instead of
+   patching each new way #app's height can lag. */
 nav.bottom{
-  position:absolute; left:12px; right:12px; bottom:calc(10px + var(--safe-b));
+  position:fixed; left:calc(var(--edge-gap) + 12px); right:calc(var(--edge-gap) + 12px); bottom:calc(10px + var(--safe-b));
   background:var(--card); border:1px solid var(--line); border-radius:22px; padding:6px;
   display:flex; justify-content:space-between; gap:3px; z-index:30; box-shadow:0 10px 30px rgba(0,0,0,.35);
 }
@@ -869,11 +902,26 @@ body{ background:var(--bg-gradient); }
   border:none; border-radius:8px; padding:6px 10px 16px 8px;
   font-size:16px; line-height:28px; resize:vertical;
 }
-/* v15.6.0 — with the header/nav hidden (journal-focus), there's real
-   room to write in now, so the textarea grows to actually use it instead
-   of staying capped at the old 42vh (which was sized for a screen that
-   still had a header and nav eating into it). */
-body.journal-focus #journalText.diary-textarea{ min-height:58vh; }
+/* v15.8.0 — now scoped to kb-open too (see the journal-focus rule
+   above): the big textarea only grows to 58vh once the keyboard is
+   actually up and the header/nav have actually made room for it.
+   Browsing Journal with nothing focused keeps the normal 42vh — no more
+   giant empty box greeting you before you've typed anything. */
+body.journal-focus.kb-open #journalText.diary-textarea{ min-height:58vh; }
+/* v15.9.0 — real bug: "Save entry" was a normal-flow button below the
+   textarea, so reaching it meant scrolling past however tall the
+   textarea currently was — 42vh normally, 58vh while typing — plus
+   whatever the on-screen keyboard was covering. On a long entry, or
+   mid-typing with the keyboard up, it could end up scrolled well out of
+   reach ("not always accessible"). It's now a sticky bar pinned to the
+   bottom of the Journal scroll area — it clamps into view immediately
+   regardless of how far down its normal position would be, and stays
+   put as you scroll through the entries list below, so Save is always
+   one tap away no matter where you are on the page. */
+#journalSaveRow{
+  position:sticky; bottom:calc(8px + var(--safe-b)); z-index:5;
+  background:var(--bg2); margin:8px -4px 12px; padding:8px 4px 0;
+}
 .journal-datebar{ display:flex; align-items:center; gap:8px; margin-bottom:12px; }
 .journal-datebar input[type=date]{ flex:1; }
 .journal-navbtn{ width:38px; height:38px; border-radius:11px; border:1px solid var(--line); background:var(--card2); flex-shrink:0; }
@@ -1427,11 +1475,15 @@ body.exp-card-soft .card, body.exp-card-soft .dash-tile{ background:var(--card);
 body.exp-card-elevated .card, body.exp-card-elevated .dash-tile{ background:var(--card); border:none; box-shadow:var(--shadow-md); }
 
 /* ---- NAV VARIANTS ---- */
-body.exp-nav-float nav.bottom{ left:12px; right:12px; bottom:calc(10px + var(--safe-b)); }
-body.exp-nav-dock nav.bottom{ left:0; right:0; bottom:0; border-radius:var(--hero-radius) var(--hero-radius) 0 0; border-bottom:none; }
-body.exp-nav-pill nav.bottom{ left:22px; right:22px; border-radius:999px; padding:8px 6px; }
+/* v15.7.0 — offsets updated from #app-relative px to viewport-relative
+   (var(--edge-gap) + px) now that nav.bottom is position:fixed. Same
+   visual result, just measured from the real screen edge instead of
+   #app's (occasionally-lagging) edge. */
+body.exp-nav-float nav.bottom{ left:calc(var(--edge-gap) + 12px); right:calc(var(--edge-gap) + 12px); bottom:calc(10px + var(--safe-b)); }
+body.exp-nav-dock nav.bottom{ left:var(--edge-gap); right:var(--edge-gap); bottom:0; border-radius:var(--hero-radius) var(--hero-radius) 0 0; border-bottom:none; }
+body.exp-nav-pill nav.bottom{ left:calc(var(--edge-gap) + 22px); right:calc(var(--edge-gap) + 22px); border-radius:999px; padding:8px 6px; }
 body.exp-nav-glass nav.bottom{ background:color-mix(in srgb, var(--card) 45%, transparent); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px); }
-body.exp-nav-lifeos nav.bottom{ left:16px; right:16px; bottom:calc(14px + var(--safe-b)); border-radius:28px; box-shadow:0 16px 34px -10px rgba(0,0,0,.28); }
+body.exp-nav-lifeos nav.bottom{ left:calc(var(--edge-gap) + 16px); right:calc(var(--edge-gap) + 16px); bottom:calc(14px + var(--safe-b)); border-radius:28px; box-shadow:0 16px 34px -10px rgba(0,0,0,.28); }
 body.exp-fab-lifeos .fab{ left:50%; right:auto; transform:translateX(-50%); bottom:calc(30px + var(--safe-b)); width:54px; height:54px; border-radius:50%; box-shadow:0 12px 26px -6px color-mix(in srgb, var(--accent) 55%, transparent); border:4px solid var(--bg); z-index:35; }
 .nav-fab-spacer{ flex:0 0 58px; }
 
@@ -1839,7 +1891,7 @@ nav.bottom, .fab{ transition:transform .18s ease; }
         <textarea id="journalText" class="diary-textarea" placeholder="Dear diary…"></textarea>
       </div>
       <div class="hint" id="journalMeta" style="margin:8px 0 12px;"></div>
-      <div class="btn-row">
+      <div class="btn-row" id="journalSaveRow">
         <button class="btn primary" id="journalSaveBtn">Save entry</button>
         <button class="btn secondary" id="journalPrintBtn">🖨 Print</button>
       </div>
@@ -2612,7 +2664,7 @@ function wireAiSuggestButton(btnId, panelId, onGo){
   });
 }
 
-const APP_VERSION = 'v15.6.1'; // single source of truth for About screen & Settings row
+const APP_VERSION = 'v15.9.0'; // single source of truth for About screen & Settings row
 // v15.5.0 — Finance/Reports Calendar & Journal Customization upgrade:
 // (1) Finance gained a real Day/Month/Year period selector with ‹›/jump
 //     navigation through history (previously it only ever showed a fixed
@@ -8811,15 +8863,14 @@ function goToScreen(name, opts){
   document.body.classList.remove('kb-open');
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   target.classList.add('active');
-  // v15.6.0 — Journal gets a distraction-free "focus" layout: the app
-  // header (clock/search/Save & Sync) and bottom nav bar are hidden
-  // entirely while on this screen, so the diary page gets the full
-  // viewport instead of being squeezed into a small sliver once the
-  // on-screen keyboard is also up (the "difficult and uncomfortable to
-  // type in" report — see .diary-textarea/body.journal-focus CSS).
-  // Toggled (not just added) so leaving Journal for any other screen
-  // restores the normal chrome immediately, with no separate cleanup
-  // path needed.
+  // v15.8.0 — Journal gets a distraction-free "focus" layout, but now
+  // only once the keyboard actually opens (body.kb-open) — not just for
+  // being on the screen at all. journal-focus itself still just marks
+  // "on Journal"; the CSS rules that actually hide the header/nav and
+  // grow the textarea require .journal-focus.kb-open together (see
+  // .diary-textarea/body.journal-focus CSS). Toggled (not just added) so
+  // leaving Journal for any other screen restores the normal chrome
+  // immediately, with no separate cleanup path needed.
   document.body.classList.toggle('journal-focus', name==='journal');
   try{ localStorage.setItem('gpl_lastScreen', name); }catch(e){} // v12.3 — see init()'s restore logic
   if(!opts.fromPopstate){

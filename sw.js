@@ -277,7 +277,7 @@
 // time instead of hand-typed, so it can't go stale again. index.html
 // changed, so bump so installed copies actually receive this instead of
 // serving a cached v15.3.0.
-const CACHE_NAME = 'gp-ledger-v15-6-1';
+const CACHE_NAME = 'gp-ledger-v15-9-0';
 const IMG_CACHE_NAME = 'gp-ledger-images-v1';
 const CORE_ASSETS = [
   './index.html',

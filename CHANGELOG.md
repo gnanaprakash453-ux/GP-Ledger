@@ -1,4 +1,52 @@
-# Changelog — v15.6.1 (grey-strip-below-nav bugfix) → history below
+# Changelog — v15.9.0 ("Save entry" always reachable in Journal) → history below
+
+## v15.9.0
+
+**Journal — "Save entry" is now a sticky bar, always reachable.**
+Save/Print sat in normal document flow below the diary textarea, so
+reaching it meant scrolling past however tall the textarea currently
+was — 42vh normally, 58vh while typing — plus whatever the keyboard was
+covering. On a long entry, or mid-typing, it could end up scrolled well
+out of reach. It's now pinned to the bottom of the Journal scroll area:
+it clamps into view immediately regardless of how far down its normal
+position would fall, and stays in place as you scroll through the
+entries list below, so Save is always one tap away.
+
+## v15.8.0
+
+**Journal — header/nav only hide while actually typing.** v15.6.0's
+"focus" layout hid the app header (welcome/time, Save & Sync) and bottom
+nav the moment Journal was opened at all, even just to browse past
+entries with no keyboard up — reported as too much empty page and no way
+to see the home/welcome/time header from Journal. The textarea also
+always reserved a fixed 58vh of blank space up front, before a single
+character was typed, which made an unwritten entry look mostly empty.
+Focus mode now only engages once the on-screen keyboard is actually open
+— the same moment the textarea's space genuinely gets tight — using the
+same kb-open state already tracked for keyboard handling elsewhere.
+Opening Journal to read or browse now looks like every other screen,
+header and nav both visible; the expanded writing view only kicks in
+once you tap in to write.
+
+## v15.7.0
+
+**Real bug fix — grey strip below the bottom nav, root cause this time.**
+v15.6.1 patched one specific way this could happen (kb-open getting stuck
+after the app is backgrounded with a field focused), but the report kept
+coming back because that was a symptom-level fix, not the real bug: the
+nav bar was `position:absolute`, anchored to `#app` — so its on-screen
+position was only ever as reliable as `#app`'s height. `#app`'s height is
+`100dvh`, which is *usually* right, but every fix so far (v14.4.8,
+v15.6.1) was really just patching one more specific case where it briefly
+reads wrong. The FAB never had this problem, because it was already
+`position:fixed`, measured straight from the true viewport, completely
+independent of `#app`. The bottom nav now uses that exact same pattern —
+`position:fixed` + `env(safe-area-inset-bottom)` — so it's glued to the
+real screen edge no matter what `#app` is doing. This closes the whole
+class of bug at the root instead of chasing the next way `#app`'s height
+can lag. No visual change under normal conditions — same size, same
+position, same look, on every Experience Engine nav style (float, dock,
+pill, glass, lifeos).
 
 ## v15.6.1
 

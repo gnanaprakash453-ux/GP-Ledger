@@ -229,7 +229,15 @@
 // (picsum never supported this at all). index.html changed only (no
 // caching-strategy change here), so bump so installed copies actually
 // receive this instead of serving a cached v14.4.6.
-const CACHE_NAME = 'gp-ledger-v14-4-7';
+// v14.4.8: real bug fix — a grey gap could appear between the bottom nav
+// and Safari's own toolbar in mobile Safari (not installed as a
+// home-screen app). #app's height was pinned to a JS-measured viewport
+// value at all times instead of only while the keyboard is open; native
+// 100dvh already tracks Safari's chrome in real time with zero JS, so
+// pinning to a JS snapshot could lag behind and expose page background
+// below the nav. CSS-only fix in index.html; bump so installed copies
+// actually receive this instead of serving a cached v14.4.7.
+const CACHE_NAME = 'gp-ledger-v14-4-8';
 const IMG_CACHE_NAME = 'gp-ledger-images-v1';
 const CORE_ASSETS = [
   './index.html',

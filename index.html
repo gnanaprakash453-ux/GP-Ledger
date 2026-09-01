@@ -2481,7 +2481,21 @@ function wireAiSuggestButton(btnId, panelId, onGo){
   });
 }
 
-const APP_VERSION = 'v14.4.6'; // single source of truth for About screen & Settings row
+const APP_VERSION = 'v14.4.7'; // single source of truth for About screen & Settings row
+// v14.4.7 — content-relevant photos. loremflickr.com (unlike picsum)
+// supports real keyword search, so every hero/quote/motivation card photo
+// now actually matches its topic: Diet shows food, Finance shows money,
+// Health shows fitness, etc. Reused data that already existed but was
+// unused for this — MOTIVATION_CARDS quotes already carried a descriptive
+// `img` slug per quote (e.g. 'fresh-healthy-meal-bowl'), now sent as real
+// flickr search tags via photoUrl()'s new keywords param; the main QUOTES
+// list (habit quote card + Home hero Focus tab) instead carries a `cat`
+// field, mapped to search terms via a new CATEGORY_KEYWORDS table; the
+// Home hero's other 3 tabs (Health/Productivity/Finance) got their own
+// fixed keyword sets. preloadTodaysImages() updated to warm the same
+// keyworded URLs the real cards request. No provider/architecture change
+// beyond v14.4.6 — same photoUrl() call sites, just passing real search
+// terms now instead of nothing.
 // v14.4.6 — photo provider switched from picsum.photos to loremflickr.com.
 // picsum.photos was confirmed genuinely unreachable on the user's own
 // network and device — a Cloudflare rate-limit page on one network, a
@@ -3390,13 +3404,33 @@ function stringToHue(str){
    same photo (deterministic, same contract picsum's seed had, via loremflickr's
    `lock` param), different seed returns a different one, and any future
    provider swap only needs to happen here. */
-function photoUrl(seed, w, h){
+/* v14.4.7 — content-relevant photos. loremflickr.com supports real
+   keyword search (this is the one thing picsum genuinely couldn't do —
+   see the honest note further down about picsum having no keyword/
+   content search at all, only a seed→arbitrary-photo mapping). Every
+   MOTIVATION_CARDS quote already carries a descriptive `img` slug per
+   quote (e.g. 'fresh-healthy-meal-bowl', 'coins-savings-jar') — that was
+   previously only used to vary the seed, never actually sent as a search
+   term. Now reused directly as flickr search tags, so Diet really does
+   show food, Finance really does show money, etc. The main QUOTES list
+   (used by the habit quote card and the Home hero's Focus tab) instead
+   carries a `cat` field, not an img slug — CATEGORY_KEYWORDS below maps
+   each of its categories to equivalent search terms. */
+const CATEGORY_KEYWORDS = {
+  general:'motivation,sunrise', finance:'money,savings', mealplanner:'food,cooking',
+  notes:'notebook,writing', content:'creative,idea', travel:'travel,journey',
+  tasks:'checklist,productivity', learning:'books,study', health:'fitness,wellness',
+  journal:'diary,journal', goals:'target,achievement', habits:'routine,morning',
+  debts:'finance,budget'
+};
+function photoUrl(seed, w, h, keywords){
   w = w||700; h = h||500;
   let hash = 0;
   const s = String(seed||'gpledger');
   for(let i=0;i<s.length;i++){ hash = (hash*31 + s.charCodeAt(i)) & 0xffffffff; }
   const lock = Math.abs(hash) % 100000;
-  return `https://loremflickr.com/${w}/${h}?lock=${lock}`;
+  const kw = keywords ? '/'+keywords.split(',').map(encodeURIComponent).join(',') : '';
+  return `https://loremflickr.com/${w}/${h}${kw}?lock=${lock}`;
 }
 /* v13.9.0 — Trash. Wired into the 7 modules built this session (Tasks,
    Notes, Trips, Learning, Ideas, People, Documents) — a delete now moves
@@ -4211,7 +4245,10 @@ function motivationCardHtml(moduleKey){
   if(S.settings && (S.settings.motivationDisabledModules||[]).includes(moduleKey)) return '';
   const q = currentModuleQuoteObj(moduleKey); if(!q) return '';
   const photoKey = q.img || q.id || (moduleKey+'-'+(q.text||'').slice(0,24));
-  const url = photoUrl((S.settings.bgSeed||'gpledger')+'-'+moduleKey+'-'+photoKey, 700, 500);
+  // v14.4.7 — q.img (e.g. 'fresh-healthy-meal-bowl') doubles as the flickr
+  // search terms now, not just a seed differentiator — see photoUrl().
+  const kw = (q.img||'').replace(/-/g,',') || CATEGORY_KEYWORDS.general;
+  const url = photoUrl((S.settings.bgSeed||'gpledger')+'-'+moduleKey+'-'+photoKey, 700, 500, kw);
   return `<div class="quote-card hero-photo-card" data-photo-url="${url}" style="margin-bottom:12px;">
     <div class="qtext">${q.text}</div>
   </div>`;
@@ -4725,10 +4762,13 @@ function preloadTodaysImages(){
   const today = todayStr();
   const bgSeed = S.settings.bgSeed || 'gpledger';
   const urls = [];
+  // v14.4.7 — keywords added so the pre-warmed URLs actually match what
+  // renderDashboard()/renderQuote() request (see those for the same maps).
+  const HERO_KEYWORDS = { focus:'motivation,sunrise', health:'fitness,wellness', productivity:'desk,work', finance:'money,savings' };
   ['focus','health','productivity','finance'].forEach(tab=>{
-    urls.push(photoUrl(bgSeed+'-hero-'+tab, 700, 500));
+    urls.push(photoUrl(bgSeed+'-hero-'+tab, 700, 500, HERO_KEYWORDS[tab]));
   });
-  urls.push(photoUrl(bgSeed+'-habitquote-'+today, 700, 500));
+  urls.push(photoUrl(bgSeed+'-habitquote-'+today, 700, 500, CATEGORY_KEYWORDS.general));
   // v14.4.5 — real bug found: this used to ALSO eagerly preload one photo
   // per module (12 modules = 12 more requests), on every single app boot,
   // even for modules never opened that session. Combined with the 5
@@ -4978,8 +5018,13 @@ function renderQuote(){
     // (previously the photo was date-only and never moved on shuffle).
     const list = activeQuoteList();
     const qIdx = list.length ? (((S.settings.quoteRotIdx||0)%list.length)+list.length)%list.length : 0;
-    const photoKey = (list[qIdx]&&list[qIdx].id) || ('day-'+todayStr());
-    const url = photoUrl((S.settings.bgSeed||'gpledger')+'-habitquote-'+photoKey, 700, 500);
+    const activeQ = list[qIdx];
+    const photoKey = (activeQ&&activeQ.id) || ('day-'+todayStr());
+    // v14.4.7 — the main QUOTES list carries a `cat` field (e.g. 'finance',
+    // 'health') rather than an img slug — mapped to real search terms via
+    // CATEGORY_KEYWORDS so this card's photo matches the quote's topic too.
+    const kw = CATEGORY_KEYWORDS[activeQ&&activeQ.cat] || CATEGORY_KEYWORDS.general;
+    const url = photoUrl((S.settings.bgSeed||'gpledger')+'-habitquote-'+photoKey, 700, 500, kw);
     setPhotoCardBg(qCard, url); // v12.2 — no-flash load, see setPhotoCardBg
   }
 }
@@ -10157,9 +10202,12 @@ function renderDashboard(){
     s>=85 ? 'Crushing it 🔥' : s>=60 ? 'Solid day so far' : s>=35 ? 'Room to catch up' : 'Keep going, you\'re doing great!';
   document.getElementById('hfEyebrow').textContent = tab==='focus' ? "Today's Focus" : `${tab[0].toUpperCase()}${tab.slice(1)} Focus`;
   document.getElementById('hfQuote').textContent = HERO_LINES[tab];
+  // v14.4.7 — each Home tab now gets a photo matching its actual topic
+  // instead of an arbitrary-but-consistent one (health→fitness, etc).
+  const HERO_KEYWORDS = { focus:'motivation,sunrise', health:'fitness,wellness', productivity:'desk,work', finance:'money,savings' };
   setPhotoCardBg(
     document.getElementById('heroFocusCard'),
-    photoUrl((S.settings.bgSeed||'gpledger')+'-hero-'+tab, 700, 500),
+    photoUrl((S.settings.bgSeed||'gpledger')+'-hero-'+tab, 700, 500, HERO_KEYWORDS[tab]||HERO_KEYWORDS.focus),
     'linear-gradient(180deg, rgba(0,0,0,.05), rgba(0,0,0,.68))'
   ); // v12.2 — no-flash load; CSS default gradient shows instantly until the photo is ready (see .hero-focus-card)
   document.getElementById('pcStats').innerHTML = tabStats(tab).map(r=>

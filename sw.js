@@ -224,7 +224,12 @@
 // index.html; this file's caching rule updated to match the new host.
 // index.html changed, so bump so installed copies actually receive this
 // instead of serving a cached v14.4.5.
-const CACHE_NAME = 'gp-ledger-v14-4-6';
+// v14.4.7: content-relevant photos — Diet shows food, Finance shows
+// money, Health shows fitness, etc, using loremflickr's keyword search
+// (picsum never supported this at all). index.html changed only (no
+// caching-strategy change here), so bump so installed copies actually
+// receive this instead of serving a cached v14.4.6.
+const CACHE_NAME = 'gp-ledger-v14-4-7';
 const IMG_CACHE_NAME = 'gp-ledger-images-v1';
 const CORE_ASSETS = [
   './index.html',

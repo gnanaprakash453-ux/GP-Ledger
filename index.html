@@ -466,16 +466,19 @@ nav.bottom button.active{ color:var(--text); background:var(--card2); }
 .seg{ display:flex; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:3px; margin-bottom:14px; }
 .seg button{ flex:1; background:none; border:none; padding:8px 0; border-radius:9px; font-size:12.5px; font-weight:700; color:var(--sub); }
 .seg button.active{ background:var(--card2); color:var(--text); }
-/* v15.5.0 — shared Finance/Reports period navigation bar (spec §1-3):
-   ‹ Prev | label (tap to jump via calendar) | Next ›, used identically
-   by both screens so switching between them "feels like the same app"
-   per spec §3. */
-.period-nav{ display:flex; align-items:stretch; gap:6px; margin-bottom:14px; }
-.period-nav-btn{ width:40px; flex-shrink:0; background:var(--card); border:1px solid var(--line); border-radius:11px; font-size:16px; font-weight:700; color:var(--text); }
-.period-nav-btn:active{ background:var(--card2); }
-.period-nav-label{ flex:1; background:var(--card); border:1px solid var(--line); border-radius:11px; font-size:13.5px; font-weight:800; color:var(--text); padding:0 8px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.period-nav-jumpbtn{ width:40px; flex-shrink:0; background:var(--card); border:1px solid var(--line); border-radius:11px; font-size:15px; }
-.period-nav-today{ text-align:center; margin:-8px 0 14px; }
+/* v15.5.0 — shared Day/Month/Year period navigator used by Finance + Reports */
+.period-nav{ background:var(--card); border:1px solid var(--line); border-radius:16px; padding:12px; margin-bottom:14px; }
+.period-nav-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:10px; }
+.period-nav-title{ font-size:10.5px; font-weight:800; text-transform:uppercase; letter-spacing:.07em; color:var(--sub); }
+.period-nav-current{ font-size:15px; font-weight:800; color:var(--text); line-height:1.2; }
+.period-nav-shortcut{ border:1px solid var(--line); background:var(--card2); color:var(--sub); border-radius:9px; padding:6px 9px; font-size:10.5px; font-weight:800; }
+.period-level{ display:flex; background:var(--card2); border:1px solid var(--line); border-radius:11px; padding:3px; gap:2px; margin-bottom:10px; }
+.period-level button{ flex:1; border:0; background:none; color:var(--sub); border-radius:8px; padding:8px 4px; font-size:11.5px; font-weight:800; }
+.period-level button.active{ background:var(--card); color:var(--text); box-shadow:0 2px 6px rgba(0,0,0,.12); }
+.period-picker-row{ display:flex; align-items:center; gap:7px; }
+.period-picker-row input,.period-picker-row select{ flex:1; min-width:0; }
+.period-nav-arrow{ width:38px; height:38px; flex:0 0 38px; border-radius:10px; border:1px solid var(--line); background:var(--card2); color:var(--text); font-size:18px; font-weight:800; }
+.period-nav-hint{ font-size:10.5px; color:var(--sub); margin-top:7px; }
 
 /* ============ TRANSACTIONS ============ */
 .tx-row{ display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--line); }
@@ -760,6 +763,26 @@ body{ background:var(--bg-gradient); }
    see the detail; still comfortably behind the ruled lines/text (z-index
    0, and every real diary-page child sits in normal flow above it). */
 .diary-sketch.style-branch{ inset:0; right:auto; bottom:auto; top:0; left:0; width:100%; height:100%; opacity:.16; }
+/* v15.5.0 — premium artwork/style variants. Decoration stays behind text. */
+.diary-page.diary-style-minimal{ background:linear-gradient(180deg,#fff,#f7f8fa); border-color:rgba(0,0,0,.10); --diary-ink:#20242b; --diary-line:rgba(70,80,95,.12); --diary-margin:transparent; }
+.diary-page.diary-style-minimal .diary-ribbon,.diary-page.diary-style-minimal .diary-sketch{ display:none; }
+.diary-page.diary-style-botanical{ --diary-paper-1:#fbf7eb; --diary-paper-2:#eee2c6; }
+.diary-page.diary-style-paper{ background:linear-gradient(160deg,#f8f0dc,#efe1bf); }
+.diary-page.diary-style-night{ background:linear-gradient(160deg,#20232b,#151821); border-color:rgba(255,255,255,.10); --diary-ink:#e9e6dc; --diary-line:rgba(255,255,255,.10); --diary-margin:rgba(196,164,98,.32); --diary-gold:#c9a96e; }
+.diary-page.diary-style-night .diary-date-heading{ color:var(--diary-ink); }
+.diary-page.diary-style-night .diary-ribbon{ background:linear-gradient(180deg,#c9a96e,#8e7444); }
+.diary-page.diary-style-night .diary-textarea{ color:var(--diary-ink) !important; }
+.diary-page.diary-style-editorial{ background:linear-gradient(180deg,#f7f5f0,#ebe8e0); border-radius:6px; --diary-ink:#24211d; --diary-line:rgba(50,45,38,.13); --diary-margin:rgba(36,33,29,.24); }
+.diary-page.diary-style-editorial .diary-date-heading{ font-family:'Playfair Display',Georgia,serif; font-style:normal; letter-spacing:-.02em; text-transform:uppercase; font-size:20px; }
+.diary-page.diary-style-editorial .diary-ribbon{ display:none; }
+.diary-page.diary-style-notebook{ background:repeating-linear-gradient(to bottom,#fbfcff,#fbfcff 27px,rgba(90,120,180,.12) 28px); border-radius:10px; --diary-ink:#26344a; --diary-line:transparent; --diary-margin:rgba(178,58,58,.35); }
+.diary-page.diary-style-notebook .diary-ribbon{ background:linear-gradient(180deg,#64748b,#334155); }
+.diary-page.diary-style-serene{ background:linear-gradient(180deg,#f7f8f5,#edf0ea); border-color:rgba(70,85,70,.12); --diary-ink:#394238; --diary-line:rgba(80,95,80,.10); --diary-margin:transparent; }
+.diary-page.diary-style-serene .diary-ribbon,.diary-page.diary-style-serene .diary-sketch{ display:none; }
+.diary-page.diary-style-stipple .diary-sketch{ opacity:.10; }
+.diary-page.diary-style-none .diary-sketch,.diary-page.diary-style-none .diary-ribbon{ display:none; }
+.diary-page.diary-style-none{ --diary-margin:transparent; }
+
 /* v14.1.0 — smoother date-navigation transition (spec §2's "Date
    Navigation"): a brief fade+slide instead of an instant content swap —
    see navigateJournalDate() for the JS half. */
@@ -860,49 +883,6 @@ body{ background:var(--bg-gradient); }
 .diary-entry-card .de-mid{ flex:1; min-width:0; }
 .diary-entry-card .de-text{ font-family:'Lora',serif; font-style:italic; color:var(--diary-ink); font-size:13.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .diary-entry-card .de-time{ font-size:11px; color:color-mix(in srgb, var(--diary-ink) 65%, transparent); margin-top:2px; }
-
-/* v15.5.0 — the 6 new premium Journal themes (spec §6). Each overrides
-   the --diary-* custom properties that .diary-page/.diary-textarea/
-   .diary-date-heading/.diary-entry-card already read from, so no other
-   markup or logic needs to change — only the palette does. Kept
-   intentionally restrained per spec §7 ("writing > readability > date >
-   navigation > decoration"): no theme here adds new illustration, only
-   colour, texture, and (for Editorial) a heading font swap. */
-.diary-page.theme-minimal{
-  --diary-paper-1:#faf9f6; --diary-paper-2:#f2f0ea; --diary-ink:#22242a;
-  --diary-line:rgba(30,30,35,.08); --diary-margin:rgba(30,30,35,.14); --diary-gold:#8a8578;
-}
-.diary-page.theme-minimal{ background-image:none; background:var(--diary-paper-1); box-shadow:0 10px 24px -14px rgba(0,0,0,.3); }
-.diary-page.theme-grain{
-  --diary-paper-1:#eee6d6; --diary-paper-2:#e1d5b8; --diary-ink:#3a3226;
-  --diary-line:rgba(90,74,40,.18); --diary-margin:rgba(140,110,60,.3); --diary-gold:#8a6e3a;
-}
-.diary-page.theme-grain{ background-blend-mode:multiply, normal, normal, normal, normal; }
-.diary-page.theme-night{
-  --diary-paper-1:#1b1f2a; --diary-paper-2:#12151e; --diary-ink:#e8e6df;
-  --diary-line:rgba(255,255,255,.08); --diary-margin:rgba(180,150,90,.3); --diary-gold:#c9a15a;
-}
-.diary-page.theme-night{ box-shadow:0 14px 34px -14px rgba(0,0,0,.65), 0 1px 0 rgba(255,255,255,.05) inset; }
-.diary-page.theme-editorial{
-  --diary-paper-1:#fbfaf7; --diary-paper-2:#f4f1ea; --diary-ink:#181818;
-  --diary-line:rgba(0,0,0,.1); --diary-margin:rgba(0,0,0,.55); --diary-gold:#181818;
-}
-.diary-page.theme-editorial .diary-date-heading{ font-family:'Georgia','Fraunces',serif; font-style:normal; font-weight:800; letter-spacing:.3px; border-bottom:2px solid var(--diary-ink); padding-bottom:8px; }
-.diary-page.theme-notebook{
-  --diary-paper-1:#f3f6fa; --diary-paper-2:#e8edf4; --diary-ink:#232a36;
-  --diary-line:rgba(40,60,100,.14); --diary-margin:rgba(60,90,150,.28); --diary-gold:#5b7bb0;
-}
-.diary-page.theme-notebook{
-  background-image:
-    radial-gradient(rgba(60,90,150,.14) 1px, transparent 1.4px),
-    linear-gradient(160deg, var(--diary-paper-1), var(--diary-paper-2));
-  background-size: 16px 16px, auto; background-repeat: repeat, no-repeat;
-}
-.diary-page.theme-serene{
-  --diary-paper-1:#f7f1f6; --diary-paper-2:#eee0ea; --diary-ink:#4a3f4d;
-  --diary-line:rgba(120,90,120,.12); --diary-margin:rgba(150,120,150,.22); --diary-gold:#a688a8;
-}
-.diary-page.theme-serene{ background-image:none; background:linear-gradient(160deg, var(--diary-paper-1), var(--diary-paper-2)); }
 
 /* ============ v8: DIET ============ */
 .meal-card{ display:flex; gap:10px; background:var(--card); border:1px solid var(--line); border-radius:var(--radius-sm); padding:10px 12px; margin-bottom:8px; align-items:center; }
@@ -1582,31 +1562,29 @@ nav.bottom, .fab{ transition:transform .18s ease; }
     <!-- ===================== FINANCE ===================== -->
     <section class="screen" id="screen-finance">
       <div id="financeMotivationCard"></div>
-      <!-- v15.5.0 — Finance Calendar/Period Selector (spec §1). Opens on
-           the current month by default; Day/Month/Year switches what
-           kind of period is selected, ‹›/tap-to-jump move through
-           history without ever touching stored transactions — this is a
-           viewing filter only (spec §4). -->
-      <div class="seg" id="financePeriodSeg">
-        <button data-p="day">Day</button>
-        <button data-p="month" class="active">Month</button>
-        <button data-p="year">Year</button>
-      </div>
       <div class="period-nav" id="financePeriodNav">
-        <button class="period-nav-btn" data-fnav="prev">‹</button>
-        <button class="period-nav-label" id="financePeriodLabel" data-fnav="jump"></button>
-        <button class="period-nav-btn" data-fnav="next">›</button>
-        <button class="period-nav-jumpbtn" data-fnav="jump" title="Jump to date">📅</button>
+        <div class="period-nav-head">
+          <div><div class="period-nav-title">Finance view</div><div class="period-nav-current" id="financePeriodLabel">September 2026</div></div>
+          <button class="period-nav-shortcut" id="financePeriodCurrent">Current</button>
+        </div>
+        <div class="period-level" id="financePeriodLevel">
+          <button data-level="day">Day</button><button data-level="month" class="active">Month</button><button data-level="year">Year</button>
+        </div>
+        <div class="period-picker-row">
+          <button class="period-nav-arrow" id="financePeriodPrev" aria-label="Previous period">‹</button>
+          <input id="financePeriodPicker" type="month" aria-label="Choose finance period">
+          <button class="period-nav-arrow" id="financePeriodNext" aria-label="Next period">›</button>
+        </div>
+        <div class="period-nav-hint" id="financePeriodHint">Viewing the complete selected month.</div>
       </div>
-      <div class="period-nav-today" id="financeTodayLink" style="display:none;"><button class="link-btn" data-fnav="today">↺ Back to current</button></div>
       <div class="card">
         <div class="stat-grid">
-          <div class="stat"><div class="num" id="finBalance">₹0</div><div class="lbl">Balance</div></div>
-          <div class="stat"><div class="num" id="finNet">₹0</div><div class="lbl" id="finNetLbl">Net</div></div>
+          <div class="stat"><div class="num" id="finBalance">₹0</div><div class="lbl">Current balance</div></div>
+          <div class="stat"><div class="num" id="finNet">₹0</div><div class="lbl" id="finNetLabel">Net · September 2026</div></div>
         </div>
       </div>
       <div class="card">
-        <div class="section-head" style="margin:0 0 8px;"><h2 id="finDonutHeading">This period</h2></div>
+        <div class="section-head" style="margin:0 0 8px;"><h2 id="financeChartTitle">Selected period expenses</h2></div>
         <canvas id="financeDonut" height="180"></canvas>
       </div>
       <div class="section-head"><h2>Accounts</h2><button class="link-btn" id="addAccountBtn">+ Add</button></div>
@@ -1664,24 +1642,21 @@ nav.bottom, .fab{ transition:transform .18s ease; }
     <section class="screen" id="screen-reports">
       <button class="link-btn" data-back="more" style="margin-bottom:8px;">‹ More</button>
       <div class="chiprow" id="reportChips"></div>
-      <!-- v15.5.0 — Reports now uses the exact same Calendar/Period
-           Selector experience as Finance (spec §2/§3): Day/Week/Month/
-           Year switch + ‹›/jump navigation through any historical
-           period, not just the current one. Defaults to the current
-           month per spec. -->
-      <div class="seg" id="reportPeriod">
-        <button data-p="day">Day</button>
-        <button data-p="week">Week</button>
-        <button data-p="month" class="active">Month</button>
-        <button data-p="year">Year</button>
-      </div>
       <div class="period-nav" id="reportPeriodNav">
-        <button class="period-nav-btn" data-rnav="prev">‹</button>
-        <button class="period-nav-label" id="reportPeriodLabel" data-rnav="jump"></button>
-        <button class="period-nav-btn" data-rnav="next">›</button>
-        <button class="period-nav-jumpbtn" data-rnav="jump" title="Jump to date">📅</button>
+        <div class="period-nav-head">
+          <div><div class="period-nav-title">Report period</div><div class="period-nav-current" id="reportPeriodLabel">September 2026</div></div>
+          <button class="period-nav-shortcut" id="reportPeriodCurrent">Current</button>
+        </div>
+        <div class="period-level" id="reportPeriod">
+          <button data-p="day">Day</button><button data-p="month" class="active">Month</button><button data-p="year">Year</button>
+        </div>
+        <div class="period-picker-row">
+          <button class="period-nav-arrow" id="reportPeriodPrev" aria-label="Previous period">‹</button>
+          <input id="reportPeriodPicker" type="month" aria-label="Choose report period">
+          <button class="period-nav-arrow" id="reportPeriodNext" aria-label="Next period">›</button>
+        </div>
+        <div class="period-nav-hint" id="reportPeriodHint">Generating the complete selected month.</div>
       </div>
-      <div class="period-nav-today" id="reportTodayLink" style="display:none;"><button class="link-btn" data-rnav="today">↺ Back to current</button></div>
       <div class="card" id="reportSummary"></div>
       <div id="reportExportArea"></div>
       <div class="section-head"><h2>Export everything</h2></div>
@@ -2585,25 +2560,8 @@ function wireAiSuggestButton(btnId, panelId, onGo){
 }
 
 const APP_VERSION = 'v15.5.0'; // single source of truth for About screen & Settings row
-// v15.5.0 — Finance/Reports Calendar & Journal Customization upgrade:
-// (1) Finance gained a real Day/Month/Year period selector with ‹›/jump
-//     navigation through history (previously it only ever showed a fixed
-//     trailing-30-days window with no way to view any other period) —
-//     Balance stays all-time, Net/donut/Ledger now reflect the selected
-//     period; nothing in S.transactions is ever touched, purely a view
-//     filter; (2) Reports now uses that exact same period-nav component
-//     (periodRange() gained an anchor-date parameter so it isn't limited
-//     to "the current X" anymore) instead of only ever showing this
-//     week/month/year with no way to look at a past one; (3) Quill & Ink
-//     removed from Journal artwork styles per spec, with existing quill/
-//     stipple selections auto-migrated to the new 'leaf' style rather
-//     than left broken or hidden; (4) 7 new premium Journal styles added
-//     (Minimal, Botanical, Paper & Grain, Night Journal, Editorial,
-//     Modern Notebook, Serene) as CSS custom-property themes over the
-//     existing diary page — no new heavy illustration, keeping with the
-//     "writing > decoration" rule — plus the old full-page Botanical &
-//     Skyline kept as an 8th, larger option. apps-script.gs/backend
-//     untouched — nothing here changes the sync payload shape.
+// v15.5.0 — Finance + Reports now share a real Day/Month/Year period engine;
+// Journal artwork was expanded and legacy Quill & Ink preferences migrate to Minimal.
 // v15.4.0 — real, verifiable staleness fix, prompted by actually checking
 // the About modal instead of assuming it was fine. It claimed "14
 // trackers" and showcased 13 module chips — both stale copy from an
@@ -4650,15 +4608,6 @@ function loadState(){
      instead of clobbering each other. This normalizes old single-object
      entries into a 1-item list, once. */
   normalizeJournal();
-  /* v15.5.0 — Quill & Ink retired as a Journal artwork option (spec:
-     "Remove Quill & Ink"). Anyone with it still stored gets migrated
-     to 'leaf' (the new restrained default) rather than being left on a
-     hidden/removed style. 'stipple' (the old pointillism tree) is
-     retired at the same time for the same reason — its replacement is
-     the new subtler 'leaf' style. */
-  if(S.settings.diaryArtStyle==='quill' || S.settings.diaryArtStyle==='stipple'){
-    S.settings.diaryArtStyle = 'leaf';
-  }
   if(!S.diet || typeof S.diet!=='object') S.diet = { meals:{}, settings:defaultDietSettings() };
   if(!S.diet.meals || typeof S.diet.meals!=='object') S.diet.meals = {};
   S.diet.settings = Object.assign(defaultDietSettings(), S.diet.settings||{});
@@ -5820,64 +5769,141 @@ function openAddHabitModal(prefillName){
   };
 }
 
+/* v15.5.0 — shared Day/Month/Year period engine for Finance + Reports.
+   One semantic model; each screen keeps its own selected level/anchor. */
+const PERIOD_VIEWS = {
+  finance:{ level:'month', anchor:todayStr() },
+  reports:{ level:'month', anchor:todayStr() }
+};
+function periodBounds(level, anchor){
+  const safe = anchor || todayStr();
+  const d = new Date(safe+'T00:00:00');
+  if(level==='day') return [safe,safe];
+  if(level==='month') return [localDateStr(new Date(d.getFullYear(),d.getMonth(),1)), localDateStr(new Date(d.getFullYear(),d.getMonth()+1,0))];
+  return [localDateStr(new Date(d.getFullYear(),0,1)), localDateStr(new Date(d.getFullYear(),11,31))];
+}
+function formatPeriodLabel(level, anchor){
+  const d = new Date((anchor||todayStr())+'T00:00:00');
+  if(level==='day') return d.toLocaleDateString(undefined,{month:'long',day:'numeric',year:'numeric'});
+  if(level==='year') return String(d.getFullYear());
+  return d.toLocaleDateString(undefined,{month:'long',year:'numeric'});
+}
+function periodHint(level,a,b){
+  if(level==='day') return `Viewing one day · ${a}`;
+  if(level==='year') return `Viewing the complete year · ${a.slice(0,4)}`;
+  return `Viewing the complete month · ${a} → ${b}`;
+}
+function periodStep(level, anchor, delta){
+  const d = new Date((anchor||todayStr())+'T00:00:00');
+  if(level==='day') d.setDate(d.getDate()+delta);
+  else if(level==='month') d.setMonth(d.getMonth()+delta,1);
+  else d.setFullYear(d.getFullYear()+delta,0,1);
+  return localDateStr(d);
+}
+function periodPickerValue(scope){
+  const pv=PERIOD_VIEWS[scope];
+  if(pv.level==='day') return pv.anchor;
+  if(pv.level==='month') return pv.anchor.slice(0,7);
+  return String(new Date(pv.anchor+'T00:00:00').getFullYear());
+}
+function syncPeriodPicker(scope){
+  const pv=PERIOD_VIEWS[scope];
+  const input=document.getElementById(scope==='finance'?'financePeriodPicker':'reportPeriodPicker');
+  if(!input) return;
+  if(pv.level==='day') input.type='date';
+  else if(pv.level==='month') input.type='month';
+  else input.type='number';
+  input.min = pv.level==='year' ? '2000' : '';
+  input.max = pv.level==='year' ? '2100' : '';
+  input.placeholder = pv.level==='year' ? 'YYYY' : '';
+  input.value = periodPickerValue(scope);
+  const wrap=document.getElementById(scope==='finance'?'financePeriodLevel':'reportPeriod');
+  if(wrap) wrap.querySelectorAll('button').forEach(b=>b.classList.toggle('active', b.dataset.level===pv.level || b.dataset.p===pv.level));
+}
+function setPeriodLevel(scope, level){
+  const pv=PERIOD_VIEWS[scope];
+  pv.level=level;
+  const d=new Date((pv.anchor||todayStr())+'T00:00:00');
+  if(level==='month') pv.anchor=localDateStr(new Date(d.getFullYear(),d.getMonth(),1));
+  else if(level==='year') pv.anchor=localDateStr(new Date(d.getFullYear(),0,1));
+  renderPeriodScope(scope);
+}
+function setPeriodFromPicker(scope, raw){
+  if(!raw) return;
+  const pv=PERIOD_VIEWS[scope];
+  if(pv.level==='day') pv.anchor=raw;
+  else if(pv.level==='month') pv.anchor=raw+'-01';
+  else {
+    const y=Math.max(1900,Math.min(2200,Number(raw)||new Date().getFullYear()));
+    pv.anchor=`${y}-01-01`;
+  }
+  renderPeriodScope(scope);
+}
+function movePeriod(scope, delta){
+  const pv=PERIOD_VIEWS[scope];
+  pv.anchor=periodStep(pv.level,pv.anchor,delta);
+  renderPeriodScope(scope);
+}
+function resetPeriod(scope){
+  const pv=PERIOD_VIEWS[scope];
+  pv.anchor=todayStr();
+  if(pv.level==='month') pv.anchor=localDateStr(new Date(new Date().getFullYear(),new Date().getMonth(),1));
+  if(pv.level==='year') pv.anchor=localDateStr(new Date(new Date().getFullYear(),0,1));
+  renderPeriodScope(scope);
+}
+function renderPeriodScope(scope){
+  if(scope==='finance') renderFinance();
+  else renderReports();
+}
+function wirePeriodControls(scope){
+  const levelEl=document.getElementById(scope==='finance'?'financePeriodLevel':'reportPeriod');
+  const picker=document.getElementById(scope==='finance'?'financePeriodPicker':'reportPeriodPicker');
+  const prev=document.getElementById(scope==='finance'?'financePeriodPrev':'reportPeriodPrev');
+  const next=document.getElementById(scope==='finance'?'financePeriodNext':'reportPeriodNext');
+  const current=document.getElementById(scope==='finance'?'financePeriodCurrent':'reportPeriodCurrent');
+  if(levelEl && !levelEl.dataset.wired){
+    levelEl.dataset.wired='1';
+    levelEl.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>setPeriodLevel(scope,b.dataset.level||b.dataset.p)));
+  }
+  if(picker && !picker.dataset.wired){
+    picker.dataset.wired='1'; picker.addEventListener('change',()=>setPeriodFromPicker(scope,picker.value));
+  }
+  if(prev && !prev.dataset.wired){ prev.dataset.wired='1'; prev.addEventListener('click',()=>movePeriod(scope,-1)); }
+  if(next && !next.dataset.wired){ next.dataset.wired='1'; next.addEventListener('click',()=>movePeriod(scope,1)); }
+  if(current && !current.dataset.wired){ current.dataset.wired='1'; current.addEventListener('click',()=>resetPeriod(scope)); }
+}
+wirePeriodControls('finance');
+wirePeriodControls('reports');
+
 /* ---------- finance ---------- */
 let donutChart, ieChart2, netChart2, habitTrendChart2;
-/* v15.5.0 — Finance period selector state (spec §1). Defaults exactly as
-   spec'd: opens on the current month. Purely a viewing filter — nothing
-   here ever touches S.transactions itself (spec §4), it only changes
-   which slice renderFinance() reads. */
-let financePeriod = 'month', financeAnchor = todayStr();
-function renderFinancePeriodNav(){
-  document.querySelectorAll('#financePeriodSeg button').forEach(b=> b.classList.toggle('active', b.dataset.p===financePeriod));
-  document.getElementById('financePeriodLabel').textContent = periodLabel(financePeriod, financeAnchor);
-  const [a,b] = periodRange(financePeriod, financeAnchor);
-  const [curA,curB] = periodRange(financePeriod, todayStr());
-  document.getElementById('financeTodayLink').style.display = (a===curA && b===curB) ? 'none' : 'block';
-}
-document.querySelectorAll('#financePeriodSeg button').forEach(b=> b.onclick = ()=>{
-  financePeriod = b.dataset.p; financeAnchor = todayStr(); renderFinance();
-});
-document.getElementById('financePeriodNav').addEventListener('click', (e)=>{
-  const btn = e.target.closest('[data-fnav]'); if(!btn) return;
-  if(btn.dataset.fnav==='prev'){ financeAnchor = shiftAnchor(financePeriod, financeAnchor, -1); renderFinance(); }
-  if(btn.dataset.fnav==='next'){ financeAnchor = shiftAnchor(financePeriod, financeAnchor, 1); renderFinance(); }
-  if(btn.dataset.fnav==='jump'){ openPeriodJumpModal(financePeriod, financeAnchor, (na)=>{ financeAnchor = na; renderFinance(); }); }
-});
-document.getElementById('financeTodayLink').addEventListener('click', (e)=>{
-  if(!e.target.closest('[data-fnav="today"]')) return;
-  financeAnchor = todayStr(); renderFinance();
-});
 function renderFinance(){
   renderTopMotivation('finance','financeMotivationCard');
-  renderFinancePeriodNav();
+  const now = todayStr();
+  const pv = PERIOD_VIEWS.finance;
+  const [periodStart, periodEnd] = periodBounds(pv.level, pv.anchor);
+  const periodTxs = S.transactions.filter(t=>t.date>=periodStart && t.date<=periodEnd);
   const balance = S.transactions.reduce((a,t)=> a + (t.type==='in'?Number(t.amount):-Number(t.amount)), 0);
-  // v15.5.0 — "Net"/donut/ledger below now reflect the selected Day/Month/
-  // Year period (spec §1) instead of a fixed trailing-30-days window.
-  // Balance stays all-time on purpose — it's the running total, not a
-  // period figure. Historical data is never deleted or altered by this;
-  // it's filtered for display only (spec §4).
-  const [pa, pb] = periodRange(financePeriod, financeAnchor);
-  const recent = S.transactions.filter(t=>t.date>=pa && t.date<=pb);
-  const net = recent.reduce((a,t)=> a + (t.type==='in'?Number(t.amount):-Number(t.amount)), 0);
+  const net = periodTxs.reduce((a,t)=> a + (t.type==='in'?Number(t.amount):-Number(t.amount)), 0);
+  const periodLabel = formatPeriodLabel(pv.level, pv.anchor);
   document.getElementById('finBalance').textContent = fmtMoney(balance);
   document.getElementById('finNet').textContent = fmtMoney(net);
-  document.getElementById('finNetLbl').textContent = `Net (${periodLabel(financePeriod, financeAnchor)})`;
-  document.getElementById('finDonutHeading').textContent = periodLabel(financePeriod, financeAnchor);
+  document.getElementById('finNetLabel').textContent = `Net · ${periodLabel}`;
+  document.getElementById('financePeriodLabel').textContent = periodLabel;
+  document.getElementById('financePeriodHint').textContent = periodHint(pv.level, periodStart, periodEnd);
+  syncPeriodPicker('finance');
   renderAccountsCard();
-  renderLendingCard(); // v14.1.0
+  renderLendingCard();
 
   const byCat = {};
-  recent.filter(t=>t.type==='out').forEach(t=>{ byCat[t.category||'Other'] = (byCat[t.category||'Other']||0)+Number(t.amount); });
+  periodTxs.filter(t=>t.type==='out').forEach(t=>{ byCat[t.category||'Other'] = (byCat[t.category||'Other']||0)+Number(t.amount); });
   const labels = Object.keys(byCat), data = Object.values(byCat);
   const ctx = document.getElementById('financeDonut');
   if(donutChart) donutChart.destroy();
   donutChart = new Chart(ctx, { type:'doughnut', data:{ labels, datasets:[{ data, backgroundColor:['#38bdf8','#f59e0b','#a78bfa','#f43f5e','#22c55e','#eab308','#ec4899','#14b8a6'] }] },
     options:{ plugins:{ legend:{ position:'bottom', labels:{ color:'#9aa3b5', boxWidth:10, font:{size:11} } } } } });
+  document.getElementById('financeChartTitle').textContent = `Expenses · ${periodLabel}`;
 
-  // v14.0.0 — spec §23: visual differentiation beyond just red/green —
-  // date gets its own muted styling, Food expenses get one treatment,
-  // other expenses another, income a third. Never color-only: icon +
-  // label + category text all carry the same signal, for accessibility.
   function txCategoryStyle(t){
     if(t.type==='in') return { bg:'#22c55e22', fg:'#22c55e', icon:'🟢', label:'Income' };
     if((t.category||'').toLowerCase()==='food') return { bg:'#ef444422', fg:'#ef4444', icon:'🔴', label:'Food' };
@@ -5892,22 +5918,17 @@ function renderFinance(){
       <div class="tx-amt ${t.type}">${t.type==='in'?'+':'-'}${fmtMoney(t.amount)}</div>
     </div>`;
   }
-  // v15.5.0 — Ledger below now shows the SAME selected period as the
-  // stats above (spec §1: "show financial activity/data for that
-  // specific day/month/year"), filtered from the same untouched
-  // S.transactions — nothing is deleted, only the view changes.
-  const sorted = [...recent].sort((a,b)=> b.date.localeCompare(a.date) || b.created-a.created);
-  // Compact summary preview: most recent 3, always visible, no separate toggle needed to see "what just happened"
+  const sorted = [...periodTxs].sort((a,b)=> b.date.localeCompare(a.date) || b.created-a.created);
   const previewEl = document.getElementById('txPreview');
   if(previewEl){
     previewEl.innerHTML = sorted.length===0
-      ? `<div class="hint">No transactions for ${periodLabel(financePeriod, financeAnchor)}.</div>`
+      ? `<div class="hint">No transactions for ${periodLabel}. Tap + Add to log one.</div>`
       : sorted.slice(0,3).map(txRowHtml).join('');
   }
   const listEl = document.getElementById('txList');
   listEl.innerHTML='';
-  if(sorted.length===0){ listEl.innerHTML = `<div class="empty-state"><div class="em-icon">💸</div><div class="em-title">No transactions for ${periodLabel(financePeriod, financeAnchor)}</div>Tap + to add one, or change the period above.</div>`; }
-  else { listEl.innerHTML = sorted.slice(0,200).map(txRowHtml).join(''); }
+  if(sorted.length===0){ listEl.innerHTML = `<div class="empty-state"><div class="em-icon">💸</div><div class="em-title">No transactions in period</div>Try another day, month, or year.</div>`; }
+  else { listEl.innerHTML = sorted.slice(0,80).map(txRowHtml).join(''); }
   listEl.querySelectorAll('[data-txid]').forEach(row=> row.onclick = ()=> openTxModal(row.dataset.txid));
   if(previewEl) previewEl.querySelectorAll('[data-txid]').forEach(row=> row.onclick = ()=> openTxModal(row.dataset.txid));
 }
@@ -6225,14 +6246,7 @@ function renderTrends(){
 }
 
 /* ---------- reports ---------- */
-let reportFilter='all', reportPeriod='month', reportAnchor=todayStr();
-function renderReportPeriodNav(){
-  document.querySelectorAll('#reportPeriod button').forEach(b=> b.classList.toggle('active', b.dataset.p===reportPeriod));
-  document.getElementById('reportPeriodLabel').textContent = periodLabel(reportPeriod, reportAnchor);
-  const [a,b] = periodRange(reportPeriod, reportAnchor);
-  const [curA,curB] = periodRange(reportPeriod, todayStr());
-  document.getElementById('reportTodayLink').style.display = (a===curA && b===curB) ? 'none' : 'block';
-}
+let reportFilter='all', reportPeriod='month';
 function renderReportChips(){
   const chips = document.getElementById('reportChips');
   const items = [
@@ -6257,74 +6271,12 @@ function renderReportChips(){
     chips.appendChild(b);
   });
 }
-/* v15.5.0 — periodRange() now takes an optional anchor date (defaults to
-   today, so every existing call site that only passed `period` keeps
-   working unchanged) so Finance/Reports can compute the range for ANY
-   day/week/month/year, not just the current one — this is what makes
-   historical navigation (spec §1/§2 "move backward and forward through
-   historical periods") possible without a second date system. */
-function periodRange(period, anchor){
-  anchor = anchor || todayStr();
-  const d = new Date(anchor+'T00:00:00');
-  if(period==='day') return [anchor, anchor];
-  if(period==='week') return [startOfWeek(anchor), addDays(startOfWeek(anchor),6)];
-  if(period==='month'){ const start=localDateStr(new Date(d.getFullYear(),d.getMonth(),1)); const end=localDateStr(new Date(d.getFullYear(),d.getMonth()+1,0)); return [start,end]; }
-  return [localDateStr(new Date(d.getFullYear(),0,1)), localDateStr(new Date(d.getFullYear(),11,31))];
-}
-/* v15.5.0 — shared period-nav helpers used by both Finance and Reports
-   (spec §3 "one consistent interaction model"). periodLabel() gives the
-   human heading ("September 2026" / "September 2, 2026" / "2026");
-   shiftAnchor() moves the anchor one step in either direction for ‹/›. */
-function periodLabel(period, anchor){
-  const d = new Date(anchor+'T00:00:00');
-  if(period==='day') return d.toLocaleDateString(undefined,{weekday:'short', day:'numeric', month:'short', year:'numeric'});
-  if(period==='week'){ const [a,b] = periodRange('week',anchor); return `${new Date(a+'T00:00:00').toLocaleDateString(undefined,{day:'numeric',month:'short'})} – ${new Date(b+'T00:00:00').toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'})}`; }
-  if(period==='month') return `${monthName(d.getMonth())} ${d.getFullYear()}`;
-  return `${d.getFullYear()}`;
-}
-function shiftAnchor(period, anchor, dir){
-  const d = new Date(anchor+'T00:00:00');
-  if(period==='day') return addDays(anchor, dir);
-  if(period==='week') return addDays(anchor, dir*7);
-  if(period==='month'){ d.setMonth(d.getMonth()+dir); return localDateStr(d); }
-  d.setFullYear(d.getFullYear()+dir); return localDateStr(d);
-}
-/* v15.5.0 — the "📅 jump" modal used by both Finance and Reports: pick an
-   exact day / month / year to jump straight to (spec: "Calendar / Period
-   Picker for jumping directly to a specific date, month, or year"),
-   rather than only stepping one ‹/› at a time. onPick(newAnchor) is
-   called with the chosen date's YYYY-MM-DD; for month/year picks it's
-   normalized to the 1st of that month/year (periodRange() only cares
-   which month/year the anchor falls in). */
-function openPeriodJumpModal(period, anchor, onPick){
-  const d = new Date(anchor+'T00:00:00');
-  let inputHtml;
-  if(period==='day' || period==='week'){
-    inputHtml = `<input type="date" id="periodJumpDate" value="${anchor}">`;
-  } else if(period==='month'){
-    inputHtml = `<input type="month" id="periodJumpDate" value="${anchor.slice(0,7)}">`;
-  } else {
-    inputHtml = `<input type="number" id="periodJumpDate" value="${d.getFullYear()}" min="2000" max="2100" step="1">`;
-  }
-  openModal(`
-    <div class="modal-head"><h3>📅 Jump to</h3><button class="modal-close" data-close>✕</button></div>
-    <label class="fl" style="margin-top:0;">${period==='day'?'Day':period==='week'?'Any day in the week':period==='month'?'Month':'Year'}</label>
-    ${inputHtml}
-    <div class="btn-row" style="margin-top:14px;">
-      <button class="btn secondary" data-close>Cancel</button>
-      <button class="btn primary" id="periodJumpGo">Go</button>
-    </div>
-  `);
-  document.getElementById('periodJumpGo').onclick = ()=>{
-    const v = document.getElementById('periodJumpDate').value;
-    if(!v) return;
-    let newAnchor;
-    if(period==='month') newAnchor = v+'-01';
-    else if(period==='year') newAnchor = `${v}-01-01`;
-    else newAnchor = v;
-    closeModal();
-    onPick(newAnchor);
-  };
+function periodRange(period){
+  if(period==='day'||period==='month'||period==='year') return periodBounds(period, PERIOD_VIEWS.reports.anchor);
+  const now = todayStr();
+  if(period==='week') return [startOfWeek(now), addDays(startOfWeek(now),6)];
+  if(period==='all') return ['2000-01-01','2100-01-01'];
+  return periodBounds('month',now);
 }
 function eachDate(a,b){ const out=[]; let d=a; while(d<=b && out.length<400){ out.push(d); d=addDays(d,1);} return out; }
 function reportExportBtns(kind){
@@ -6334,7 +6286,7 @@ function wireReportExportBtns(){
   document.querySelectorAll('#reportExportArea [data-rexp]').forEach(btn=>{
     btn.onclick = ()=>{
       const kind = btn.dataset.kind; const fmt = btn.dataset.rexp;
-      const [a,b] = periodRange(reportPeriod, reportAnchor);
+      const [a,b] = periodRange(reportPeriod);
       if(kind==='debts') fmt==='xlsx' ? exportDebtsExcel(a,b) : exportDebtsPdf(a,b);
       if(kind==='journal') fmt==='xlsx' ? exportJournalReportExcel(a,b) : exportJournalReportPdf(a,b);
       if(kind==='diet') fmt==='xlsx' ? exportDietReportExcel(a,b) : exportDietReportPdf(a,b);
@@ -6373,11 +6325,14 @@ function dailyBreakdownHtml(dates, valueFn, fmt, color){
 }
 function renderReports(){
   renderReportChips();
-  renderReportPeriodNav();
   const summary = document.getElementById('reportSummary');
   const expArea = document.getElementById('reportExportArea');
-  const [a,b] = periodRange(reportPeriod, reportAnchor);
+  reportPeriod = PERIOD_VIEWS.reports.level;
+  const [a,b] = periodRange(reportPeriod);
   const dates = eachDate(a, b<todayStr()?b:todayStr());
+  document.getElementById('reportPeriodLabel').textContent = formatPeriodLabel(PERIOD_VIEWS.reports.level, PERIOD_VIEWS.reports.anchor);
+  document.getElementById('reportPeriodHint').textContent = periodHint(PERIOD_VIEWS.reports.level,a,b);
+  syncPeriodPicker('reports');
   expArea.innerHTML = '';
 
   if(reportFilter==='finance'){
@@ -7317,7 +7272,7 @@ function journalFontStack(font){ return `'${font}', ${JOURNAL_FONT_FALLBACK[font
    selectable, refined artwork styles (spec: "realistic, premium... NOT
    childish scribbling"), each rendered once and cached, not regenerated
    per keystroke/render:
-   - 'quill': the original ink quill + drop (unchanged)
+   - 'quill': the legacy quill artwork (removed in v15.5.0)
    - 'stipple': a pointillism tree canopy — the exact reference style
      requested (the attached hand-holding-pen photo), built from a
      deterministically-seeded dot scatter (same seed every time, so the
@@ -7510,52 +7465,30 @@ function buildBotanicalFrameSVG(){
     ${skyline}
   </svg>`;
 }
-/* v15.5.0 — "Botanical" (key 'leaf'): the new restrained replacement for
-   the retired Quill & Ink / Stipple Tree. Spec §6 asks for "very subtle
-   leaves/organic linework around the edges — elegant and restrained, not
-   a large illustration" — a handful of small leaves and one blossom
-   tucked in the bottom-right corner, reusing the existing leafShape()/
-   flowerShape() primitives at a much smaller scale/count than the
-   full-page 'branch' style below. */
-function buildSubtleLeafSprigSVG(){
-  const leaves = [
-    [150,178,-10],[162,168,20],[172,180,-25],[140,166,35],[178,160,5]
-  ].map(([x,y,a])=>leafShape(x,y,a,7)).join('');
-  const stem = `<path d="M186 190 C 172 182, 156 176, 138 172" stroke="currentColor" stroke-width="1.1" fill="none" stroke-linecap="round"/>`;
-  const blossom = flowerShape(180,172,3.4);
-  return `<svg viewBox="0 0 200 200" width="100%" height="100%" preserveAspectRatio="xMidYMid meet">${stem}${leaves}${blossom}</svg>`;
+/* v15.5.0 — Journal artwork overhaul. Quill is intentionally removed; the
+   new styles are lightweight CSS/SVG treatments layered onto the existing diary page. */
+const DIARY_STYLE_KEYS = ['minimal','botanical','paper','night','editorial','notebook','serene','none','stipple'];
+function migrateDiaryArtStyle(){
+  const current = S.settings.diaryArtStyle;
+  if(current==='quill' || current==='branch' || !DIARY_STYLE_KEYS.includes(current)){
+    S.settings.diaryArtStyle = current==='stipple' ? 'stipple' : (current==='branch' ? 'botanical' : 'minimal');
+    saveState();
+  }
 }
 function diaryArtSVG(style){
-  if(style==='leaf') return buildSubtleLeafSprigSVG();
-  if(style==='branch') return buildBotanicalFrameSVG();
-  // minimal / grain / night / editorial / notebook / serene / none /
-  // any legacy value all render with no corner illustration — those
-  // styles are theme-only (see diaryThemeClass()) so the writing area
-  // stays fully undecorated, per spec §7's "never overdecorate" rule.
-  return '';
-}
-/* v15.5.0 — each new premium style is a distinct colour/typography
-   *theme* for the whole diary page (paper colour, ink colour, grain
-   intensity, ruled-line colour), not just a corner sketch — applied via
-   a CSS class that overrides the --diary-* custom properties (see the
-   .diary-page.theme-* rules). 'leaf' and 'branch' keep the original warm
-   parchment palette unchanged (no theme class) since they're artwork
-   variations on the classic look, not new palettes. */
-function diaryThemeClass(style){
-  if(['minimal','grain','night','editorial','notebook','serene'].includes(style)) return 'theme-'+style;
+  if(style==='stipple') return buildStippleTreeSVG();
+  if(style==='botanical') return buildBotanicalFrameSVG();
+  if(style==='minimal'||style==='paper'||style==='night'||style==='editorial'||style==='notebook'||style==='serene'||style==='none') return '';
   return '';
 }
 function renderDiarySketch(){
+  migrateDiaryArtStyle();
   const el = document.getElementById('diarySketch'); if(!el) return;
-  const style = S.settings.diaryArtStyle || 'leaf';
-  el.innerHTML = diaryArtSVG(style);
-  el.className = 'diary-sketch' + (style==='branch' ? ' style-branch' : '');
   const page = document.getElementById('diaryPage');
-  if(page){
-    page.className = page.className.replace(/\btheme-\w+\b/g,'').trim();
-    const themeCls = diaryThemeClass(style);
-    if(themeCls) page.classList.add(themeCls);
-  }
+  const style = S.settings.diaryArtStyle || 'minimal';
+  el.innerHTML = diaryArtSVG(style);
+  el.className = 'diary-sketch' + (style==='botanical' ? ' style-branch' : '') + (style==='stipple' ? ' style-stipple' : '');
+  if(page){ page.className = page.className.replace(/\bdiary-style-[\w-]+\b/g,'').trim(); page.classList.add('diary-style-'+style); }
 }
 renderDiarySketch();
 function monthName(m){ return ['January','February','March','April','May','June','July','August','September','October','November','December'][m]; }
@@ -7688,7 +7621,7 @@ function navigateJournalDate(newDate, direction){
   const dir = direction<0 ? -1 : 1;
   page.style.setProperty('--dir', dir);
   if(cfg.use3dOrigin) page.style.transformOrigin = dir>0 ? 'right center' : 'left center';
-  page.className = page.className.replace(/\b(page-turn|slide|fade|curl|ink)-(leave|enter)\b/g, '').trim();
+  page.className = page.className.replace(/\b(page-turn|slide|fade|curl|ink)-(leave|enter)\b/g, '').trim(); page.className = 'diary-page diary-style-' + (S.settings.diaryArtStyle || 'minimal');
   page.classList.add('diary-page', cfg.leave);
   setTimeout(()=>{
     renderJournal();
@@ -7706,24 +7639,16 @@ document.getElementById('jTodayBtn').addEventListener('click', ()=> navigateJour
    None) and page transition (all 6 spec'd modes), both persisted to
    S.settings so they apply the next time the Journal is opened too, not
    just for the current session. */
-/* v15.5.0 — Quill & Ink and Stipple Tree retired (see the loadState()
-   migration above). Replaced with 7 premium styles per spec §5/§6, each
-   visually and conceptually distinct — not just palette swaps: Minimal
-   (no decoration at all), Botanical (the new subtle leaf sprig),
-   Paper & Grain (texture only), Night Journal (dark), Editorial
-   (magazine typography), Modern Notebook (dot-grid), Serene (soft
-   pastel, almost undecorated), plus the existing full-page Botanical &
-   Skyline kept as the one larger/statement option for anyone who wants
-   it. */
 const DIARY_ART_OPTIONS = [
-  { key:'minimal',   label:'Minimal',        desc:'No illustration — just writing, typography, and whitespace' },
-  { key:'leaf',       label:'Botanical',      desc:'A few subtle leaves in the corner, elegant and restrained' },
-  { key:'grain',      label:'Paper & Grain',  desc:'A refined textured paper feel, no artwork' },
-  { key:'night',      label:'Night Journal',  desc:'A sophisticated dark page, easy on the eyes at night' },
-  { key:'editorial',  label:'Editorial',      desc:'Premium magazine-style typography and spacing' },
-  { key:'notebook',   label:'Modern Notebook',desc:'A contemporary dot-grid notebook feel' },
-  { key:'serene',     label:'Serene',         desc:'Very calm and soft, almost no decoration' },
-  { key:'branch',     label:'Botanical & Skyline', desc:'A full page border — branch, vines, and a delicate skyline' },
+  { key:'minimal',  label:'Minimal', desc:'Clean paper, generous whitespace, almost no decoration' },
+  { key:'botanical',label:'Botanical', desc:'Delicate botanical frame with restrained linework' },
+  { key:'paper',    label:'Paper & Grain', desc:'Tactile paper texture with subtle fibre character' },
+  { key:'night',    label:'Night Journal', desc:'Elegant dark page treatment for low-light writing' },
+  { key:'editorial',label:'Editorial', desc:'Refined magazine-inspired typography and spacing' },
+  { key:'notebook', label:'Modern Notebook', desc:'Contemporary ruled notebook structure' },
+  { key:'serene',   label:'Serene', desc:'Quiet, soft, distraction-free writing surface' },
+  { key:'stipple',  label:'Stipple Tree', desc:'Pointillist tree canopy with delicate ink character' },
+  { key:'none',     label:'None', desc:'No illustration or decorative artwork' },
 ];
 const JOURNAL_TRANSITION_OPTIONS = [
   { key:'pageturn', label:'Classic Page Turn', desc:'A real 3D turn with a paper wave' },
@@ -7734,7 +7659,8 @@ const JOURNAL_TRANSITION_OPTIONS = [
   { key:'none',     label:'None', desc:'Instant, no animation' },
 ];
 function openDiaryCustomizeModal(){
-  const curArt = S.settings.diaryArtStyle || 'leaf';
+  migrateDiaryArtStyle();
+  const curArt = S.settings.diaryArtStyle || 'minimal';
   const curTrans = S.settings.journalTransition || 'pageturn';
   openModal(`
     <div class="modal-head"><h3>🎨 Customize diary</h3><button class="modal-close" data-close>✕</button></div>
@@ -9009,20 +8935,7 @@ document.getElementById('settingsCatHub').addEventListener('click', (e)=>{
 });
 document.getElementById('settingsCatBack').addEventListener('click', ()=> history.back()); // v12.2 — go through history so it stays in sync with openSettingsCategory's pushState
 closeSettingsCategory(); // start on the hub, every group hidden until a category is opened
-document.querySelectorAll('#reportPeriod button').forEach(b=> b.onclick=()=>{
-  reportPeriod=b.dataset.p; reportAnchor=todayStr(); renderReports();
-});
-// v15.5.0 — Reports ‹›/jump/today, mirroring Finance's period-nav exactly (spec §3).
-document.getElementById('reportPeriodNav').addEventListener('click', (e)=>{
-  const btn = e.target.closest('[data-rnav]'); if(!btn) return;
-  if(btn.dataset.rnav==='prev'){ reportAnchor = shiftAnchor(reportPeriod, reportAnchor, -1); renderReports(); }
-  if(btn.dataset.rnav==='next'){ reportAnchor = shiftAnchor(reportPeriod, reportAnchor, 1); renderReports(); }
-  if(btn.dataset.rnav==='jump'){ openPeriodJumpModal(reportPeriod, reportAnchor, (na)=>{ reportAnchor = na; renderReports(); }); }
-});
-document.getElementById('reportTodayLink').addEventListener('click', (e)=>{
-  if(!e.target.closest('[data-rnav="today"]')) return;
-  reportAnchor = todayStr(); renderReports();
-});
+/* v15.5.0 — reportPeriod controls are wired by the shared period engine. */
 document.querySelectorAll('#routinePeriod button').forEach(b=> b.onclick=()=>{
   document.querySelectorAll('#routinePeriod button').forEach(x=>x.classList.remove('active')); b.classList.add('active');
   routinePeriod=b.dataset.p; renderRoutineTotals();

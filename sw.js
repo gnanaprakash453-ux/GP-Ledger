@@ -207,7 +207,16 @@
 // handled safely via each image's own onerror. index.html changed, so
 // bump so installed copies actually receive this instead of serving a
 // cached v14.4.3.
-const CACHE_NAME = 'gp-ledger-v14-4-4';
+// v14.4.5: real root cause found for photos never loading — picsum.photos
+// was actively rate-limiting the device's IP (Cloudflare Error 1200),
+// caused by this app firing ~17 distinct picsum requests on every single
+// boot (confirmed by the user opening picsum.photos directly and hitting
+// the same rate-limit page). Cut the eager per-module preload (12 of
+// those 17), since each module's photo already loads itself when that
+// module's screen is opened — down to 5 requests on boot. index.html
+// changed, so bump so installed copies actually receive this instead of
+// serving a cached v14.4.4.
+const CACHE_NAME = 'gp-ledger-v14-4-5';
 const IMG_CACHE_NAME = 'gp-ledger-images-v1';
 const CORE_ASSETS = [
   './index.html',

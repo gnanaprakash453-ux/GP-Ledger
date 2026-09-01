@@ -2480,7 +2480,20 @@ function wireAiSuggestButton(btnId, panelId, onGo){
   });
 }
 
-const APP_VERSION = 'v14.4.4'; // single source of truth for About screen & Settings row
+const APP_VERSION = 'v14.4.5'; // single source of truth for About screen & Settings row
+// v14.4.5 — real root cause found for photos never loading: picsum.photos
+// was actively rate-limiting the device's IP (Cloudflare "Error 1200 —
+// temporarily rate limited"), confirmed by opening picsum.photos directly
+// in the phone's browser. Traced to preloadTodaysImages() firing ~17
+// distinct picsum requests on every single app boot (4 focus tabs + habit
+// quote + one photo per module, eagerly, even for modules never opened
+// that session) — with "Change now"/hourly auto-rotation repeating the
+// entire batch fresh every time since each regenerates a brand-new random
+// seed. Cut the per-module eager preload (each module's own photo already
+// loads itself the moment that module's screen opens), dropping the
+// boot-time burst from ~17 requests to 5. This won't undo an active rate
+// limit already in effect — that clears on picsum's own schedule — but it
+// removes the actual cause of tripping it during normal use.
 // v14.4.4 — real bug fix: found why photos behind Today's Focus/the habit
 // quote/every module's motivation card were NEVER loading, not just
 // occasionally — applyBackground() and preloadTodaysImages() both bailed
@@ -4686,10 +4699,22 @@ function preloadTodaysImages(){
     urls.push(`https://picsum.photos/seed/${encodeURIComponent(bgSeed+'-hero-'+tab)}/700/500`);
   });
   urls.push(`https://picsum.photos/seed/${encodeURIComponent(bgSeed+'-habitquote-'+today)}/700/500`);
-  Object.keys(MOTIVATION_CARDS).forEach(moduleKey=>{
-    const seed = encodeURIComponent(bgSeed+'-empty-'+moduleKey+'-'+today);
-    urls.push(`https://picsum.photos/seed/${seed}/700/500`);
-  });
+  // v14.4.5 — real bug found: this used to ALSO eagerly preload one photo
+  // per module (12 modules = 12 more requests), on every single app boot,
+  // even for modules never opened that session. Combined with the 5
+  // above, that's ~17 distinct picsum.photos requests fired every time
+  // the app is opened — before counting "Change now" or hourly
+  // auto-rotation, each of which generates a brand-new random seed and
+  // repeats the whole batch, none of it reusable from cache. picsum.photos
+  // rate-limits by IP via Cloudflare ("Error 1200 — temporarily rate
+  // limited") once too many requests land in too short a window — normal
+  // use of this app was clearly capable of triggering that on its own,
+  // which is what turned out to be the actual cause of photos never
+  // showing. Each module's motivation photo already loads itself the
+  // moment that module's screen is opened (see renderTopMotivation →
+  // setPhotoCardBg) — eagerly preloading all 12 up front was pure
+  // unnecessary request volume, not a real performance win. Cut, dropping
+  // the boot-time burst from ~17 requests down to 5.
   urls.forEach((url,i)=>{
     if(__warmImgUrls.has(url)) return;
     const img = new Image();

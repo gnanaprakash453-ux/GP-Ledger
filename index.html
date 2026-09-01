@@ -196,9 +196,26 @@ body.kb-open .back-fab{ top:calc(10px + var(--safe-t)); bottom:auto; left:auto; 
 }
 
 /* ============ QUOTE CARD ============ */
+/* v14.4.3 — real bug: this card had NO solid base color, only a ~15-18%
+   opacity tint gradient — meaning its actual visible color was almost
+   entirely whatever sat behind it. In dark themes body's background is
+   near-black (--bg:#0f1115), so any time the hero photo itself doesn't
+   load (offline, a slow/blocked network, picsum having a bad moment —
+   setPhotoCardBg's img.onerror deliberately leaves the CSS default in
+   place rather than showing a broken image) the "default" people
+   actually saw was a barely-tinted near-black rectangle — exactly the
+   "black screen behind all the quotes" report. Every other card in the
+   app (.card) has an opaque var(--card) base for this reason; this one
+   never did. Fixed by giving it the same opaque base, with the existing
+   tint gradient layered on top — so the untinted fallback now reads as
+   an intentional dark card (like every other card in the app) instead
+   of a void, exactly matching the "never show a blank card" intent the
+   v12.2 fix above originally promised. */
 .quote-card{
   border-radius:var(--radius); padding:16px 18px; margin-bottom:14px; position:relative; overflow:hidden;
-  background:linear-gradient(135deg, rgba(99,102,241,.18), rgba(34,197,94,.14)); border:1px solid var(--line);
+  background-color:var(--card);
+  background-image:linear-gradient(135deg, rgba(99,102,241,.18), rgba(34,197,94,.14));
+  border:1px solid var(--line);
 }
 .quote-card .qlabel{ font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--sub); font-weight:700; }
 .quote-card .qtext{ font-family:var(--font-head); font-size:15px; font-weight:600; margin-top:6px; line-height:1.4; }
@@ -2210,7 +2227,7 @@ nav.bottom, .fab{ transition:transform .18s ease; }
             <select id="setBgInterval"><option value="0">Every app open</option><option value="15">15 minutes</option><option value="30">30 minutes</option><option value="60">1 hour</option><option value="180">3 hours</option><option value="1440">Once a day</option><option value="custom">Custom…</option></select>
             <input type="number" id="setBgIntervalCustom" min="1" max="10080" placeholder="Minutes (e.g. 45)" style="display:none; margin-top:8px;">
             <div class="btn-row" style="margin-top:12px;"><button class="btn secondary" id="shuffleBgBtn">🔀 Change now</button></div>
-            <div class="hint">"Change now" instantly swaps every photo card currently on screen — not just the wallpaper below, and not just next time you open a screen. Random curated photos each time. Skipped automatically when offline.</div>
+            <div class="hint">"Change now" instantly swaps every photo card currently on screen — not just the wallpaper below, and not just next time you open a screen. Random curated photos each time. If you're genuinely offline the new photos just won't load and your cards keep their current look — nothing breaks.</div>
           </div>
         </div>
       </div>
@@ -2463,7 +2480,39 @@ function wireAiSuggestButton(btnId, panelId, onGo){
   });
 }
 
-const APP_VERSION = 'v14.4.2'; // single source of truth for About screen & Settings row
+const APP_VERSION = 'v14.4.4'; // single source of truth for About screen & Settings row
+// v14.4.4 — real bug fix: found why photos behind Today's Focus/the habit
+// quote/every module's motivation card were NEVER loading, not just
+// occasionally — applyBackground() and preloadTodaysImages() both bailed
+// out completely whenever navigator.onLine was false, before even
+// attempting a single image request. That property only reflects whether
+// the OS thinks a network interface is up, not whether the connection
+// actually reaches the internet — and it's well documented to misreport
+// false on installed/standalone PWAs on Android in particular, even with
+// a perfectly working connection. On an affected device this meant zero
+// photos would ever load, permanently, with no recovery available from
+// inside the app — exactly the "still can't see the images" report.
+// Removed both upfront checks; every image request already fails safely
+// on its own via img.onerror (a genuinely offline device just gets a
+// normal failed request and keeps its fallback gradient, same as
+// before), so the gate was only ever costing successful loads, never
+// preventing real ones. Updated the "Change now" hint to match — it no
+// longer claims to skip when offline, since it never needed to.
+// v14.4.3 — real bug fix: quote/photo cards (Home hero, Habit quote, and
+// every module's motivation card) went black. Root cause: .quote-card
+// never had a solid base color — only a ~15-18% opacity tint gradient —
+// so its true visible color was almost entirely whatever sat behind it.
+// In dark themes that's body's near-black background, and setPhotoCardBg
+// deliberately leaves the CSS default in place (never swaps in a broken
+// image) whenever a photo fails to load — offline, a blocked/slow
+// network, or picsum having a bad moment. So any time a photo didn't
+// load, what actually showed was a barely-tinted near-black rectangle,
+// not the "themed gradient" fallback the v12.2 fix intended. Gave
+// .quote-card the same opaque var(--card) base every other card in the
+// app already has, with the tint gradient layered on top — the no-photo
+// fallback now reads as an intentional dark card instead of a void, and
+// this holds regardless of whether picsum itself is reachable. No JS
+// changed — this was purely a CSS gap.
 // v14.4.2 — Meal Planner: found the actual cause of meal names being cut
 // off ("Peanut but…", "Fish curry …") — each input carried a leftover
 // inline style="flex:1;" that outranked the .mp-slot CSS rule meant to
@@ -4455,7 +4504,13 @@ function applyBackground(){
   const st = S.settings;
   bg.style.setProperty('--bg-opacity', (Number(st.bgOpacity)||16)/100);
   if(!st.bgOn){ bg.classList.remove('on'); return; }
-  if(!navigator.onLine){ bg.classList.remove('on'); return; }
+  // v14.4.4 — removed the navigator.onLine gate that used to sit here too
+  // (see preloadTodaysImages() for the full reasoning: that property is
+  // unreliable, especially in installed PWAs on Android, and was silently
+  // keeping the wallpaper permanently off on devices where it misreports
+  // false). img.onerror below already turns 'on' off safely on a real
+  // failed load — that's the correct place for this check, not an
+  // upfront guess.
   const seed = st.bgSeed || 1;
   const url = `https://picsum.photos/seed/gpledger${seed}/800/1600`;
   const img = new Image();
@@ -4610,7 +4665,20 @@ function scheduleBackgroundRotation(){
    renderTopMotivation can apply it instantly instead of showing a fallback
    first. */
 function preloadTodaysImages(){
-  if(!navigator.onLine) return;
+  // v14.4.4 — real bug: this used to bail out entirely whenever
+  // navigator.onLine was false. That property is well known to be
+  // unreliable — it only reflects whether the OS reports a network
+  // interface as connected, not whether the connection actually reaches
+  // the internet, and installed/standalone PWAs on Android in particular
+  // are known to misreport it false even with a perfectly good
+  // connection. When that happened here, NONE of the hero/quote/
+  // motivation photos ever preloaded — every card sat on its fallback
+  // gradient forever, with no way to recover short of the browser
+  // starting to report online correctly again. Each image request below
+  // already fails safely on its own (img.onload only fires on success;
+  // a real offline device just gets a normal failed request, same as
+  // any other page), so the upfront gate was only ever removing chances
+  // to succeed, never preventing a real failure.
   const today = todayStr();
   const bgSeed = S.settings.bgSeed || 'gpledger';
   const urls = [];

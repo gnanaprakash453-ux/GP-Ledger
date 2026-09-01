@@ -188,7 +188,26 @@
 // ✨/✕/Eaten buttons and truncating meal names ("Peanut but…"). Removed.
 // index.html changed, so bump so installed copies actually receive this
 // instead of serving a cached v14.4.1.
-const CACHE_NAME = 'gp-ledger-v14-4-2';
+// v14.4.3: real bug fix — quote/photo cards (Home hero, Habit quote,
+// every module's motivation card) were showing black instead of the
+// intended themed-gradient fallback whenever their photo failed to load
+// (offline/blocked/slow network, or picsum hiccuping). Root cause was
+// .quote-card never having a solid base color, only a faint tint over
+// whatever's behind it — near-black in dark themes. Gave it the same
+// opaque var(--card) base every other card already has. CSS-only fix,
+// no JS changed. index.html changed, so bump so installed copies
+// actually receive this instead of serving a cached v14.4.2.
+// v14.4.4: real bug fix — found why photos never loaded at all, not just
+// occasionally: applyBackground() and preloadTodaysImages() both bailed
+// out completely whenever navigator.onLine was false, before attempting
+// a single image request. That property is unreliable and known to
+// misreport false on installed/standalone PWAs on Android even with a
+// working connection — meaning on an affected device, zero photos would
+// ever load, permanently. Removed both gates; failures are already
+// handled safely via each image's own onerror. index.html changed, so
+// bump so installed copies actually receive this instead of serving a
+// cached v14.4.3.
+const CACHE_NAME = 'gp-ledger-v14-4-4';
 const IMG_CACHE_NAME = 'gp-ledger-images-v1';
 const CORE_ASSETS = [
   './index.html',

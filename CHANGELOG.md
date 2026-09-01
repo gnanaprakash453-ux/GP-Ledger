@@ -1,4 +1,48 @@
-# Changelog — v15.4.0 (About modal was stale — showed 14 trackers, app actually has 22) → history below
+# Changelog — v15.5.0 (Finance/Reports Calendar & Journal Customization upgrade) → history below
+
+## v15.5.0
+
+**Finance — real Calendar/Period Selector.** Finance used to only ever
+show a fixed trailing-30-days window, with no way to look at any other
+day, month, or year. It now opens on the current month by default, with
+a Day/Month/Year switch plus `‹ Prev | Month 2026 | Next ›` navigation
+and a 📅 jump button to pick an exact date/month/year. Balance stays
+all-time (it's the running total, not a period figure); Net, the donut
+chart, and the Ledger (both the 3-item preview and the full log) now
+reflect whichever period is selected. This is a viewing filter only —
+no transaction is ever deleted, altered, or duplicated when the period
+changes, and switching to a new current month never clears anything.
+
+**Reports — same calendar experience as Finance.** Previously "Week" /
+"Month" / "Year" only ever meant *this* week/month/year — there was no
+way to look at a past period at all. Reports now uses the identical
+period-nav component as Finance (`periodRange()` gained an anchor-date
+parameter so it isn't locked to "now" anymore), defaults to the current
+month, and lets you navigate or jump to any historical day, week,
+month, or year. The selected period always drives what's calculated and
+displayed, and the current selection is always shown in the heading so
+the numbers are never ambiguous about which period they cover.
+
+**Journal — Quill & Ink removed, 7 new premium styles added.** Quill &
+Ink is gone from the artwork picker, per request. Anyone who still had
+`quill` (or the also-retired `stipple`) selected is auto-migrated to
+the new `leaf` style on next load — nobody is left on a hidden or
+broken style. In its place: **Minimal**, **Botanical** (a new, much
+more restrained corner leaf sprig than the old illustrations),
+**Paper & Grain**, **Night Journal**, **Editorial**, **Modern
+Notebook**, and **Serene** — each a genuinely different colour/texture
+theme for the whole diary page (paper tone, ink colour, ruled-line
+colour), not just a palette tweak. The previous full-page "Botanical &
+Skyline" border style is kept as an 8th, larger option for anyone who
+wants a statement look. None of the new styles add heavy illustration —
+writing space, readability, and the date stay the priority, decoration
+stays out of the way, per the "don't overdecorate" requirement. All
+existing journal entries, fonts, colors, page transitions, and
+persistence are untouched.
+
+index.html and sw.js changed (CACHE_NAME bumped to `gp-ledger-v15-5-0`)
+so installed copies actually receive this. No apps-script.gs change, no
+redeploy needed — nothing here changes the sync payload shape.
 
 ## v15.4.0
 

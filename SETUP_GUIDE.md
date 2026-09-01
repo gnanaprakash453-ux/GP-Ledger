@@ -426,6 +426,19 @@ searches match across any field, not just one exact phrase, and results
 are ranked so the closest match shows first. Tap a result to jump
 straight to it.
 
+## 9a. Finance & Reports: Day/Month/Year period selector
+
+Both **Finance** and **Reports** now open on the current month by
+default, with a **Day / Month / Year** switch above the numbers and a
+`‹ Prev | September 2026 | Next ›` bar to step through history — tap
+the **📅** button to jump straight to a specific date, month, or year
+instead of stepping one at a time. A **"↺ Back to current"** link
+appears whenever you've navigated away from today's period. This only
+changes what's *shown* — Balance (in Finance) stays an all-time total,
+and switching periods never deletes, overwrites, or duplicates any
+transaction; every past entry stays exactly where it was logged and
+stays reachable through the selector.
+
 ## 10. Budgets
 
 Inside the **Finance** tab, above the ledger: **+ Add** a category and a
@@ -492,6 +505,12 @@ under that date. Entries always export in true chronological (month/date)
 order via **Export whole diary**, regardless of what order you wrote them
 in. Print, PDF, and Word (.doc) export work per-entry too. Everything syncs
 to a `Journal` tab in your Google Sheet.
+
+**Customize diary** (button above the page): pick an **artwork style** —
+Minimal, Botanical, Paper & Grain, Night Journal, Editorial, Modern
+Notebook, Serene, or the larger Botanical & Skyline — and a **page
+transition**. Quill & Ink and Stipple Tree were retired; if you'd
+picked either before, you've been switched to Botanical automatically.
 
 ## 17. Diet & nutrition
 

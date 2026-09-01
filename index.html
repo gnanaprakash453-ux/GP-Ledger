@@ -378,24 +378,6 @@ nav.bottom button{
 nav.bottom button .ic{ font-size:18px; }
 nav.bottom button.active{ color:var(--text); background:var(--card2); }
 
-/* v14.4.3 — see the HTML comment above #navSafeFill for the full reasoning.
-   Sits directly behind the floating nav, painted the same colour as the
-   nav card, filling the safe-area gap so it reads as the nav's own base
-   instead of exposed raw page background. z-index is one below nav's so
-   the nav itself still renders on top; pointer-events:none so it can never
-   intercept a touch even if a pack's own nav override shrinks nav's
-   footprint. exp-nav-dock's flush nav already covers this same area on its
-   own, so the plate just sits invisibly behind it there. */
-.nav-safe-fill{
-  position:absolute; left:0; right:0; bottom:0;
-  height:calc(10px + var(--safe-b) + 16px);
-  background:var(--card); border-radius:22px 22px 0 0;
-  z-index:29; pointer-events:none;
-}
-body.exp-nav-lifeos .nav-safe-fill{ height:calc(14px + var(--safe-b) + 16px); border-radius:28px 28px 0 0; }
-body.exp-nav-glass .nav-safe-fill{ background:color-mix(in srgb, var(--card) 45%, transparent); }
-body.exp-nav-dock .nav-safe-fill{ display:none; }
-
 /* ============ CARDS ============ */
 .card{ background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:16px; margin-bottom:12px; }
 .stat-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
@@ -1201,89 +1183,36 @@ body{ background:var(--bg-gradient); }
 .progress-fill{ height:100%; background:var(--accent); border-radius:999px; }
 .checklist-row{ display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--line); }
 .checklist-row:last-child{ border-bottom:none; }
-/* ===== v15.0.0 — Meal Planner visual redesign =====
-   UI-layer only: reuses the app's existing --card/--card2/--line/--radius/
-   --accent/--good tokens (see :root) rather than introducing a parallel
-   palette, per-meal-type tint via color-mix() on those same tokens stands
-   in for "soft pastel accents" without breaking the dark theme or any
-   Experience Pack. No business logic lives here — markMealSlotDone(),
-   aiSuggestMealSlot() etc. are untouched; only renderMealPlanner()'s HTML
-   template and these rules changed. */
-#mpHeaderRow{ display:flex; align-items:flex-start; justify-content:space-between; gap:10px; margin-bottom:12px; }
-#mpHeaderRow h2{ margin:0; font-size:19px; font-weight:800; letter-spacing:-.01em; }
-#mpHeaderRow .mp-sub{ font-size:12px; color:var(--sub); margin-top:2px; }
-.mp-more-btn{ flex-shrink:0; width:36px; height:36px; border-radius:11px; background:var(--card); border:1px solid var(--line); color:var(--text); font-size:16px; font-weight:800; }
-.mp-more-menu{ background:var(--card); border:1px solid var(--line); border-radius:var(--radius-sm); padding:6px; margin:-4px 0 14px; box-shadow:var(--shadow-sm); }
-.mp-more-menu button{ width:100%; text-align:left; background:none; border:none; padding:11px 10px; border-radius:10px; font-size:13px; font-weight:700; color:var(--text); display:flex; align-items:center; gap:9px; }
-.mp-more-menu button:active{ background:var(--card2); }
-/* view-mode / date-jump chips scroll instead of squeezing on narrow phones */
-#mpViewSeg{ overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
-#mpViewSeg::-webkit-scrollbar{ display:none; }
-#mpViewSeg button{ flex:0 0 auto; padding:8px 15px; white-space:nowrap; }
-#mpDatePickWrap input[type=date]{ border-radius:12px; }
-.mp-autofill-btn{
-  display:flex; align-items:center; justify-content:center; gap:7px; width:100%; border:none;
-  border-radius:14px; padding:13px; margin-bottom:14px; font-weight:800; font-size:13px; cursor:pointer;
-  background:linear-gradient(135deg, color-mix(in srgb, var(--accent) 85%, var(--accent2)), var(--accent2)); color:var(--accent-ink);
+.mp-day-card{ background:var(--card); border:1px solid var(--line); border-radius:var(--radius-sm); padding:14px; margin-bottom:10px; }
+.mp-day-head{ font-weight:700; font-size:13px; margin-bottom:9px; }
+/* v14.0.0 — Meal Planner visual improvement (spec §14): colour-coded left
+   accent bar per meal type (see MEAL_SLOT_STYLE), an emoji chip replacing
+   the old plain text label, and a visual day-total calorie bar. */
+.mp-day-calbar{ height:5px; border-radius:3px; background:var(--line); overflow:hidden; margin-bottom:11px; }
+.mp-day-calbar-fill{ height:100%; background:linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 60%, #f59e0b)); border-radius:3px; }
+/* v14.4.0 — larger, wrap-friendly slot layout so the full meal name and
+   all its actions stay usable on narrow phones instead of squeezing
+   everything into one cramped row (spec: "increase size/responsiveness
+   so the complete content can be viewed properly on mobile"). The input
+   now gets its own full-width line; the action buttons sit on the row
+   below it, wrapping naturally rather than overflowing/truncating. */
+.mp-slot{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:10px; padding:8px 10px; border-radius:10px; background:var(--card2); }
+.mp-slot-emoji{ width:22px; flex-shrink:0; font-size:17px; text-align:center; }
+.mp-slot input{ flex:1 1 100%; min-width:0; font-size:14px; padding:9px 10px; }
+.mp-slot-actions{ display:flex; gap:6px; margin-left:30px; flex-wrap:wrap; }
+/* v14.0.0 — Meal Planner ↔ Diet completion toggle (spec §13) */
+.mp-eaten-btn{
+  flex-shrink:0; font-size:11.5px; font-weight:700; padding:8px 11px; border-radius:10px;
+  background:var(--card); border:1px solid var(--line); color:var(--sub); white-space:nowrap;
 }
-
-/* ---- per-day hero card: date + calorie ring + eaten-state chips ---- */
-.mp-day-card{ background:var(--card); border:1px solid var(--line); border-radius:22px; padding:16px 16px 14px; margin-bottom:16px; box-shadow:var(--shadow-sm); }
-.mp-day-hero-top{ display:flex; align-items:center; justify-content:space-between; gap:14px; }
-.mp-day-title{ font-size:12.5px; font-weight:800; color:var(--sub); text-transform:uppercase; letter-spacing:.04em; display:flex; align-items:center; gap:7px; }
-.mp-today-chip{ background:var(--accent); color:var(--accent-ink); font-size:9.5px; font-weight:800; padding:2px 7px; border-radius:999px; text-transform:none; letter-spacing:0; }
-.mp-day-kcal-big{ font-size:26px; font-weight:800; letter-spacing:-.02em; margin-top:4px; line-height:1.1; }
-.mp-day-kcal-big .mp-day-kcal-unit{ font-size:13px; font-weight:700; color:var(--sub); }
-.mp-day-kcal-sub{ font-size:12px; font-weight:600; color:var(--sub); margin-top:3px; }
-.mp-day-kcal-sub.over{ color:var(--warn); }
-.mp-ring{ position:relative; width:64px; height:64px; flex-shrink:0; }
-.mp-ring svg{ width:64px; height:64px; transform:rotate(-90deg); }
-.mp-ring circle{ fill:none; stroke-width:7; }
-.mp-ring .mp-ring-bg{ stroke:var(--line); }
-.mp-ring .mp-ring-fill{ stroke:var(--accent); stroke-linecap:round; transition:stroke-dashoffset .4s ease; }
-.mp-ring-label{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; color:var(--text); }
-.mp-progress-chips{ display:flex; gap:6px; margin-top:13px; }
-.mp-chip{ flex:1; text-align:center; padding:6px 4px; border-radius:10px; font-size:11px; font-weight:700; background:var(--card2); color:var(--sub2); border:1px solid transparent; }
-.mp-chip-planned{ background:color-mix(in srgb, var(--warn) 14%, var(--card2)); color:var(--warn); }
-.mp-chip-done{ background:color-mix(in srgb, var(--good) 16%, var(--card2)); color:var(--good); border-color:color-mix(in srgb, var(--good) 35%, transparent); }
-.mp-meals{ margin-top:14px; display:flex; flex-direction:column; gap:10px; }
-
-/* ---- individual meal card ---- */
-.mp-meal-card{ border-radius:16px; padding:12px 13px; background:var(--card2); border:1px solid var(--line); position:relative; overflow:hidden; }
-.mp-meal-card::before{ content:''; position:absolute; left:0; top:0; bottom:0; width:4px; background:var(--mp-accent, var(--accent)); }
-.mp-meal-card.is-done{ background:color-mix(in srgb, var(--good) 8%, var(--card2)); }
-.mp-meal-top{ display:flex; align-items:center; gap:8px; margin-bottom:2px; }
-.mp-meal-icon{ font-size:16px; width:20px; text-align:center; flex-shrink:0; }
-.mp-meal-label{ font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; color:var(--sub); flex:1; min-width:0; }
-.mp-meal-kcal{ font-size:12.5px; font-weight:800; color:var(--text); flex-shrink:0; }
-.mp-meal-clear{ flex-shrink:0; width:22px; height:22px; border-radius:7px; background:none; border:none; color:var(--sub2); font-size:12px; margin:-2px -2px -2px 0; }
-.mp-meal-input{
-  width:100%; border:none; background:none; padding:5px 0 2px; font-size:14.5px; font-weight:600; color:var(--text);
-  min-height:30px;
+.mp-eaten-btn.done{ background:color-mix(in srgb, var(--good) 18%, transparent); border-color:var(--good); color:var(--good); }
+/* v14.4.0 — AI-suggest (✨) and Clear (✕) per-slot buttons */
+.mp-icon-btn{
+  flex-shrink:0; width:34px; height:34px; border-radius:9px; font-size:14px;
+  background:var(--card); border:1px solid var(--line); color:var(--sub);
 }
-.mp-meal-input::placeholder{ color:var(--sub2); font-weight:600; }
-.mp-meal-card.is-empty{ background:var(--card2); border-style:dashed; }
-.mp-logged-tag{ font-size:11px; font-weight:700; color:var(--good); display:flex; align-items:center; gap:4px; margin:1px 0 6px; }
-.mp-meal-actions{ display:flex; gap:7px; margin-top:6px; flex-wrap:wrap; }
-.mp-pill-btn{
-  flex:1 1 auto; min-width:0; display:flex; align-items:center; justify-content:center; gap:5px;
-  padding:9px 10px; border-radius:11px; font-size:12px; font-weight:800; border:1px solid var(--line);
-  background:var(--card); color:var(--text); white-space:nowrap;
-}
-.mp-pill-btn.ai{ color:var(--accent); border-color:color-mix(in srgb, var(--accent) 40%, var(--line)); background:color-mix(in srgb, var(--accent) 9%, var(--card)); }
-.mp-pill-btn.eaten.done{ background:color-mix(in srgb, var(--good) 20%, var(--card)); border-color:var(--good); color:var(--good); }
-.mp-pill-btn.loading{ opacity:.55; pointer-events:none; }
-/* soft per-meal-type accent, read only via .mp-meal-card::before */
-.mp-accent-breakfast{ --mp-accent:#f59e0b; }
-.mp-accent-lunch{ --mp-accent:#22c55e; }
-.mp-accent-dinner{ --mp-accent:#ef4444; }
-.mp-accent-snacks{ --mp-accent:#8b5cf6; }
-.mp-hint{ font-size:11px; color:var(--sub2); margin:2px 0 12px; line-height:1.5; }
-#mpFavSection{ margin-bottom:16px; }
-.mp-fav-heart{ flex-shrink:0; width:22px; height:22px; border-radius:7px; background:none; border:none; color:var(--sub2); font-size:13px; }
-.mp-fav-heart.active{ color:#ef4444; }
-.mp-fav-chip{ gap:7px; }
-.mp-fav-remove{ background:none; border:none; color:inherit; opacity:.6; font-size:10px; padding:0; margin-left:2px; }
+.mp-icon-btn[data-mpai]{ color:var(--accent); border-color:color-mix(in srgb, var(--accent) 40%, var(--line)); }
+.mp-icon-btn.loading{ opacity:.5; pointer-events:none; }
 
 /* ============ v9: DOCUMENTS ============ */
 .doc-card{ display:flex; align-items:center; gap:11px; background:var(--card); border:1px solid var(--line); border-radius:var(--radius-sm); padding:12px; margin-bottom:8px; }
@@ -1464,24 +1393,7 @@ body.exp-layout-gamified .dash-tile .dt-fill{ background:linear-gradient(90deg, 
    setVH() below). While any input/textarea is focused we also hide the
    fixed bottom nav + FAB instead of letting them float stranded mid-screen
    above the keyboard and swallow touches meant for the field. ------------ */
-body.kb-open nav.bottom, body.kb-open .fab, body.kb-open .nav-safe-fill{ transform:translateY(140%); pointer-events:none; transition:transform .18s ease; }
-/* v14.4.4 — while typing, the header (clock/search/Save & Sync row) used
-   to just sit there above the keyboard doing nothing useful, on top of
-   whatever native keyboard-accessory bar the OS/WebView itself adds — two
-   stacked bars of clutter above the actual text field, reported as
-   "annoying" while typing in Journal specifically, though it applies to
-   every text field. header.top isn't a floating overlay like nav.bottom
-   (it's a normal flex child that takes real layout space above <main>),
-   so it's collapsed via max-height/padding/opacity rather than translated
-   off-screen, which also lets <main> reclaim that space for the field
-   itself instead of just hiding a gap. The 260px max-height ceiling is
-   comfortably above the header's real height in every state so nothing
-   clips while expanded. Note: the OS's own keyboard accessory bar
-   (Previous/Next/Done, the QuickType word-suggestion strip) is native
-   WebView/keyboard UI — not part of this app — and can't be removed from
-   here; this only controls the app's own header. */
-header.top{ overflow:hidden; max-height:260px; transition:max-height .2s ease, opacity .15s ease, padding .2s ease; }
-body.kb-open header.top{ max-height:0; padding-top:0; padding-bottom:0; opacity:0; pointer-events:none; }
+body.kb-open nav.bottom, body.kb-open .fab{ transform:translateY(140%); pointer-events:none; transition:transform .18s ease; }
 nav.bottom, .fab{ transition:transform .18s ease; }
 </style>
 </head>
@@ -1926,21 +1838,6 @@ nav.bottom, .fab{ transition:transform .18s ease; }
         <button data-go="mealplanner" class="active">Meal Planner</button>
       </div>
       <div id="mealplannerMotivationCard"></div>
-      <!-- v15.0.0 — UI redesign only: header + "•••" secondary-actions
-           menu (Repeat Week / Export live here now, spec §13) replace the
-           old flat button stack. All underlying functionality/ids below
-           are unchanged — only presentation and layout. -->
-      <div id="mpHeaderRow">
-        <div>
-          <h2>Meal Planner</h2>
-          <div class="mp-sub">Plan your meals, your way</div>
-        </div>
-        <button class="mp-more-btn" id="mpMoreBtn" title="More actions">⋯</button>
-      </div>
-      <div class="mp-more-menu" id="mpMoreMenu" style="display:none;">
-        <button id="mpRepeatWeekBtn">↻ &nbsp;Repeat last week</button>
-        <button id="exportMealPlanBtn">⬇ &nbsp;Export</button>
-      </div>
       <!-- v14.0.0 — default view changed from an always-7-day week to
            Today+Tomorrow (spec §12.1), with a view switcher for the other
            ranges (§12.2) plus a real Calendar grid (§12.3/§12.4, see
@@ -1978,15 +1875,9 @@ nav.bottom, .fab{ transition:transform .18s ease; }
         <h3 id="mpWeekLabel">—</h3>
         <button id="mpNextWeekBtn">›</button>
       </div>
-      <button class="mp-autofill-btn" id="mpAutoFillBtn">✨ Auto-plan empty meals</button>
-      <!-- v15.0.0 — spec §11: surfaces S.mealFavorites, which already
-           existed in the data model/backup/export but had no UI. Tapping
-           a chip drops it into the next empty matching slot on screen;
-           the ✕ removes it from favorites (never touches the plan). -->
-      <div id="mpFavSection" style="display:none;">
-        <div class="mp-day-title" style="margin-bottom:8px;">♡ Favorites</div>
-        <div class="chiprow" id="mpFavChips"></div>
-      </div>
+      <button class="btn secondary" id="mpRepeatWeekBtn" style="margin-bottom:10px;">↻ Repeat last week</button>
+      <button class="btn primary" id="mpAutoFillBtn" style="margin-bottom:12px;">✨ Auto-fill empty meals (by your calorie goal)</button>
+      <button class="btn secondary" id="exportMealPlanBtn" style="margin-bottom:12px;">⬇ Export</button>
       <div id="mpWeekList"></div>
     </section>
 
@@ -2474,20 +2365,6 @@ nav.bottom, .fab{ transition:transform .18s ease; }
   </main>
 
   <nav class="bottom" id="bottomNav"></nav>
-  <!-- v14.4.3 — the floating pill nav sits above the true bottom edge with a
-       gap (10px + safe-area-inset-bottom, more on packs like lifeos) so its
-       rounded corners read as "floating". That gap was never painted with
-       anything but the plain page background (a flat, muted theme colour
-       under a very faint 16%-opacity photo layer) — every other part of the
-       screen has an opaque white card sitting on top of that same colour,
-       so it goes unnoticed, but this one strip has nothing covering it and
-       reads as a flat grey patch stuck to the bottom of every screen. This
-       backing plate sits just behind the nav, painted the same colour as
-       the nav card itself, so that strip now reads as part of the nav's
-       own base instead of a mismatched grey box. exp-nav-dock is
-       unaffected — its nav already sits flush at the true edge with no
-       gap, so this plate stays fully hidden behind it. -->
-  <div class="nav-safe-fill" id="navSafeFill"></div>
 
   <!-- ============ v12.0: ONE universal FAB — replaces the 9 screen-scoped fabAdd*
        buttons. Fixed at app-shell level so it's present on every screen. ============ -->
@@ -2586,32 +2463,7 @@ function wireAiSuggestButton(btnId, panelId, onGo){
   });
 }
 
-const APP_VERSION = 'v14.4.4'; // single source of truth for About screen & Settings row
-// v14.4.4 — while typing anywhere in the app, the header (clock/search/
-// Save & Sync row) now collapses away along with the bottom nav, instead
-// of staying put above the keyboard doing nothing. Also fixed a gap from
-// v14.4.3: the new nav safe-area backing plate wasn't included in the
-// kb-open rule, so it stayed visible as a plain card-coloured bar even
-// after nav.bottom itself slid away — it now hides together with nav.
-// Note: the native keyboard accessory bar (Previous/Next/Done, the
-// QuickType word-suggestion strip) is OS/WebView UI, not part of this
-// app, and isn't something a web app can remove — reducing our own
-// header+nav clutter is what's actually in reach here.
-// v14.4.3 — fixed the grey strip sitting below the bottom nav on every
-// screen, always in the same spot, from the moment the app opens. The
-// floating pill nav sits above the true bottom edge with a safe-area gap
-// (10px + safe-area-inset-bottom, more on the lifeos pack) so it reads as
-// "floating" — but that gap was never painted with anything but the plain
-// page background: a flat, muted theme colour under a very faint
-// 16%-opacity photo layer. Everywhere else on screen an opaque white card
-// sits on top of that same colour, so it's never noticed there, but this
-// one strip has nothing covering it, so it reads as a flat grey patch
-// glued to the bottom of every screen. Added a backing plate (see
-// #navSafeFill in the HTML, styled in the .nav-safe-fill CSS block) that
-// sits just behind the nav and is painted the nav's own card colour
-// (adjusted for the glass pack's translucency, hidden entirely on the
-// dock pack whose nav already sits flush with no gap) so that strip now
-// reads as part of the nav's base instead of a mismatched grey box.
+const APP_VERSION = 'v14.4.2'; // single source of truth for About screen & Settings row
 // v14.4.2 — Meal Planner: found the actual cause of meal names being cut
 // off ("Peanut but…", "Fish curry …") — each input carried a leftover
 // inline style="flex:1;" that outranked the .mp-slot CSS rule meant to
@@ -4578,22 +4430,6 @@ function applyTheme(){
   root.setProperty('--card', theme.card); root.setProperty('--card2', theme.card2);
   root.setProperty('--text', theme.text); root.setProperty('--sub', theme.sub);
   root.setProperty('--sub2', theme.sub2); root.setProperty('--line', theme.line);
-  /* v15.0.1 — bugfix: the page-wide background (body/#app, via
-     --bg-gradient) only ever got set from applyExperiencePack(), never
-     from here. header.top pulls its own gradient from --bg/--bg2 (both
-     updated above), so the header always tracked a theme switch — but
-     the rest of the page kept showing whatever --bg-gradient was left
-     over from the last time a pack was applied (often the *previous*
-     theme's flat color, or a pack default that no longer matches).
-     That's the mismatched/grey patch reported at the bottom of screens
-     with short content: header looks right, page background behind it
-     doesn't. Recompute it the same way applyExperiencePack() does —
-     the pack's own gradient if it defines one (e.g. Skyglass keeps its
-     signature blue-to-pink look regardless of theme), otherwise the
-     newly-selected theme's flat bg — so switching themes now also
-     keeps the page background in sync. */
-  const pack = currentPack();
-  root.setProperty('--bg-gradient', pack.bgGradient || theme.bg);
   const accent = st.customAccent || st.accent || theme.accent;
   root.setProperty('--accent', accent);
   root.setProperty('--accent2', st.customAccent ? accent : theme.accent2);
@@ -11500,61 +11336,6 @@ function mpParseCalories(text){
   const m = (text||'').match(/\(~(\d+)\s*kcal\)/i);
   return m ? Number(m[1]) : 0;
 }
-/* v15.0.0 — Meal Favorites UI (spec §11). S.mealFavorites already existed
-   in the data model (initialized in S, saved/loaded via localStorage,
-   included in export/import) but had no screen anywhere to add, view, or
-   use it from — this wires the existing storage up to the redesigned
-   Meal Planner rather than inventing a new one. A favorite is
-   {name, cal, slot}; slot is kept because a saved meal is really "this
-   goes in Lunch", and re-using it drops it into the next empty Lunch
-   slot currently on screen. */
-function isMealFavorited(name, slot){
-  return (S.mealFavorites||[]).some(f=>f.name===name && f.slot===slot);
-}
-function toggleMealFavorite(name, cal, slot){
-  if(!S.mealFavorites) S.mealFavorites = [];
-  const idx = S.mealFavorites.findIndex(f=>f.name===name && f.slot===slot);
-  if(idx>=0) S.mealFavorites.splice(idx,1);
-  else S.mealFavorites.push({name, cal, slot});
-  saveState();
-}
-function renderMpFavorites(){
-  const sec = document.getElementById('mpFavSection');
-  const row = document.getElementById('mpFavChips');
-  if(!sec || !row) return;
-  const favs = S.mealFavorites||[];
-  if(!favs.length){ sec.style.display='none'; return; }
-  sec.style.display='block';
-  row.innerHTML = favs.map((f,i)=>{
-    const style = MEAL_SLOT_STYLE[f.slot] || {emoji:'🍽'};
-    return `<span class="chip mp-fav-chip" data-mpfavuse="${i}">${style.emoji} ${f.name}${f.cal?` · ${f.cal} kcal`:''}<button class="mp-fav-remove" data-mpfavdel="${i}" title="Remove from favorites">✕</button></span>`;
-  }).join('');
-  row.querySelectorAll('[data-mpfavuse]').forEach(chip=>{
-    chip.addEventListener('click', (e)=>{
-      if(e.target.closest('[data-mpfavdel]')) return;
-      const fav = S.mealFavorites[Number(chip.dataset.mpfavuse)];
-      if(!fav) return;
-      const dates = mpDatesForView();
-      let target = null;
-      for(const ds of dates){
-        if(!S.mealPlan[ds]) S.mealPlan[ds] = {};
-        if(!(S.mealPlan[ds][fav.slot]||'').trim()){ target = ds; break; }
-      }
-      if(!target){ alert('Every visible slot for that meal type already has something planned. Clear a slot first, or switch views.'); return; }
-      S.mealPlan[target][fav.slot] = fav.cal ? `${fav.name} (~${fav.cal} kcal)` : fav.name;
-      syncDoneMealEdit(target, fav.slot, S.mealPlan[target][fav.slot]);
-      saveState(); renderMealPlanner(); renderDiet();
-    });
-  });
-  row.querySelectorAll('[data-mpfavdel]').forEach(x=>{
-    x.addEventListener('click', (e)=>{
-      e.stopPropagation();
-      const i = Number(x.dataset.mpfavdel);
-      S.mealFavorites.splice(i,1);
-      saveState(); renderMpFavorites();
-    });
-  });
-}
 /* v14.0.0 — Meal Planner ↔ Diet ↔ Calories interlink (spec §13). Marking a
    planned meal slot as eaten creates one entry in S.diet.meals for that
    date, tagged source:'mealplanner' and linked back to the slot via
@@ -11654,7 +11435,6 @@ document.getElementById('mpCalPrevBtn').addEventListener('click', ()=>{ mpCalVie
 document.getElementById('mpCalNextBtn').addEventListener('click', ()=>{ mpCalView.m++; if(mpCalView.m>11){mpCalView.m=0;mpCalView.y++;} renderMpCalendar(); });
 function renderMealPlanner(){
   renderTopMotivation('mealplanner','mealplannerMotivationCard');
-  renderMpFavorites();
   document.getElementById('mpWeekHead').style.display = mpViewMode==='week' ? 'flex' : 'none';
   const isCal = mpViewMode==='calendar';
   document.getElementById('mpCalHead').style.display = isCal ? 'flex' : 'none';
@@ -11671,76 +11451,34 @@ function renderMealPlanner(){
   const dates = mpDatesForView();
   const targets = mealSlotTargets();
   const wrap = document.getElementById('mpWeekList');
-  /* v15.0.0 — UI redesign only: each day now renders as a "hero" card
-     (calorie ring + eaten-state chips, spec §3/§8) followed by one visual
-     meal card per slot (spec §4/§5/§7) instead of the old flat input
-     rows. dayTotal/targets math, the mealPlan/mealPlanDone read, and every
-     data-mpdate/data-mpslot/data-mpai/data-mpclear/data-mpdone(slot)
-     attribute are unchanged from before — the querySelectorAll wiring
-     right below this block still finds the exact same elements. */
-  const CIRC = 2*Math.PI*28;
-  wrap.innerHTML = (targets.personalized ? '' : `<div class="mp-hint">Using a general 2,000 kcal/day target — set your height/weight/age in Diet → Settings for a target personalized to you.</div>`) +
+  wrap.innerHTML = (targets.personalized ? '' : `<div class="hint" style="margin-bottom:10px;">Using a general 2,000 kcal/day target — set your height/weight/age in Diet → Settings for a target personalized to you.</div>`) +
     dates.map(ds=>{
     const d = new Date(ds+'T00:00:00');
     const day = S.mealPlan[ds] || {};
     const isToday = ds===todayStr();
     const dayTotal = MEAL_SLOTS.reduce((sum,[key])=>sum+mpParseCalories(day[key]),0);
-    const remaining = targets.daily - dayTotal;
-    const pct = targets.daily>0 ? Math.max(0, Math.min(1, dayTotal/targets.daily)) : 0;
-    const dashoffset = CIRC*(1-pct);
     return `<div class="mp-day-card">
-      <div class="mp-day-hero-top">
-        <div>
-          <div class="mp-day-title">${d.toLocaleDateString(undefined,{weekday:'long', month:'short', day:'numeric'})}${isToday?' <span class="mp-today-chip">Today</span>':''}</div>
-          <div class="mp-day-kcal-big">${dayTotal}<span class="mp-day-kcal-unit"> / ${targets.daily} kcal</span></div>
-          <div class="mp-day-kcal-sub${remaining<0?' over':''}">${remaining>=0?`${remaining} kcal remaining`:`${Math.abs(remaining)} kcal over`}</div>
-        </div>
-        <div class="mp-ring">
-          <svg viewBox="0 0 64 64">
-            <circle class="mp-ring-bg" cx="32" cy="32" r="28"></circle>
-            <circle class="mp-ring-fill" cx="32" cy="32" r="28" style="stroke-dasharray:${CIRC};stroke-dashoffset:${dashoffset};"></circle>
-          </svg>
-          <span class="mp-ring-label">${Math.round(pct*100)}%</span>
-        </div>
+      <div class="mp-day-head" style="display:flex; justify-content:space-between; align-items:center;">
+        <span>${d.toLocaleDateString(undefined,{weekday:'long', month:'short', day:'numeric'})}${isToday?' · Today':''}</span>
+        ${dayTotal>0?`<span style="font-weight:700; color:var(--sub); font-size:11px;">~${dayTotal} / ${targets.daily} kcal</span>`:''}
       </div>
-      <div class="mp-progress-chips">
-        ${MEAL_SLOTS.map(([key,label])=>{
-          const doneRec = S.mealPlanDone[ds] && S.mealPlanDone[ds][key];
-          const done = !!(doneRec && doneRec.done);
-          const planned = !!(day[key]||'').trim();
-          const cls = done?'mp-chip-done':(planned?'mp-chip-planned':'');
-          const mark = done?'✓':(planned?'…':'—');
-          return `<span class="mp-chip ${cls}" title="${label}">${mark}</span>`;
-        }).join('')}
-      </div>
-      <div class="mp-meals">
+      ${dayTotal>0 ? `<div class="mp-day-calbar"><div class="mp-day-calbar-fill" style="width:${Math.min(100, dayTotal/targets.daily*100)}%;"></div></div>` : ''}
       ${MEAL_SLOTS.map(([key,label])=>{
         const doneRec = S.mealPlanDone[ds] && S.mealPlanDone[ds][key];
         const done = !!(doneRec && doneRec.done);
-        const text = (day[key]||'').trim();
-        const hasText = !!text;
-        const cal = hasText ? mpParseCalories(text) : 0;
-        const cleanName = (text.replace(/\s*\(~\d+\s*kcal\)$/,'') || text).replace(/"/g,'&quot;');
-        const favd = hasText ? isMealFavorited(text.replace(/\s*\(~\d+\s*kcal\)$/,'')||text, key) : false;
+        const hasText = !!(day[key]||'').trim();
         const style = MEAL_SLOT_STYLE[key] || {emoji:'🍽',color:'var(--sub)'};
         return `
-        <div class="mp-meal-card mp-accent-${key}${done?' is-done':''}${hasText?'':' is-empty'}">
-          <div class="mp-meal-top">
-            <span class="mp-meal-icon">${style.emoji}</span>
-            <span class="mp-meal-label">${label}</span>
-            ${cal>0?`<span class="mp-meal-kcal">${cal} kcal</span>`:''}
-            ${hasText?`<button class="mp-fav-heart${favd?' active':''}" data-mpfav="${ds}:${key}" title="${favd?'Remove from favorites':'Save '+cleanName+' to favorites'}">${favd?'♥':'♡'}</button>`:''}
-            ${hasText?`<button class="mp-meal-clear" data-mpclear="${ds}:${key}" title="Clear">✕</button>`:''}
-          </div>
-          <input class="mp-meal-input" type="text" data-mpdate="${ds}" data-mpslot="${key}" value="${(day[key]||'').replace(/"/g,'&quot;')}" placeholder="${hasText?label+'…':'+ Add meal'}">
-          ${done?`<div class="mp-logged-tag">✓ Logged to Diet</div>`:''}
-          <div class="mp-meal-actions">
-            <button class="mp-pill-btn ai" data-mpai="${ds}:${key}" title="AI suggest">✨ ${hasText?'Suggest':'AI Suggest'}</button>
-            <button class="mp-pill-btn eaten${done?' done':''}" data-mpdone="${ds}" data-mpdoneslot="${key}" title="${done?'Marked eaten — tap to undo':'Mark as eaten'}" ${hasText?'':'disabled style="opacity:.4;"'}>${done?'✓ Eaten':'Mark eaten'}</button>
+        <div class="mp-slot" style="border-left:3px solid ${style.color};">
+          <span class="mp-slot-emoji" title="${label}">${style.emoji}</span>
+          <input type="text" data-mpdate="${ds}" data-mpslot="${key}" value="${(day[key]||'').replace(/"/g,'&quot;')}" placeholder="${label}…">
+          <div class="mp-slot-actions">
+            <button class="mp-icon-btn" data-mpai="${ds}:${key}" title="AI suggest">✨</button>
+            ${hasText?`<button class="mp-icon-btn" data-mpclear="${ds}:${key}" title="Clear">✕</button>`:''}
+            <button class="mp-eaten-btn${done?' done':''}" data-mpdone="${ds}" data-mpdoneslot="${key}" title="${done?'Marked eaten — tap to undo':'Mark as eaten'}" ${hasText?'':'disabled style="opacity:.35;"'}>${done?'✓ Eaten':'☐ Eaten'}</button>
           </div>
         </div>`;
       }).join('')}
-      </div>
     </div>`;
   }).join('');
   wrap.querySelectorAll('[data-mpdate]').forEach(inp=>{
@@ -11774,17 +11512,6 @@ function renderMealPlanner(){
         alert(`Could not get a suggestion (${e.message}).`);
         btn.classList.remove('loading'); btn.textContent = '✨';
       }
-    });
-  });
-  wrap.querySelectorAll('[data-mpfav]').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      const [ds, slot] = btn.dataset.mpfav.split(':');
-      const text = ((S.mealPlan[ds]||{})[slot]||'').trim();
-      if(!text) return;
-      const cal = mpParseCalories(text);
-      const name = text.replace(/\s*\(~\d+\s*kcal\)$/,'') || text;
-      toggleMealFavorite(name, cal, slot);
-      renderMealPlanner();
     });
   });
   wrap.querySelectorAll('[data-mpclear]').forEach(btn=>{
@@ -11902,14 +11629,6 @@ document.getElementById('mpAutoFillBtn').addEventListener('click', ()=>{
   if(!personalized) alert(`Filled ${filled} empty meal${filled===1?'':'s'} using a general 2,000 kcal/day target. Add your height/weight/age in Diet → Settings for suggestions personalized to you.`);
 });
 document.getElementById('exportMealPlanBtn').addEventListener('click', exportMealPlanExcel);
-// v15.0.0 — "•••" secondary-actions menu (presentation only; Repeat Week
-// and Export keep their exact existing handlers above, just relocated).
-document.getElementById('mpMoreBtn').addEventListener('click', ()=>{
-  const m = document.getElementById('mpMoreMenu');
-  m.style.display = m.style.display==='none' ? 'block' : 'none';
-});
-document.getElementById('mpRepeatWeekBtn').addEventListener('click', ()=>{ document.getElementById('mpMoreMenu').style.display='none'; });
-document.getElementById('exportMealPlanBtn').addEventListener('click', ()=>{ document.getElementById('mpMoreMenu').style.display='none'; });
 
 /* ---------- v13.5.0: PEOPLE ----------
    Deliberately not a CRM: no interaction history, no follow-up

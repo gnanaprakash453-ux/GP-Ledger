@@ -1,9 +1,4 @@
-// GP Ledger service worker — v15.0.1
-// v15.0.1: fixed a real bug — the picsum.photos cache handler used to
-// cache error/rate-limit responses as if they were valid images, which
-// could permanently break Photo & Quote cards for the rest of the day.
-// See the fix + full explanation inline below. IMG_CACHE_NAME bumped too,
-// so any already-poisoned entries are dropped on next activate.
+// GP Ledger service worker — v14.4.1
 // Bumping CACHE_NAME forces old caches to be dropped on next install,
 // so a re-deploy (e.g. after this update) actually reaches phones.
 // v13.0.0: new app icon set (all 4 files replaced) — bumping the cache
@@ -193,25 +188,8 @@
 // ✨/✕/Eaten buttons and truncating meal names ("Peanut but…"). Removed.
 // index.html changed, so bump so installed copies actually receive this
 // instead of serving a cached v14.4.1.
-// v14.4.3: fixed the grey strip below the bottom nav — the safe-area gap
-// under the floating nav was never painted with anything but the plain
-// page background, exposed on every screen since nothing covers it there.
-// Added a backing plate matching the nav's own card colour behind it. See
-// the APP_VERSION comment block in index.html for full detail. index.html
-// changed, so bump so installed copies actually receive this instead of
-// serving a cached v14.4.2.
-// v14.4.4: header now collapses along with the bottom nav while typing,
-// and the v14.4.3 nav safe-area plate now hides together with nav.bottom
-// instead of staying visible on its own. See the APP_VERSION comment
-// block in index.html for full detail. index.html changed, so bump so
-// installed copies actually receive this instead of serving a cached
-// v14.4.3.
-const CACHE_NAME = 'gp-ledger-v15-0-1';
-// v15.0.1 — bumped so `activate` (below) deletes the old image cache,
-// which may already contain a permanently-poisoned response from the bug
-// fixed just above — a clean cache means this fix takes effect immediately
-// instead of only for images that happen to get a fresh URL.
-const IMG_CACHE_NAME = 'gp-ledger-images-v2';
+const CACHE_NAME = 'gp-ledger-v14-4-2';
+const IMG_CACHE_NAME = 'gp-ledger-images-v1';
 const CORE_ASSETS = [
   './index.html',
   './manifest.json',
@@ -250,28 +228,13 @@ self.addEventListener('fetch', (event) => {
   // network-first handler below was treating these exactly like the app
   // shell — refetching every single time — which was the main cause of
   // the visible image delay on every screen, not just the first visit.
-  // v15.0.1 — bugfix: this used to call cache.put() unconditionally on
-  // whatever fetch(req) returned, including a rate-limit/5xx/error
-  // response from picsum.photos. Once that happened, cache.match(req)
-  // would keep serving that same failed response for that exact seeded
-  // URL forever — the hero/quote/motivation photos use a URL baked from
-  // today's date, so one transient picsum.photos hiccup silently and
-  // permanently "broke" every image on that screen for the rest of the
-  // day (quotes still rendered fine since they're not network-dependent,
-  // matching the reported symptom exactly). Only a genuinely successful
-  // (res.ok) response gets cached now; a failed one is still handed back
-  // to the page as-is (img.onerror on the client already treats it as a
-  // failed load and just leaves the themed-gradient fallback in place —
-  // see setPhotoCardBg in index.html) but is never persisted, so the very
-  // next attempt (next visit, "Change now", tomorrow's rotation) gets a
-  // real fresh network attempt instead of being stuck on the bad copy.
   if (req.url.includes('picsum.photos')) {
     event.respondWith(
       caches.open(IMG_CACHE_NAME).then((cache) =>
         cache.match(req).then((cached) => {
           if (cached) return cached;
           return fetch(req).then((res) => {
-            if (res.ok) cache.put(req, res.clone());
+            cache.put(req, res.clone());
             return res;
           }).catch(() => cached);
         })

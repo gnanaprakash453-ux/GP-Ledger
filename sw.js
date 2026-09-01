@@ -1,4 +1,4 @@
-// GP Ledger service worker — v14.4.1
+// GP Ledger service worker — v15.0.0
 // Bumping CACHE_NAME forces old caches to be dropped on next install,
 // so a re-deploy (e.g. after this update) actually reaches phones.
 // v13.0.0: new app icon set (all 4 files replaced) — bumping the cache
@@ -237,7 +237,17 @@
 // pinning to a JS snapshot could lag behind and expose page background
 // below the nav. CSS-only fix in index.html; bump so installed copies
 // actually receive this instead of serving a cached v14.4.7.
-const CACHE_NAME = 'gp-ledger-v14-4-8';
+// v15.0.0: maintenance/architecture release — this header comment had been
+// stuck reading "v14.4.1" for seven prior bumps while CACHE_NAME kept
+// moving underneath it (doc drift, now fixed by keeping this line current
+// going forward); CHANGELOG.md backfilled after drifting five versions
+// behind the shipped app; apps-script.gs's checkReminders() gained a
+// Tasks due-today check (see the APP_VERSION comment block in index.html
+// for full detail — apps-script.gs must be redeployed separately for
+// that part to take effect). index.html and sw.js changed, so bump so
+// installed copies actually receive this instead of serving a cached
+// v14.4.8.
+const CACHE_NAME = 'gp-ledger-v15-0-0';
 const IMG_CACHE_NAME = 'gp-ledger-images-v1';
 const CORE_ASSETS = [
   './index.html',

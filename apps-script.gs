@@ -119,7 +119,15 @@ const SS = SpreadsheetApp.getActiveSpreadsheet();
 // Bump this every time you paste updated code, so the app's "Test connection"
 // and sync-failure messages can tell you when a deployment is stale (i.e. you
 // edited/pasted new code but forgot Deploy > Manage deployments > New version).
-const SCRIPT_VERSION = 'v9.7.1';
+const SCRIPT_VERSION = 'v10.0.0';
+
+// v10.0.0 — checkReminders() gained a Tasks due-today check. Tasks has had
+// dueDate/dueTime fields since it shipped, and the client's own
+// checkTaskReminders() has fired an in-app popup for them since v13.8.0 —
+// but that only reaches you while the app is actually open. This mirrors
+// the same client logic here so a task due today also reaches Telegram on
+// the existing 5-minute trigger, same as debts/subscriptions/health/
+// documents/goals already do. No new trigger needed.
 
 // v9.7.0 — the Data tab's full JSON snapshot used to live in ONE cell,
 // which Google Sheets caps at ~50,000 characters. Once total synced history
@@ -612,6 +620,17 @@ function checkReminders() {
     const key = 'goal_' + g.id + '_' + today;
     if (alreadySent(key)) return;
     sendTelegram(settings.tgToken, settings.tgChatId, `🎯 "${g.title}" deadline is today`);
+    markSent(key);
+  });
+
+  // Tasks — due today, not yet done. Mirrors the client's own
+  // checkTaskReminders() (dueDate===today, skip if t.done) so a task due
+  // today reaches Telegram even when the app is closed (v10.0.0).
+  (payload.tasks || []).forEach(t => {
+    if (t.done || !t.dueDate || t.dueDate !== today) return;
+    const key = 'task_' + t.id + '_' + today;
+    if (alreadySent(key)) return;
+    sendTelegram(settings.tgToken, settings.tgChatId, `📝 ${t.title} is due today${t.dueTime ? ' at ' + t.dueTime : ''}`);
     markSent(key);
   });
 }

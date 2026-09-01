@@ -1,4 +1,189 @@
-# Changelog — v14.1.0 (thematic module redesigns, Global Clock relocation, Diet↔Habit↔Home integration) → history below
+# Changelog — v15.0.0 (maintenance/architecture release: background Tasks reminders, changelog backfill, version-doc cleanup) → history below
+
+## v15.0.0
+
+**Maintenance/architecture release — no visual redesign.** This pass
+audited the project end-to-end (all three files, plus BLUEPRINT.md's own
+"known limitation" notes) rather than adding new surface area. Three real
+gaps closed:
+
+1. **Tasks due-today reminders now also fire in the background.** Tasks
+   has had `dueDate`/`dueTime` fields since v13.2.0, and the client's own
+   `checkTaskReminders()` has shown an in-app popup for them since
+   v13.8.0 — but that only ever reached you while the app was open.
+   `checkReminders()` in `apps-script.gs` (the background Telegram
+   trigger every other reminder-bearing module already uses) never
+   gained a matching check. It now mirrors the exact same
+   dueDate/done logic, on the same existing 5-minute trigger — no new
+   trigger to set up. `SCRIPT_VERSION` bumped to `v10.0.0`;
+   **apps-script.gs must be redeployed** (Deploy → Manage deployments →
+   ✏️ → New version → Deploy) for this to take effect, same as any
+   script change.
+2. **This changelog had drifted five versions behind the shipped app** —
+   its last entry was v14.1.0, while `APP_VERSION` was already at
+   v14.4.8. Backfilled below (v14.2.0 → v14.4.8) from index.html's and
+   sw.js's own version-history comments, which had stayed current the
+   whole time — only this file had stopped being updated.
+3. **sw.js's own top-of-file version comment** had been stuck reading
+   "v14.4.1" for seven bumps while `CACHE_NAME` kept moving underneath
+   it — cosmetic, but exactly the kind of doc drift that wastes time
+   when debugging a stale-cache report. Now current, and worth keeping
+   current going forward.
+
+**Confirmed NOT a bug, just scope not yet reached (stated so a future
+pass doesn't re-discover it):** Nudges (`checkNudges()`) remain
+in-app/foreground-only. Real background delivery would mean adding the
+same three conditions to `checkReminders()` in apps-script.gs too — this
+was scoped out here because it needs its own audit of the nudge dedupe
+logic (`S.settings.nudgeLastShown`), not a one-line mirror like Tasks
+was.
+
+index.html, sw.js, and apps-script.gs all changed (CACHE_NAME bumped to
+`gp-ledger-v15-0-0`, SCRIPT_VERSION bumped to `v10.0.0`) so installed
+copies actually receive all of the above instead of serving a cached
+v14.4.8 — and don't forget the separate Apps Script redeploy for part 1.
+
+## v14.4.8
+
+Real bug fix — a grey gap could appear between the bottom nav and
+Safari's own toolbar in mobile Safari (not installed as a home-screen
+app). Root cause: `#app`'s height was pinned to a JS-measured viewport
+value at all times, when that value only actually needs to override the
+CSS default while the on-screen keyboard is open. Native `100dvh`
+already tracks Safari's bottom URL-bar chrome expanding/collapsing
+continuously with zero JS involved — pinning to a JS snapshot instead
+meant `#app` could lag one event behind Safari's real chrome state,
+exposing a strip of the page's own background below the nav. `#app` now
+uses native `100dvh` normally and only switches to the JS-measured
+`--vvh` while `body.kb-open` is set. CSS-only fix, no JS changed.
+
+index.html and sw.js changed (CACHE_NAME bumped to `gp-ledger-v14-4-8`)
+so installed copies actually receive this instead of serving a cached
+v14.4.7.
+
+## v14.4.7
+
+Content-relevant photos. loremflickr.com (unlike picsum) supports real
+keyword search, so every hero/quote/motivation card photo now actually
+matches its topic: Diet shows food, Finance shows money, Health shows
+fitness, etc. `MOTIVATION_CARDS` quotes already carried a descriptive
+`img` slug per quote, now sent as real flickr search tags via
+`photoUrl()`'s new keywords param; the main `QUOTES` list instead
+carries a `cat` field mapped to search terms via a new
+`CATEGORY_KEYWORDS` table; the Home hero's other 3 tabs got their own
+fixed keyword sets. No provider/architecture change beyond v14.4.6 —
+same `photoUrl()` call sites, just passing real search terms now.
+
+index.html changed only (no caching-strategy change) so bump so
+installed copies actually receive this instead of serving a cached
+v14.4.6.
+
+## v14.4.6
+
+Photo provider switched from picsum.photos to loremflickr.com — picsum
+was confirmed genuinely unreachable on the user's own network and
+device (a rate-limit page on one network, ERR_TIMED_OUT on another,
+tested directly), unrelated to anything in this app. Every photo URL
+now goes through one central `photoUrl()` helper in index.html; sw.js's
+caching rule updated to match the new host.
+
+index.html and sw.js changed (CACHE_NAME bumped to `gp-ledger-v14-4-6`)
+so installed copies actually receive this instead of serving a cached
+v14.4.5.
+
+## v14.4.5
+
+Real root cause found for photos never loading: picsum.photos was
+actively rate-limiting the device's IP (Cloudflare Error 1200), caused
+by this app firing ~17 distinct picsum requests on every single boot
+(confirmed by opening picsum.photos directly and hitting the same
+rate-limit page). Cut the eager per-module preload (12 of those 17),
+since each module's photo already loads itself when that module's
+screen is opened — down to 5 requests on boot.
+
+index.html changed, bumped CACHE_NAME to `gp-ledger-v14-4-5`.
+
+## v14.4.4
+
+Real bug fix — found why photos never loaded at all, not just
+occasionally: `applyBackground()` and `preloadTodaysImages()` both
+bailed out completely whenever `navigator.onLine` was false, before
+attempting a single image request. That property is unreliable and
+known to misreport `false` on installed/standalone PWAs on Android even
+with a working connection — meaning on an affected device, zero photos
+would ever load, permanently. Removed both gates; failures are already
+handled safely via each image's own `onerror`.
+
+index.html changed, bumped CACHE_NAME to `gp-ledger-v14-4-4`.
+
+## v14.4.3
+
+Real bug fix — quote/photo cards (Home hero, Habit quote, every
+module's motivation card) were showing black instead of the intended
+themed-gradient fallback whenever their photo failed to load
+(offline/blocked/slow network, or picsum hiccuping). Root cause was
+`.quote-card` never having a solid base color, only a faint tint over
+whatever's behind it — near-black in dark themes. Gave it the same
+opaque `var(--card)` base every other card already has. CSS-only fix,
+no JS changed.
+
+index.html changed, bumped CACHE_NAME to `gp-ledger-v14-4-3`.
+
+## v14.4.2
+
+Meal Planner input fix — a leftover inline `style="flex:1;"` on each
+meal input was overriding the `.mp-slot` CSS rule meant to give it its
+own full-width row, squeezing it down to a sliver next to the ✨/✕/Eaten
+buttons and truncating meal names ("Peanut but…"). Removed.
+
+index.html changed, bumped CACHE_NAME to `gp-ledger-v14-4-2`.
+
+## v14.4.1
+
+Three targeted fixes: (1) black screen on app open — root cause was
+`init()` running as one unguarded sequence where a single uncaught
+exception anywhere in it aborted everything before `#app` ever got its
+`.ready` class, which is what reveals `<main>`; every step in `init()`
+is now individually try/caught so it always finishes and `.ready`
+always gets added. (2) The fixed bottom nav sometimes stayed on screen
+and blocked the keyboard while typing — its show/hide listeners used to
+sit at the very end of `init()`, so the same kind of abort described
+above could leave them never attached for a whole session; they now
+live in their own `setupKeyboardHandling()` function that always runs
+first. (3) Journal now remembers the font you last used and defaults
+new entries to it instead of always starting on Caveat.
+
+index.html changed, bumped CACHE_NAME to `gp-ledger-v14-4-1`.
+
+## v14.4.0
+
+Targeted fixes: Clock size setting + position-jump-on-open glitch
+fixed; Meal Planner's real "tomorrow always empty" bug fixed (Auto-fill
+was filling a stale, invisible week) plus real per-slot AI suggestions,
+Clear, and larger/responsive cards; Goals/Learning AI suggestions now
+available while adding a new entry, not only after it's saved;
+Journal's Botanical & Skyline artwork gained blossoms and
+ink-hatching shading; notification volume is now adjustable (was a
+fixed, quiet hardcoded level).
+
+index.html changed, bumped CACHE_NAME to `gp-ledger-v14-4-0`.
+
+## v14.3.0
+
+Premium Journal customization — 3 artwork styles (Quill & Ink, Stipple
+Tree, and Botanical & Skyline — a full page-framing border of original
+branch/vine/skyline line art), all 6 spec'd page-transition modes via a
+new "🎨 Customize diary" modal, the Default Font dropdown renamed to 5
+named categories with corrected per-font fallbacks, and a real
+grain/fibre paper texture on both the diary page and notebook editor.
+
+index.html changed, bumped CACHE_NAME to `gp-ledger-v14-3-0`.
+
+## v14.2.0
+
+Closes out the full "GP Hub UI/AI/Module Integration" spec.
+
+index.html changed, bumped CACHE_NAME to `gp-ledger-v14-2-0`.
 
 ## v14.1.0
 

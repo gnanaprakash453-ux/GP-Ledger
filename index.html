@@ -2499,7 +2499,31 @@ function wireAiSuggestButton(btnId, panelId, onGo){
   });
 }
 
-const APP_VERSION = 'v14.4.8'; // single source of truth for About screen & Settings row
+const APP_VERSION = 'v15.0.0'; // single source of truth for About screen & Settings row
+// v15.0.0 — maintenance/architecture release, no visual redesign. Three
+// real gaps closed: (1) Tasks due-today reminders used to only fire while
+// the app was open (checkTaskReminders(), client-side popup only) — the
+// background Telegram trigger in apps-script.gs never got a matching
+// check, so a closed app meant a missed reminder. checkReminders() there
+// now mirrors the exact same dueDate/done logic every other module's
+// background reminder already uses (SCRIPT_VERSION bumped to v10.0.0 —
+// see APP_SCRIPT_VERSION below, and apps-script.gs must be redeployed for
+// this to take effect, same as any script change). (2) CHANGELOG.md had
+// drifted five versions behind the shipped app (last entry was v14.1.0,
+// APP_VERSION was already at v14.4.8) — backfilled with v14.2.0–v14.4.8
+// from this file's and sw.js's own version-history comments, so the
+// changelog is a trustworthy record again instead of silently stale.
+// (3) sw.js's own top-of-file version comment had been stuck reading
+// "v14.4.1" for seven bumps while CACHE_NAME kept moving — cosmetic, but
+// exactly the kind of doc drift that causes confusion when debugging a
+// stale-cache report. Still true after this pass, worth restating so a
+// future session doesn't waste time "fixing" it: Nudges
+// (checkNudges()) remain in-app/foreground-only — real background
+// delivery would mean adding the same three conditions to
+// checkReminders() in apps-script.gs too, scoped out here since it needs
+// its own audit of the nudge dedupe logic, not a one-line mirror like
+// Tasks was. index.html, sw.js, and apps-script.gs all changed — CACHE_NAME
+// bumped to gp-ledger-v15-0-0 so installed copies actually receive this.
 // v14.4.8 — real bug fix: a grey gap could appear between the bottom nav
 // and Safari's own toolbar (mobile Safari, not installed as a home-screen
 // app). Root cause: #app's height was pinned to a JS-measured viewport
@@ -9186,7 +9210,7 @@ document.getElementById('testTgBtn').addEventListener('click', async ()=>{
 });
 
 /* ---------- Google Sheets sync ---------- */
-const APP_SCRIPT_VERSION = 'v9.7.1'; // must match SCRIPT_VERSION at the top of apps-script.gs — fixes "Data tab is empty" on large accounts (chunked snapshot storage, see apps-script.gs)
+const APP_SCRIPT_VERSION = 'v10.0.0'; // must match SCRIPT_VERSION at the top of apps-script.gs — v10.0.0 added the Tasks due-today background reminder (see apps-script.gs checkReminders())
 function debugLog(msg){
   const box = document.getElementById('syncDebug'); box.style.display='block';
   box.textContent = `[${new Date().toLocaleTimeString()}] ${msg}\n` + box.textContent;

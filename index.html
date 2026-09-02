@@ -16,11 +16,20 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <!-- v14.4.6 — background-photo host switched from picsum.photos to
      loremflickr.com (picsum was confirmed blocked/timing out on the
-     user's own network+device — see photoUrl() for the full reasoning);
-     preconnect updated to match so the DNS/TLS handshake is still warm
-     before the first photo request fires. -->
+     user's own network+device at the time — see photoUrl() for the full
+     reasoning); preconnect updated to match so the DNS/TLS handshake is
+     still warm before the first photo request fires. -->
 <link rel="preconnect" href="https://loremflickr.com" crossorigin>
 <link rel="dns-prefetch" href="https://loremflickr.com">
+<!-- v16.2.0 — picsum.photos is back as setPhotoCardBg's automatic
+     fallback provider (see that function) for whenever loremflickr times
+     out or errors twice in a row. A network/ISP block is rarely
+     permanent and can differ by host, so it's worth preconnecting here
+     too rather than assuming the earlier block above still applies —
+     this only ever gets used as a last resort, so warming it costs
+     nothing on the common path where loremflickr just works. -->
+<link rel="preconnect" href="https://picsum.photos" crossorigin>
+<link rel="dns-prefetch" href="https://picsum.photos">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Manrope:wght@400;500;600;700;800&family=Fraunces:ital,wght@0,600;0,700;1,500;1,600&family=Nunito:wght@400;600;700&family=Sora:wght@500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&family=Space+Mono:wght@500;700&family=IBM+Plex+Mono:wght@500;600&family=Playfair+Display:wght@600;700;800&family=Space+Grotesk:wght@500;600;700&family=Quicksand:wght@500;600;700&family=Outfit:wght@500;600;700;800&family=Syne:wght@600;700;800&family=DM+Serif+Display&family=Bricolage+Grotesque:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Roboto:wght@400;500;700;900&family=DM+Sans:wght@400;500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=Geist:wght@400;500;600;700;800&family=Nunito+Sans:wght@400;600;700;800&family=Caveat:wght@500;600;700&family=Lora:ital,wght@0,500;0,600;1,400&family=Special+Elite&display=swap" rel="stylesheet">
 <!-- v14.3.0 — Special Elite (vintage typewriter) added for the Journal's
      5 named Default Font categories — everything else unchanged. -->
@@ -2229,7 +2238,7 @@ nav.bottom, .fab{ transition:transform .18s ease; }
         <div class="settings-row settings-cat-row" data-cat="home"><div class="sr-icon">🏠</div><div class="sr-label">Home<div class="sr-sub">Quick Actions</div></div><span class="chev">›</span></div>
         <div class="settings-row settings-cat-row" data-cat="communication"><div class="sr-icon">📨</div><div class="sr-label">Communication<div class="sr-sub">Telegram reminders</div></div><span class="chev">›</span></div>
         <div class="settings-row settings-cat-row" data-cat="backup"><div class="sr-icon">💾</div><div class="sr-label">Backup &amp; Restore<div class="sr-sub">Google Sheet sync, JSON backup/restore</div></div><span class="chev">›</span></div>
-        <div class="settings-row settings-cat-row" data-cat="modules"><div class="sr-icon">🧩</div><div class="sr-label">Modules &amp; Data<div class="sr-sub">Turn sections on/off, diet &amp; body stats</div></div><span class="chev">›</span></div>
+        <div class="settings-row settings-cat-row" data-cat="modules"><div class="sr-icon">🧩</div><div class="sr-label">Modules &amp; Data<div class="sr-sub">Turn sections on/off</div></div><span class="chev">›</span></div>
         <div class="settings-row settings-cat-row" id="settingsAboutRow" data-cat="about"><div class="sr-icon">ℹ️</div><div class="sr-label">About<div class="sr-sub">Version <span id="aboutRowVersion"></span> · credits, what this app is</div></div><span class="chev">›</span></div>
       </div>
       <button class="link-btn" id="settingsCatBack" style="margin-bottom:10px; display:none;">‹ All settings</button>
@@ -2521,8 +2530,23 @@ nav.bottom, .fab{ transition:transform .18s ease; }
         </div>
       </div>
 
-      <div class="settings-group" data-cat="modules">
-        <h3>Diet &amp; body stats</h3>
+      <!-- v16.2.0 — real fix: this whole panel used to live under
+           data-cat="modules" (Modules & Data) while the General category's
+           own sr-sub text already claimed to hold "diet stats" — so anyone
+           looking for height/weight/age under General, where the app itself
+           said it would be, couldn't find it, and it read as duplicated
+           with the Diet tab's quick weight-log button. There was only ever
+           one actual settings record for height/weight/age/sex/activity/
+           goal (S.diet.settings below); moved the panel itself to General
+           so the one place that exists is also the place the app points
+           to. Diet's calorie/macro targets and the Meal Planner's
+           suggested-calorie fill (see dietTargets()/computeDietTargets())
+           already read directly from these four fields — nothing to wire
+           up, they're already the single source those screens calculate
+           from. -->
+      <div class="settings-group" data-cat="general">
+        <h3>Body stats</h3>
+        <div class="hint" style="padding:14px 16px 0;">Height, weight, age and activity level — this is what Diet uses to calculate your daily calorie/macro targets and to size your Meal Planner suggestions automatically. Set it once here and both stay in sync.</div>
         <div class="settings-list">
           <div style="padding:0 16px 14px;">
             <label class="fl">Height (cm)</label><input type="number" id="setHeight" placeholder="170">
@@ -2673,7 +2697,16 @@ function wireAiSuggestButton(btnId, panelId, onGo){
   });
 }
 
-const APP_VERSION = 'v16.1.0'; // single source of truth for About screen & Settings row
+const APP_VERSION = 'v16.2.0'; // single source of truth for About screen & Settings row
+// v16.2.0 — two fixes: (1) photo cards now fall back to a second,
+// independent photo provider (picsum.photos) after loremflickr.com times
+// out or errors twice in a row, instead of giving up after just one host
+// — see setPhotoCardBg(). (2) Body stats (height/weight/age/sex/activity/
+// goal) moved from Settings → Modules & Data to Settings → General, which
+// is where the General category's own description already said they'd
+// be — same single settings record as before, just filed where it's
+// actually findable. Diet's calorie/macro targets and Meal Planner's
+// suggested calories already read straight from this record.
 // v15.5.0 — Finance/Reports Calendar & Journal Customization upgrade:
 // (1) Finance gained a real Day/Month/Year period selector with ‹›/jump
 //     navigation through history (previously it only ever showed a fixed
@@ -4240,38 +4273,46 @@ function scheduleQuoteRotation(){
    this session (populated by preloadTodaysImages, kicked off as early
    as possible in init) so a card whose photo is already warm applies it
    immediately with zero flash. */
-const __warmImgUrls = new Set();
-/* v16.1.0 — real bug: loremflickr proxies a live Flickr search per
-   request (no CDN, no guaranteed response time), so a slow/stuck request
-   never fired onload OR onerror — the Image object just sat there
-   forever, the card stayed on its fallback gradient with no visible
-   retry, and reopening the same screen re-requested the exact same
-   (still-stuck) URL. Now: give any single attempt 7s; if neither event
-   fires by then, treat it as failed and retry ONCE with a cache-busted
-   variant of the same URL (same seed/lock so it's still "this card's
-   photo", just a fresh request instead of whatever got stuck). Give up
-   quietly after that, same as before — never leaves a broken/blank card. */
+const __warmImgUrls = new Map(); // requested loremflickr url -> the url that actually resolved (itself, or a fallback)
+/* v16.2.0 — real bug: loremflickr.com isn't just occasionally slow, it has
+   a genuine history of going fully dark — Flickr itself blocked
+   loremflickr's API access for weeks in 2025, and it proxies a live
+   Flickr search with no CDN in front of it, so on some networks a request
+   simply never resolves. Two timed-out/errored attempts at the SAME host
+   (see below) previously just gave up and left the CSS gradient forever —
+   correct as a last resort, but not before trying a second, completely
+   independent provider first. picsum.photos is a different service on a
+   different host; it can't do keyword search (only loremflickr can), so a
+   picsum fallback photo won't always match the card's theme, but an
+   on-theme-ish photo that actually loads beats a themed photo that never
+   arrives. Same `lock` number is reused so it's still deterministic —
+   this card keeps the same fallback photo every time, it just isn't
+   necessarily *on-topic* the way the primary photo is. */
 function setPhotoCardBg(el, url, darken){
   if(!el || !url) return;
   darken = darken || 'linear-gradient(180deg, rgba(0,0,0,.08), rgba(0,0,0,.7))';
-  const apply = ()=>{ el.style.backgroundImage = `${darken}, url('${url}')`; };
-  if(__warmImgUrls.has(url)){ apply(); return; }
-  const attempt = (attemptUrl, isRetry)=>{
+  const apply = (resolvedUrl)=>{ el.style.backgroundImage = `${darken}, url('${resolvedUrl}')`; };
+  if(__warmImgUrls.has(url)){ apply(__warmImgUrls.get(url)); return; }
+  const m = url.match(/^https:\/\/loremflickr\.com\/(\d+)\/(\d+)\/[^?]+\?lock=(\d+)/);
+  const fallbackUrl = m ? `https://picsum.photos/seed/${m[3]}/${m[1]}/${m[2]}` : null;
+  const attempt = (attemptUrl, stage)=>{
     let done = false;
     const img = new Image();
     const timer = setTimeout(()=>{
       if(done) return; done = true;
-      if(!isRetry){ attempt(attemptUrl + (attemptUrl.includes('?')?'&':'?') + 'retry=1', true); }
-      // second attempt timing out too: leave the CSS default gradient in place, no error state to show
+      if(stage==='first'){ attempt(attemptUrl + (attemptUrl.includes('?')?'&':'?') + 'retry=1', 'retry'); }
+      else if(stage==='retry' && fallbackUrl){ attempt(fallbackUrl, 'fallback'); }
+      // fallback (or no fallback available) timing out too: leave the CSS default gradient in place, no error state to show
     }, 7000);
-    img.onload = ()=>{ if(done) return; done = true; clearTimeout(timer); __warmImgUrls.add(url); apply(); };
+    img.onload = ()=>{ if(done) return; done = true; clearTimeout(timer); __warmImgUrls.set(url, attemptUrl); apply(attemptUrl); };
     img.onerror = ()=>{
       if(done) return; done = true; clearTimeout(timer);
-      if(!isRetry){ attempt(attemptUrl + (attemptUrl.includes('?')?'&':'?') + 'retry=1', true); }
+      if(stage==='first'){ attempt(attemptUrl + (attemptUrl.includes('?')?'&':'?') + 'retry=1', 'retry'); }
+      else if(stage==='retry' && fallbackUrl){ attempt(fallbackUrl, 'fallback'); }
     };
     img.src = attemptUrl;
   };
-  attempt(url, false);
+  attempt(url, 'first');
 }
 /* v16.1.0 — lightweight WhatsApp-style formatting for Journal & Notes.
    Deliberately NOT a rich-text/contenteditable rebuild (real risk of
@@ -5186,7 +5227,7 @@ function preloadTodaysImages(){
     // is warm. Unsupported browsers just ignore the property — no
     // functional change, this is a pure enhancement.
     if(i<2 && 'fetchPriority' in img) img.fetchPriority = 'high';
-    img.onload = ()=>{ __warmImgUrls.add(url); };
+    img.onload = ()=>{ __warmImgUrls.set(url, url); };
     img.src = url;
   });
 }

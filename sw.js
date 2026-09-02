@@ -344,7 +344,7 @@
 // WhatsApp-style formatting toolbar (Bold/Italic/Strike/Mono) added to
 // Journal + Notes. index.html changed, so bump so installed copies
 // actually receive this.
-const CACHE_NAME = 'gp-ledger-v16-1-0';
+const CACHE_NAME = 'gp-ledger-v16-2-0';
 const IMG_CACHE_NAME = 'gp-ledger-images-v1';
 const CORE_ASSETS = [
   './index.html',
@@ -386,9 +386,15 @@ self.addEventListener('fetch', (event) => {
   // visible image delay on every screen, not just the first visit.
   // v14.4.6 — provider switched from picsum.photos to loremflickr.com
   // (picsum was confirmed blocked/timing out on the user's own
-  // network+device — see photoUrl() in index.html); matched here so the
-  // new provider's requests still get this same caching treatment.
-  if (req.url.includes('loremflickr.com')) {
+  // network+device at the time — see photoUrl() in index.html); matched
+  // here so the new provider's requests still get this same caching
+  // treatment.
+  // v16.2.0 — picsum.photos is back as setPhotoCardBg's automatic
+  // fallback when loremflickr times out or errors twice in a row (see
+  // that function). Same cache-first treatment for its requests too, so
+  // a card that had to fall back today doesn't pay that same penalty
+  // again on every revisit.
+  if (req.url.includes('loremflickr.com') || req.url.includes('picsum.photos')) {
     event.respondWith(
       caches.open(IMG_CACHE_NAME).then((cache) =>
         cache.match(req).then((cached) => {

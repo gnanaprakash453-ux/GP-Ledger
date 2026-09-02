@@ -1,4 +1,38 @@
-# Changelog — v16.1.0 (Photo card fixes + full on/off control, weight moved into Diet, WhatsApp-style formatting for Journal & Notes) → history below
+# Changelog — v16.2.0 (Photo cards: second provider as fallback, Body stats moved to General) → history below
+
+## v16.2.0
+
+**Two requested fixes.**
+
+**1. Photo card picks not loading.**
+v16.1.0's 7s-timeout-then-retry fix helped, but only ever retried the same
+host (loremflickr.com) a second time. loremflickr has a real history of
+going fully dark on its own — Flickr blocked its API access outright for
+weeks in 2025 — so on a network where that host itself is slow/blocked,
+both attempts fail the same way every time and the card is stuck on its
+gradient. `setPhotoCardBg()` now tries a second, independent provider
+(picsum.photos, a different host entirely) after both loremflickr attempts
+time out or error, using the same lock number so it's still deterministic
+per card. picsum can't do keyword search the way loremflickr can, so a
+fallback photo won't always match the card's theme — but a photo that
+actually loads beats a themed one that never arrives. Preconnect hints and
+the service worker's cache-first handling were extended to cover
+picsum.photos too, so the fallback path isn't paying a cold DNS/TLS
+penalty on top of everything else, and a card that had to fall back once
+loads instantly on every later revisit that day.
+
+**2. Height/weight/age hard to find — looked duplicated with Diet.**
+There was only ever one actual settings record for body stats
+(height/weight/age/sex/activity/goal), but its panel lived under
+Settings → Modules & Data while the General category's own description
+already claimed to hold "diet stats" — so anyone looking under General,
+where the app itself pointed, came up empty, and finding it later under
+Modules & Data read as a second, duplicate place. Moved the panel itself
+(not the data — nothing to migrate) to Settings → General, renamed
+"Diet & body stats" → "Body stats", and added a line at the top of the
+panel spelling out that Diet's calorie/macro targets and the Meal
+Planner's suggested calories already calculate straight from these same
+four fields — no separate step needed, they always have.
 
 ## v16.1.0
 

@@ -1,4 +1,25 @@
-# Changelog — v15.9.7 (Journal — motivational quote card now hides while typing, so the writing area is actually visible above the keyboard) → history below
+# Changelog — v15.10.0 (Journal — the diary page can no longer clip itself: it now grows to fit all its content instead of cropping it partway down) → history below
+
+## v15.10.0
+
+**Journal — the diary page was getting cut off partway down, not just
+scrolled awkwardly.**
+`.diary-page` had `overflow:hidden` on it — added early on to keep the
+decorative background art (the sketch illustration, the paper-grain
+texture) from bleeding past the page's rounded corners. That same rule
+was also silently cropping the page's *real* content: any time the
+textarea grew taller than the page's starting height — typed content,
+the keyboard-open 58vh bump, or a manual `resize:vertical` drag — the
+extra height had nowhere to go but under the clip, so the bottom of the
+page (and anything typed or attached down there) disappeared instead of
+pushing the page taller. `.diary-page` now only clips horizontally
+(`overflow-x:hidden`, still enough to contain the background art's
+negative-offset bleed); vertically it's `overflow-y:visible`, so the
+page is a plain block that always expands to fit everything inside it,
+and the surrounding `.screen` (already `overflow-y:auto`) scrolls to
+reach whatever that adds. The photo card, handwriting, colors, and
+toolbar are unchanged — this only touches how tall the page container
+is allowed to get.
 
 ## v15.9.7
 

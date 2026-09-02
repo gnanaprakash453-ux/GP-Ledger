@@ -796,7 +796,20 @@ body{ background:var(--bg-gradient); }
   background-size: 100px 100px, auto, auto, auto, auto;
   box-shadow: 0 14px 34px -16px rgba(0,0,0,.45), 0 1px 0 rgba(255,255,255,.5) inset;
   border:1px solid rgba(120,90,50,.28);
-  overflow:hidden;
+  /* v15.10.0 — real bug: overflow:hidden here was clipping the diary
+     page itself, not just the decorative background layers it was meant
+     to contain. Once the textarea grows past its starting height (typed
+     content, the keyboard-open 58vh bump, or a manual resize:vertical
+     drag), the extra height was being cropped away instead of pushing
+     .diary-page taller — the page visibly cut off partway down, with
+     whatever sat right after it (the entries list, the motivation card
+     on re-render) reading as if it had been spliced in mid-page. Only
+     the horizontal bleed (the sketch/background art's negative offsets)
+     ever needed containing, so this now clips X only and lets Y grow
+     with its content — .diary-page is a plain block in normal flow with
+     no fixed/max height, so it always expands to fit everything inside
+     it, and the parent .screen (overflow-y:auto) scrolls to reach it. */
+  overflow-x:hidden; overflow-y:visible;
   backface-visibility:hidden; /* v14.1.0 — prevents a mirrored-text flash during the page-turn rotation */
 }
 .diary-ribbon{
@@ -918,6 +931,13 @@ body{ background:var(--bg-gradient); }
   background-attachment:local;
   border:none; border-radius:8px; padding:6px 10px 16px 8px;
   font-size:16px; line-height:28px; resize:vertical;
+  /* v15.10.0 — belt-and-suspenders alongside the .diary-page overflow
+     fix above: a resize:vertical drag (or a browser autofilling more
+     height than min-height) can never make the textarea taller than the
+     page around it now, since max-height:none + the parent's
+     overflow-y:visible mean growth always pushes .diary-page's own
+     height out rather than clipping. */
+  max-height:none;
 }
 /* v15.8.0 — now scoped to kb-open too (see the journal-focus rule
    above): the big textarea only grows to 58vh once the keyboard is
@@ -2678,7 +2698,7 @@ function wireAiSuggestButton(btnId, panelId, onGo){
   });
 }
 
-const APP_VERSION = 'v15.9.7'; // single source of truth for About screen & Settings row
+const APP_VERSION = 'v15.10.0'; // single source of truth for About screen & Settings row
 // v15.5.0 — Finance/Reports Calendar & Journal Customization upgrade:
 // (1) Finance gained a real Day/Month/Year period selector with ‹›/jump
 //     navigation through history (previously it only ever showed a fixed

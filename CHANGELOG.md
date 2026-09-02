@@ -1,4 +1,37 @@
-# Changelog — v15.10.5 (apps-script.gs — Journal sheet tab was writing blank rows for every entry; fixed) → history below
+# Changelog — v15.10.6 (Journal — keyboard was still hiding the toolbar/textarea after scrolling; fixed) → history below
+
+## v15.10.6
+
+**Journal — the editor (toolbar + textarea) was still hidden behind the
+keyboard after tapping in, even though the screen scrolled.**
+v15.10.3 scrolled the journal screen so the top of `#diaryPage` (the
+date heading) landed at the top of the visible area on focus. That's
+the wrong anchor: `#diaryPage` is one tall block — sketch/ribbon, date
+heading, date bar, toolbar, *then* the textarea (`min-height:46vh`) —
+and on a real phone with the keyboard up, that whole block is routinely
+taller than what's left of the visible viewport. Scrolling to its own
+top reliably shows the date heading, but the toolbar and textarea
+underneath it still land below the fold, hidden behind the keyboard —
+exactly the reported "half blocked, can't see the journal" (see the
+attached screenshot: date heading visible, editor gone).
+
+Fixed: the scroll now anchors to the `.journal-toolbar` row (the one
+directly above the textarea) instead of the top of the whole diary
+page, measured via `getBoundingClientRect()` rather than `offsetTop`
+(more reliable since `#diaryPage` is a positioned ancestor for its own
+decorations). This pushes the heading/date bar off the top of the
+screen and gives the textarea the maximum share of whatever
+keyboard-shrunk space remains. Also added a `visualViewport` `resize`
+listener for ~1.2s after focus, re-running the same correction as the
+keyboard's height changes — the existing 320ms/650ms fixed-delay
+corrections were good guesses but not a guarantee on slower devices or
+slower keyboard animations, and this closes that gap without changing
+anything about the height/kb-open scheme itself.
+
+`sw.js`'s `CACHE_NAME` bumped to `gp-ledger-v15-10-6` so the fixed
+`index.html` actually reaches installed/offline copies of the app.
+
+---
 
 ## v15.10.5
 

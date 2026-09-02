@@ -2684,7 +2684,7 @@ function wireAiSuggestButton(btnId, panelId, onGo){
   });
 }
 
-const APP_VERSION = 'v15.10.5'; // single source of truth for About screen & Settings row
+const APP_VERSION = 'v15.10.6'; // single source of truth for About screen & Settings row
 // v15.5.0 — Finance/Reports Calendar & Journal Customization upgrade:
 // (1) Finance gained a real Day/Month/Year period selector with ‹›/jump
 //     navigation through history (previously it only ever showed a fixed
@@ -10082,11 +10082,34 @@ function setupKeyboardHandling(){
       // textarea at the top together — same intent as the original fix,
       // just measured rather than assumed, so it's correct regardless of
       // how much (or little) sits above the diary page.
+      // v15.10.6 — real bug (still reported): #diaryPage itself is one
+      // tall block — sketch/ribbon, date heading, date bar, toolbar,
+      // *then* the textarea (min-height 46vh) — and on a real phone with
+      // the keyboard up, that whole block is routinely taller than what's
+      // left of the visible viewport. Scrolling to dp's own top (the
+      // v15.10.3 fix) reliably brings the date heading into view, but
+      // that's the top of a block that doesn't fit — the toolbar and the
+      // textarea underneath it still land below the fold, hidden behind
+      // the keyboard. That matches the report exactly: heading visible,
+      // editable box gone. The heading isn't what needs to be reachable
+      // while typing — the toolbar + textarea are. Anchoring the scroll
+      // to the toolbar (the row directly above the textarea) instead
+      // pushes the heading/date bar off the top and gives the textarea
+      // the maximum share of whatever keyboard-shrunk space remains.
+      // Measured via getBoundingClientRect rather than offsetTop, since
+      // #diaryPage is a positioned ancestor (for its sketch/ribbon
+      // decorations) and offsetTop chains through it would be relative
+      // to the wrong element.
       if(t.id === 'journalText'){
         const scrollDiaryIntoView = ()=>{
           const sj = document.getElementById('screen-journal');
-          const dp = document.getElementById('diaryPage');
-          if(sj && dp) sj.scrollTo({ top: Math.max(dp.offsetTop - 8, 0), behavior:'smooth' });
+          const toolbar = document.querySelector('#diaryPage .journal-toolbar');
+          if(sj && toolbar){
+            const sjRect = sj.getBoundingClientRect();
+            const tbRect = toolbar.getBoundingClientRect();
+            const delta = tbRect.top - sjRect.top - 8;
+            sj.scrollTo({ top: sj.scrollTop + delta, behavior:'smooth' });
+          }
           window.scrollTo(0,0);
         };
         setTimeout(scrollDiaryIntoView, 320);
@@ -10098,6 +10121,26 @@ function setupKeyboardHandling(){
         // extra motion when it wasn't needed (scrolling to where it
         // already is is a no-op).
         setTimeout(scrollDiaryIntoView, 650);
+        // v15.10.6 — belt-and-suspenders alongside the two fixed-delay
+        // corrections above: 320ms/650ms are good guesses, not a
+        // guarantee, and a slower device or a slower keyboard animation
+        // can still finish after both have already fired, leaving the
+        // last correction stale. While the keyboard is settling, also
+        // re-run the same correction on every visualViewport resize
+        // event (that's what fires as the keyboard's height changes),
+        // for a short window after focus — so the position keeps
+        // catching up to wherever the keyboard actually ends up,
+        // regardless of how long its animation takes on this device.
+        const vv = window.visualViewport;
+        if(vv){
+          const untilTs = Date.now() + 1200;
+          const onVVResize = ()=>{
+            scrollDiaryIntoView();
+            if(Date.now() >= untilTs) vv.removeEventListener('resize', onVVResize);
+          };
+          vv.addEventListener('resize', onVVResize);
+          setTimeout(()=> vv.removeEventListener('resize', onVVResize), 1200);
+        }
       } else {
         setTimeout(()=>{ try{ t.scrollIntoView({ block:'center', behavior:'smooth' }); }catch(err){} }, 320);
       }

@@ -315,7 +315,12 @@
 // version) for the fix to actually take effect server-side. index.html
 // also changed, so bump so installed copies actually receive this
 // instead of serving a cached v15.10.4.
-const CACHE_NAME = 'gp-ledger-v15-10-5';
+// v15.10.6: index.html's journal keyboard-scroll fix (real bug — scrolling
+// to #diaryPage's own top on focus left the toolbar+textarea below the
+// fold behind the keyboard; now anchors to the toolbar instead, see the
+// APP_VERSION comment block in index.html for full detail). CACHE_NAME
+// bumped to match so the fixed index.html actually reaches installed apps.
+const CACHE_NAME = 'gp-ledger-v15-10-6';
 const IMG_CACHE_NAME = 'gp-ledger-images-v1';
 const CORE_ASSETS = [
   './index.html',

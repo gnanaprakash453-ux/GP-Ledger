@@ -1,4 +1,23 @@
-# Changelog — v16.2.0 (Photo cards: second provider as fallback, Body stats moved to General) → history below
+# Changelog — v16.3.0 (Grey strip below bottom nav fixed) → history below
+
+## v16.3.0
+
+**Grey strip below the bottom nav — present from the moment the app opens.**
+#app's height was pinned to a one-time JS-measured `--vvh` snapshot. If
+that first reading came in short — address bar not yet collapsed in a
+browser tab, or the standalone/home-screen safe-area inset not yet
+settled — and nothing afterward happened to trigger another
+visualViewport event, the short reading just stuck for the whole
+session. `nav.bottom` was unaffected (it's independently `position:fixed`
+to the true screen edge since v15.7.0), but #app's own bottom edge came
+up short, exposing a strip of plain page background beneath the nav.
+Fixed with a CSS clamp: while no field is focused, #app now takes
+whichever is taller of the JS reading and native `100dvh` (which is
+always accurate in that state) — a short/stale JS reading can no longer
+under-report the height. The keyboard-open sizing path — the one case
+`dvh` genuinely can't track, and the reason `--vvh` exists at all — is
+completely untouched by this, so the earlier keyboard-covering fix
+(v15.10.4) isn't affected.
 
 ## v16.2.0
 

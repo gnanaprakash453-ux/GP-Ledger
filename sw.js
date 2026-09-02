@@ -344,7 +344,7 @@
 // WhatsApp-style formatting toolbar (Bold/Italic/Strike/Mono) added to
 // Journal + Notes. index.html changed, so bump so installed copies
 // actually receive this.
-const CACHE_NAME = 'gp-ledger-v16-2-0';
+const CACHE_NAME = 'gp-ledger-v16-3-0';
 const IMG_CACHE_NAME = 'gp-ledger-images-v1';
 const CORE_ASSETS = [
   './index.html',

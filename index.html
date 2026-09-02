@@ -10184,11 +10184,96 @@ function setupKeyboardHandling(){
   document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) healKbOpen(); });
   window.addEventListener('pageshow', healKbOpen);
 }
+// v15.10.7 — real bug (still reported): everything above gets the diary
+// page positioned correctly ONCE, right when the keyboard first opens —
+// but #journalText is an auto-GROWING textarea (min-height:46vh,
+// max-height:none — see .diary-textarea), not an internally-scrolling
+// box. As someone keeps typing a longer entry, the caret moves further
+// down the page than that one-time correction ever accounted for, and
+// nothing re-checks after the 1200ms window above ends. iOS Safari does
+// not reliably auto-scroll an ancestor container to follow the caret in
+// a plain textarea on its own — especially once #app is being pinned to
+// a JS-measured --vvh instead of the real layout viewport — so the
+// caret silently walks behind the keyboard the longer the entry gets,
+// exactly as reported ("especially when writing longer entries").
+// This adds a continuous, lightweight correction that runs on every
+// keystroke/selection change/keyboard-height change while #journalText
+// is focused: it measures the caret's actual pixel position (via a
+// hidden mirror element that copies the textarea's own font/padding/
+// line-height, so it's exact rather than estimated) and nudges
+// #screen-journal's scroll position just enough to keep that exact
+// point inside the visible visualViewport — never more than needed, so
+// normal scrolling/reading isn't disturbed. Runs in both mobile Safari
+// and the installed PWA since it only depends on the visualViewport API
+// (no UA/standalone branching needed).
+function getJournalCaretCoords(textarea, position){
+  const mirror = document.createElement('div');
+  const cs = window.getComputedStyle(textarea);
+  const copyProps = ['boxSizing','width','paddingTop','paddingRight','paddingBottom','paddingLeft',
+    'borderTopWidth','borderRightWidth','borderBottomWidth','borderLeftWidth',
+    'fontFamily','fontSize','fontWeight','fontStyle','fontVariant','letterSpacing',
+    'lineHeight','textTransform','wordSpacing','textIndent'];
+  copyProps.forEach(p=>{ mirror.style[p] = cs[p]; });
+  mirror.style.position = 'absolute';
+  mirror.style.visibility = 'hidden';
+  mirror.style.whiteSpace = 'pre-wrap';
+  mirror.style.wordWrap = 'break-word';
+  mirror.style.top = '0';
+  mirror.style.left = '-9999px';
+  mirror.style.height = 'auto';
+  mirror.textContent = textarea.value.substring(0, position);
+  const span = document.createElement('span');
+  span.textContent = textarea.value.substring(position) || '.';
+  mirror.appendChild(span);
+  document.body.appendChild(mirror);
+  const coords = { top: span.offsetTop, left: span.offsetLeft, height: (parseFloat(cs.lineHeight) || 28) };
+  document.body.removeChild(mirror);
+  return coords;
+}
+function setupJournalCaretTracking(){
+  const ta = document.getElementById('journalText');
+  const sj = document.getElementById('screen-journal');
+  if(!ta || !sj) return;
+  let raf = null;
+  function ensureCaretVisible(){
+    raf = null;
+    if(document.activeElement !== ta) return;
+    const vv = window.visualViewport;
+    const viewTop = vv ? vv.offsetTop : 0;
+    const viewBottom = vv ? (vv.offsetTop + vv.height) : window.innerHeight;
+    const taRect = ta.getBoundingClientRect();
+    const coords = getJournalCaretCoords(ta, ta.selectionStart);
+    const caretTop = taRect.top + coords.top;
+    const caretBottom = caretTop + coords.height;
+    const margin = 18;
+    if(caretBottom > viewBottom - margin){
+      sj.scrollTop += (caretBottom - (viewBottom - margin));
+    } else if(caretTop < viewTop + margin){
+      sj.scrollTop -= ((viewTop + margin) - caretTop);
+    }
+  }
+  function scheduleCheck(){
+    if(raf) return;
+    raf = requestAnimationFrame(ensureCaretVisible);
+  }
+  ta.addEventListener('input', scheduleCheck);
+  ta.addEventListener('keyup', scheduleCheck);
+  ta.addEventListener('click', scheduleCheck);
+  ta.addEventListener('focus', ()=> setTimeout(scheduleCheck, 350));
+  document.addEventListener('selectionchange', ()=>{ if(document.activeElement === ta) scheduleCheck(); });
+  if(window.visualViewport){
+    window.visualViewport.addEventListener('resize', ()=>{ if(document.activeElement === ta) scheduleCheck(); });
+  }
+}
 function init(){
   // v14.4.1 — always attach the keyboard/kb-open handling first (see the
   // comment on setupKeyboardHandling above), before any step below that
   // could throw and abort the rest of init().
   try{ setupKeyboardHandling(); }catch(err){ console.error('setupKeyboardHandling failed', err); }
+  // v15.10.7 — see setupJournalCaretTracking above; attached alongside
+  // setupKeyboardHandling so a caret-tracking failure can't take down
+  // the rest of init() either.
+  try{ setupJournalCaretTracking(); }catch(err){ console.error('setupJournalCaretTracking failed', err); }
   try{ history.replaceState({ screen:'dashboard' }, '', '#dashboard'); }catch(e){}
   // v14.4.1 — every step from here down that touches saved/derived data is
   // now individually try/caught. Before this, one uncaught exception

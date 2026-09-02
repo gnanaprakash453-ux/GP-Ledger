@@ -151,59 +151,20 @@ header.top{
    bar stays comfortable without ever compressing the tap targets unevenly
    relative to each other — .icon-btn and .sync-btn keep the same height
    as one another at every width. */
-/* v15.6.0 — Journal "focus" layout (see the journal-focus toggle in
-   goToScreen). The app header and bottom nav were both taking a fixed
-   chunk of vertical space on every screen including Journal; combined
-   with the keyboard, that left only a few visible lines to actually
-   write in — the "difficult and uncomfortable to type in" report. On
-   Journal specifically, both are removed outright rather than just
-   shrunk, and the freed space goes straight to the diary page: #app is
-   already a column flexbox (header/main/nav), so hiding header+nav here
-   is enough for main to expand into their space on its own, no separate
-   sizing math needed. The diary content itself (date heading, font/color
-   toolbar, "Export whole diary", the entries list below) is untouched —
-   only the app chrome around it goes. */
-/* v15.8.0 — real bug: journal-focus was tied to *being on the Journal
-   screen at all*, not to actually typing — so the header (welcome/time,
-   Save & Sync) and bottom nav disappeared the moment you opened Journal,
-   even just to browse past entries with no keyboard up, and the textarea
-   reserved a fixed 58vh of blank space before a single character was
-   typed — together reported as "too much empty page, can't see the
-   home/welcome/time header". The whole point of this layout was to give
-   the keyboard-open writing state more room, not to hide chrome while
-   idly reading — so it now only engages once the on-screen keyboard is
-   actually up (body.kb-open, set by the existing focusin/focusout
-   handling), the same moment the textarea's own space genuinely gets
-   tight. Just having Journal open with nothing focused now looks like
-   every other screen: header and nav both visible. */
-body.journal-focus.kb-open header.top,
-body.journal-focus.kb-open nav.bottom{ display:none; }
-/* v15.9.7 — real bug: even with header/nav/FAB hidden, the motivational
-   photo card at the top of the screen (#journalMotivationCard, ~160px
-   with its own photo strip) plus the date heading/datebar/toolbar above
-   the textarea left no room, above a half-screen keyboard, to actually
-   see where you type — the visible area cut off right at the toolbar,
-   with the textarea itself scrolled just out of view below the fold
-   ("doesn't show the bottom half"). The quote card is purely decorative
-   and irrelevant once you're actively writing, so it's hidden the same
-   way header/nav are — only while the keyboard is actually up — freeing
-   enough space that the toolbar and the start of the textarea are both
-   visible together above the keyboard. */
-body.journal-focus.kb-open #journalMotivationCard{ display:none; }
-/* v15.9.3 — the universal Add FAB sits at bottom:88px (right side).
-   The FAB's "add something" purpose doesn't really apply on Journal
-   anyway (Save now lives in the toolbar, Export/PDF/Word cover the
-   rest), so it's simplest to just hide it for the whole time you're on
-   Journal, not only while typing. */
+/* v15.10.1 — the entire "journal-focus" hide-on-keyboard-open scheme
+   (header/nav/motivation-card disappearing, textarea jumping to 58vh)
+   is removed. Each of v15.6.0 through v15.9.7 patched a fresh symptom
+   of the same root problem: toggling several elements' display and a
+   vh-based height the instant the keyboard opens is a race against
+   Safari's own keyboard-open viewport animation, and losing that race
+   (even briefly) is exactly what produces a "half the page, cut off,
+   with the photo card caught mid-transition" frame — matching the
+   latest report. A plain page that never rehides or resizes itself on
+   focus can't show that frame: header, nav, and the motivation card
+   now stay put the same as on every other screen, and the diary page
+   is simply part of the normal scrollable flow underneath them. */
 body.journal-focus .fab{ display:none; }
-body.journal-focus.kb-open #screen-journal{
-  /* .screen's default padding reserves 96px at the bottom for the now-
-     hidden nav/FAB, and a flat 14px at the top for the now-hidden
-     header's safe-area handling — both reclaimed here so the diary page
-     sits close to the real edges of the screen instead of leaving that
-     space empty. */
-  padding:calc(14px + var(--safe-t)) 16px calc(16px + var(--safe-b));
-}
+
 @media (max-width:360px){
   header.top{ padding-left:14px; padding-right:14px; }
   .hclock-svg{ width:22px; height:22px; }
@@ -925,8 +886,15 @@ body{ background:var(--bg-gradient); }
 /* v14.1.0 — ruled lines via a repeating gradient sized to line-height, so
    lines fall exactly under the text baseline; background-attachment:local
    makes them scroll with the content instead of staying fixed under it. */
+/* v15.10.1 — the kb-open-only 58vh bump is gone along with the rest of
+   the journal-focus hide/resize scheme above: the textarea keeps one
+   constant min-height (bumped slightly from 42vh to 46vh so writing
+   still gets a comfortably tall box) whether or not the keyboard is
+   up, so nothing about its size changes at the exact moment focus/blur
+   fires — one less thing that can race the keyboard animation and
+   render a half-updated frame. */
 #journalText.diary-textarea{
-  width:100%; min-height:42vh; background:
+  width:100%; min-height:46vh; background:
     repeating-linear-gradient(to bottom, transparent, transparent 27px, var(--diary-line) 28px);
   background-attachment:local;
   border:none; border-radius:8px; padding:6px 10px 16px 8px;
@@ -939,12 +907,6 @@ body{ background:var(--bg-gradient); }
      height out rather than clipping. */
   max-height:none;
 }
-/* v15.8.0 — now scoped to kb-open too (see the journal-focus rule
-   above): the big textarea only grows to 58vh once the keyboard is
-   actually up and the header/nav have actually made room for it.
-   Browsing Journal with nothing focused keeps the normal 42vh — no more
-   giant empty box greeting you before you've typed anything. */
-body.journal-focus.kb-open #journalText.diary-textarea{ min-height:58vh; }
 /* v15.9.5 — the old fixed bottom "Save entry"/"Print" bar (#journalSaveRow,
    previously here through several fix attempts across v15.9.0–v15.9.3)
    was removed at the user's request — it sat awkwardly over the bottom
@@ -2698,7 +2660,7 @@ function wireAiSuggestButton(btnId, panelId, onGo){
   });
 }
 
-const APP_VERSION = 'v15.10.0'; // single source of truth for About screen & Settings row
+const APP_VERSION = 'v15.10.1'; // single source of truth for About screen & Settings row
 // v15.5.0 — Finance/Reports Calendar & Journal Customization upgrade:
 // (1) Finance gained a real Day/Month/Year period selector with ‹›/jump
 //     navigation through history (previously it only ever showed a fixed
@@ -8880,14 +8842,11 @@ function goToScreen(name, opts){
   document.body.classList.remove('kb-open');
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   target.classList.add('active');
-  // v15.8.0 — Journal gets a distraction-free "focus" layout, but now
-  // only once the keyboard actually opens (body.kb-open) — not just for
-  // being on the screen at all. journal-focus itself still just marks
-  // "on Journal"; the CSS rules that actually hide the header/nav and
-  // grow the textarea require .journal-focus.kb-open together (see
-  // .diary-textarea/body.journal-focus CSS). Toggled (not just added) so
-  // leaving Journal for any other screen restores the normal chrome
-  // immediately, with no separate cleanup path needed.
+  // v15.10.1 — the header/nav/motivation-card hiding and textarea
+  // resize that used to depend on this class are gone (see the CSS
+  // near .diary-page). The only thing journal-focus still does is hide
+  // the FAB while on Journal (body.journal-focus .fab), so this toggle
+  // stays but no longer changes anything keyboard-related.
   document.body.classList.toggle('journal-focus', name==='journal');
   try{ localStorage.setItem('gpl_lastScreen', name); }catch(e){} // v12.3 — see init()'s restore logic
   if(!opts.fromPopstate){
@@ -10067,15 +10026,16 @@ function setupKeyboardHandling(){
       // v15.9.6 — real bug: t.scrollIntoView({block:'center'}) was used
       // for every field including #journalText. Centering makes sense
       // for a short input elsewhere in the app, but the journal textarea
-      // grows to min-height:58vh the moment the keyboard opens (see
-      // body.journal-focus.kb-open #journalText.diary-textarea) — so
-      // "centering" it lands the viewport somewhere in the middle of
-      // that tall box, showing blank ruled lines with no date heading or
-      // toolbar in sight ("opens to the middle of the page"). For the
-      // journal specifically, scroll its screen container to the top
-      // instead: the toolbar/date heading sit directly above the
-      // textarea, so top:0 already puts the cursor in view along with
-      // them, with nothing to scroll past.
+      // is a tall box (see #journalText.diary-textarea) — so "centering"
+      // it lands the viewport somewhere in the middle of that tall box,
+      // showing blank ruled lines with no date heading or toolbar in
+      // sight ("opens to the middle of the page"). For the journal
+      // specifically, scroll its screen container to the top instead:
+      // the toolbar/date heading sit directly above the textarea, so
+      // top:0 already puts the cursor in view along with them, with
+      // nothing to scroll past. (v15.10.1: this no longer races a
+      // header/nav/height change — those stay fixed now — so this is
+      // just a plain scroll, nothing more.)
       if(t.id === 'journalText'){
         setTimeout(()=>{ document.getElementById('screen-journal')?.scrollTo({top:0, behavior:'smooth'}); }, 320);
       } else {

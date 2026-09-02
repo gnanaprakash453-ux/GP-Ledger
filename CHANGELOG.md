@@ -1,4 +1,32 @@
-# Changelog — v15.10.0 (Journal — the diary page can no longer clip itself: it now grows to fit all its content instead of cropping it partway down) → history below
+# Changelog — v15.10.1 (Journal — removed the keyboard-triggered hide/resize scheme entirely; header, nav, motivation card, and the diary page now stay put and just scroll) → history below
+
+## v15.10.1
+
+**Journal — still cutting off mid-page after v15.10.0's overflow fix.**
+v15.10.0 fixed `.diary-page` clipping its own content, but the page
+still visibly cut off partway down whenever the keyboard opened. The
+actual remaining cause was the "journal-focus" scheme from v15.6.0
+onward: the instant a field on this screen gains focus, `kb-open` gets
+added and CSS reacts by hiding the header, the bottom nav, and the
+motivational photo card, *and* growing the textarea to `min-height:58vh`
+— four layout changes firing at the same moment the keyboard itself is
+sliding up. Each of v15.6.0, v15.8.0, and v15.9.7 fixed one fresh
+symptom of that same race, but the underlying race was never removed —
+and losing it, even for a frame or two, is exactly what a "half the
+page, cut off, with the photo card caught mid-transition" screenshot
+looks like.
+
+This version removes the race instead of patching its next symptom:
+header, bottom nav, and the motivation card no longer hide themselves
+on focus — they now behave the same on Journal as on every other
+screen, always present. The textarea keeps one constant height
+(`min-height:46vh`, up slightly from 42vh) instead of jumping to 58vh
+on focus. Nothing about the diary page's size or the surrounding
+chrome's visibility changes at the moment the keyboard opens or closes
+— the `.screen` container's native scrolling is the only thing doing
+work, which is what makes "the complete page, reachable by scrolling"
+actually reliable. The photo card, handwriting, colors, toolbar, and
+Save/Export buttons are all unchanged.
 
 ## v15.10.0
 

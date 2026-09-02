@@ -74,25 +74,35 @@ h1,h2,h3,h4{ font-family:var(--font-head); font-weight:var(--font-weight-head); 
 .mono{ font-family:var(--font-mono); }
 ::-webkit-scrollbar{ display:none; }
 
-/* v14.4.8 — real bug: #app's height was pinned to the JS-measured
-   --vvh at ALL times, not just while the keyboard is open (which is the
-   only scenario --vvh actually exists for — see setVH() and the v14.0.0
-   note below on kb-open). Native `100dvh` already tracks Safari's
-   bottom URL-bar chrome expanding/collapsing in real time, continuously,
-   with zero JS involved — that's exactly what dvh units are for. Pinning
-   #app to a JS snapshot instead meant it could lag one event behind
-   Safari's actual chrome state (a resize/scroll event has to fire and be
-   handled before --vvh catches up), and during that lag #app renders
-   shorter than the true viewport — showing a strip of the page's own
-   background between the bottom nav and Safari's toolbar, exactly like
-   the "grey bar at the bottom" report, worst right after a fresh load or
-   navigation before the first visualViewport event has fired at all.
-   Now #app just uses native 100dvh normally (always correct, no lag) and
-   only switches to the JS-measured --vvh while body.kb-open is set —
-   the one case dvh genuinely can't handle on iOS (the on-screen keyboard
-   covering part of the viewport without a matching viewport resize). */
-#app{ height:100%; height:100dvh; display:flex; flex-direction:column; max-width:560px; margin:0 auto; position:relative; background:var(--bg-gradient); }
-body.kb-open #app{ height:var(--vvh, 100dvh); }
+/* v14.4.8 — real bug (superseded by v15.10.4 below): #app's height was
+   pinned to the JS-measured --vvh at ALL times. Native `100dvh` already
+   tracks Safari's bottom URL-bar chrome expanding/collapsing in real
+   time, continuously, with zero JS involved. Pinning #app to a JS
+   snapshot instead meant it could lag one event behind Safari's actual
+   chrome state (a resize/scroll event has to fire and be handled before
+   --vvh catches up), and during that lag #app renders shorter than the
+   true viewport — showing a strip of the page's own background between
+   the bottom nav and Safari's toolbar. The fix at the time was to use
+   native 100dvh normally and only switch to the JS-measured --vvh while
+   body.kb-open is set.
+   v15.10.4 — real bug: that gate is itself a race, and a worse one. It
+   depends on the SAME focusin handler that starts the keyboard's own
+   open animation also having (a) added the kb-open class and (b) had
+   setVH() run an updated --vvh, all before the browser paints — miss
+   that window on a given device/keyboard-animation speed and #app keeps
+   rendering at full (pre-keyboard) height for a beat, which is exactly
+   what the "opens the keyboard and it blocks/covers the editor" reports
+   describe: content that should have moved up above the keyboard
+   didn't, because #app hadn't shrunk yet. An older, simpler build of
+   this app (kept as a reference alongside this file) applied --vvh
+   unconditionally, with 100dvh only as the pre-JS fallback, and never
+   had this problem — so that's restored here. The one-frame chrome-
+   collapse flash the v14.4.8 gate traded it away to avoid is a strictly
+   smaller, cosmetic issue than a keyboard permanently covering the
+   editor, and --vvh only ever differs from dvh right after a real
+   visualViewport resize/scroll event fires, so it tracks Safari's
+   chrome too, just one JS tick behind instead of natively instant. */
+#app{ height:100%; height:100dvh; height:var(--vvh, 100dvh); display:flex; flex-direction:column; max-width:560px; margin:0 auto; position:relative; background:var(--bg-gradient); }
 
 /* ============ HEADER ============ */
 /* v13.13.0 — two-row header. Row 1 is the greeting alone (full width, never
@@ -2674,7 +2684,7 @@ function wireAiSuggestButton(btnId, panelId, onGo){
   });
 }
 
-const APP_VERSION = 'v15.10.3'; // single source of truth for About screen & Settings row
+const APP_VERSION = 'v15.10.4'; // single source of truth for About screen & Settings row
 // v15.5.0 — Finance/Reports Calendar & Journal Customization upgrade:
 // (1) Finance gained a real Day/Month/Year period selector with ‹›/jump
 //     navigation through history (previously it only ever showed a fixed

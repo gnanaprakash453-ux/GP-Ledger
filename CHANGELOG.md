@@ -1,4 +1,33 @@
-# Changelog — v15.10.3 (Journal — editor still cut off/blocked by the keyboard: fixed the scroll destination itself) → history below
+# Changelog — v15.10.4 (App shell — #app now always tracks the real visual viewport, not just while kb-open; this is what was still letting the keyboard cover the editor) → history below
+
+## v15.10.4
+
+**Journal — keyboard still blocking/covering the editor after v15.10.3.**
+v15.10.3 fixed *where* the app scrolled to on focus, but the keyboard
+was still covering that destination on some devices. Root cause: `#app`
+only shrinks to the real, keyboard-shrunk viewport height (`--vvh`)
+while `body.kb-open` is set — and that class is added by the very same
+focusin handler that also has to add it before the keyboard's own open
+animation finishes and the browser paints. Miss that timing on a given
+device/keyboard speed and `#app` keeps its full pre-keyboard height for
+a beat — content that should have moved up to clear the keyboard
+doesn't, and the keyboard simply sits on top of the editor. Confirmed
+against an older build of this app (predating the diary redesign) that
+never had this problem: it applied `--vvh` unconditionally rather than
+gating it behind a class, with `100dvh` only as the fallback before the
+first measurement lands.
+
+Fix: `#app` now does the same — `height:var(--vvh, 100dvh)` applies at
+all times, not just while `kb-open`. This trades away the one thing the
+v14.4.8 gate was protecting against (a one-frame flash if Safari's own
+URL-bar chrome collapses at the exact same instant — `--vvh` is one JS
+tick behind native `dvh` for that single frame) in exchange for the
+keyboard never being able to outrace the layout again. `body.kb-open`
+itself is unchanged and still drives everything else that was already
+working (hiding the bottom nav/FAB, repositioning the back button,
+Journal's extra keyboard scroll-room padding).
+
+---
 
 ## v15.10.3
 

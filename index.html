@@ -198,22 +198,19 @@ main{ flex:1; overflow:hidden; position:relative; }
    only: exactly one layer is ever promoted, everything else stays a normal
    (cheap) paint layer. */
 .screen.active{ display:block; transform:translateZ(0); will-change:scroll-position; }
-/* v15.10.2 — real bug, reported as only happening in the installed
-   home-screen app, never in a plain Safari tab: standalone iOS PWAs
-   are documented to NOT reliably shrink `visualViewport`/`100dvh` when
-   the on-screen keyboard opens the way an ordinary Safari tab does —
-   the keyboard just overlays the bottom of a viewport the browser still
-   thinks is full-height. Nothing here was resizing to make room, so the
-   keyboard silently covered whatever was scrolled to the bottom of the
-   screen (the diary textarea) with no extra scroll room to pull it back
-   into view above the keyboard — exactly "cuts off, can't see the edit
-   window", "locked" in the sense that scrolling had nowhere further to
-   go. This adds a generous fixed buffer of extra scroll room at the
-   bottom of the Journal screen specifically while a field on it is
-   focused, sized to comfortably clear a full-height keyboard — so
-   there's always somewhere for the browser to scroll the textarea *to*,
-   independent of whether the OS ever reports the keyboard's height. */
+/* v15.10.2 — real bug: the on-screen keyboard can cover the bottom of
+   the screen (the diary textarea) without the page layout ever getting
+   shorter in a way the browser reacts to, on both Safari and the
+   installed home-screen app — so there was nothing for the browser to
+   scroll the textarea *to* that would clear the keyboard, reading as
+   "cuts off, can't see the edit window" / a "locked" page with nowhere
+   further to scroll. This adds a generous fixed buffer of extra scroll
+   room at the bottom of the Journal screen specifically while a field
+   on it is focused, sized to comfortably clear a full-height keyboard —
+   independent of whether/when the browser ever reports the keyboard's
+   real height. */
 body.kb-open #screen-journal{ padding-bottom:min(60vh, 420px); }
+
 
 /* ============ v12.0.3: sticky back button — was scrolling away with
    content, forcing a scroll-to-top just to leave a screen ============ */
@@ -10053,17 +10050,16 @@ function setupKeyboardHandling(){
       // nothing to scroll past. (v15.10.1: this no longer races a
       // header/nav/height change — those stay fixed now — so this is
       // just a plain scroll, nothing more.)
-      // v15.10.2 — separate from the container scroll above: standalone
-      // iOS PWAs (installed via "Add to Home Screen") have a documented
-      // quirk where the OS can scroll the outer <html>/<body> itself to
-      // bring a focused field into view, even though body{overflow:
-      // hidden} here means it has nothing of its own to scroll. The
-      // result reads as the whole app visually shifted/offset —
-      // reported as the screen "locking" — and it happens one level
-      // above #screen-journal, so the container scroll above can't fix
-      // it on its own. Forcing the real window scroll position back to
-      // (0,0) undoes that outer shift; harmless to call even on
-      // platforms/tabs where nothing actually needs it.
+      // v15.10.2 — separate from the container scroll above: mobile
+      // WebKit (Safari and the installed home-screen app alike) can
+      // scroll the outer <html>/<body> itself to bring a focused field
+      // into view, even though body{overflow:hidden} here means it has
+      // nothing of its own to scroll. The result reads as the whole app
+      // visually shifted/offset — reported as the screen "locking" —
+      // and it happens one level above #screen-journal, so the
+      // container scroll above can't fix it on its own. Forcing the
+      // real window scroll position back to (0,0) undoes that outer
+      // shift; harmless to call even when nothing actually needs it.
       if(t.id === 'journalText'){
         setTimeout(()=>{
           document.getElementById('screen-journal')?.scrollTo({top:0, behavior:'smooth'});

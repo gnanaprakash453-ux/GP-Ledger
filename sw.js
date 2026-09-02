@@ -332,7 +332,19 @@
 // Backup/Load from Sheet/Import Backup. index.html changed, so bump so
 // installed copies actually receive this instead of serving a cached
 // v15.10.6 with the old broken editor.
-const CACHE_NAME = 'gp-ledger-v16-0-0';
+// v16.0.1: the new entry-composer modal (v16.0.0) still had Save at the
+// bottom, below the PDF/Word/Delete buttons — needed a scroll to reach
+// on a real phone. Save (💾) moved up into the toolbar, next to the
+// font/color pickers, so it's reachable without scrolling. index.html
+// changed, so bump so installed copies actually receive this.
+// v16.1.0: photo-card fixes (fixed the dead "Habits" disable toggle, added
+// a "Home" toggle, widened photo keyword diversity, added a load
+// timeout+retry), consolidated Photo card settings into one place, weight
+// quick-log moved into Diet (unified with Health vitals history), and a
+// WhatsApp-style formatting toolbar (Bold/Italic/Strike/Mono) added to
+// Journal + Notes. index.html changed, so bump so installed copies
+// actually receive this.
+const CACHE_NAME = 'gp-ledger-v16-1-0';
 const IMG_CACHE_NAME = 'gp-ledger-images-v1';
 const CORE_ASSETS = [
   './index.html',

@@ -518,6 +518,10 @@ picked either before, you've been switched to Botanical automatically.
    activity level and goal (fat loss / maintain / muscle gain), then
    **Save body stats**. The Diet tab uses these to show a personal daily
    calorie and macro target.
+   - **Weight (v16.1.0+):** don't retype it here every time — use the
+     **⚖️ Weight → Log weight** card at the top of the Diet tab instead.
+     It keeps a real dated history (feeds a Weight goal automatically if
+     you set one up — see §8) and updates this Settings field for you.
 2. **More → Diet → + Log meal**: enter a meal manually (name + calories/
    protein/carbs/fat/fiber), or attach/take a photo first.
 3. **Optional — photo-based estimates:** get a free API key at
@@ -567,6 +571,16 @@ picked either before, you've been switched to Botanical automatically.
   button at the top to get back, all the time.
 - **🔍 Search** (header icon, every screen) — see section 9.
 - **About** (bottom of Settings) shows the app version, the logo, and credit.
+- **Photo cards (v16.1.0+)** — one place now: **Settings → Appearance →
+  Photo cards**. A master **Show photo cards** switch turns every photo
+  card off app-wide; below it, **Turn off per section** lets you disable
+  just specific ones (Home, Habits, Finance, Diet, etc.) while leaving the
+  rest on.
+- **Formatting in Journal & Notes (v16.1.0+)** — a small **B / I / S / </>**
+  toolbar above the entry box: select some text and tap one to wrap it in
+  WhatsApp-style markers (`*bold*`, `_italic_`, `~strike~`, `` ```mono``` ``).
+  Tap the same selection again to undo. Renders as real formatting in the
+  Notes list; still shown as plain text in Journal's list preview.
 
 ## 19. Troubleshooting checklist
 - **Habits not showing on first open** — the app seeds default habits (Drink Water, Read, Walk, No Junk, Sleep) before the very first render, and re-seeds automatically if local storage ever comes back empty or corrupted.

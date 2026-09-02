@@ -1,3 +1,92 @@
+# Changelog — v16.1.0 (Photo card fixes + full on/off control, weight moved into Diet, WhatsApp-style formatting for Journal & Notes) → history below
+
+## v16.1.0
+
+**Three requested fixes, bundled together.**
+
+**1. Photo card loading — slow, sometimes blank, sometimes repeats.**
+Root-caused both loading complaints:
+- *Repeats*: most modules only had 2-3 distinct photo keyword slugs shared
+  across 8-9 different quotes, so different quotes/days kept landing on the
+  same small handful of actual photos (loremflickr's search pool for a
+  narrow 2-word query is small). `photoUrl()` now auto-appends one more
+  qualifier word (bright/closeup/minimal/vivid/cozy/morning/wide/soft
+  light), picked from the seed, to every request — multiplies the distinct
+  photo pool without touching any of the existing quote/keyword data.
+- *Sometimes not loading*: loremflickr proxies a live search per request
+  with no timeout — a stuck request never fired `onload` or `onerror`, so
+  the card just sat on its fallback gradient forever, and reopening the
+  screen re-requested the exact same stuck URL. `setPhotoCardBg()` now
+  gives any attempt 7s, then retries once with a cache-busted variant
+  before giving up quietly (same "never show a broken card" behavior as
+  before, just with an actual second chance first).
+
+**2. Photo cards — full on/off control, in Settings.**
+Found a real bug while doing this: Settings already *listed* a "Habits"
+toggle in the per-module photo-card list, but nothing in the code ever
+checked it — toggling it did nothing. Home's dashboard card had no toggle
+at all. Fixed both, and consolidated the three previously scattered,
+inconsistently-worded settings (a mislabeled "Motivational empty-state
+cards" switch that actually already controlled the always-on cards, a
+separate "Empty-state photos" per-module list with the same wrong
+description, and a rotation-only "Photo cards" section with no on/off of
+its own) into one clear group under Settings → Appearance → Photo cards:
+- A single master "Show photo cards" switch — off kills every photo card
+  app-wide in one go.
+- A "Turn off per section" list covering every module, now including Home
+  and Habits. Home only drops the photo (its focus ring/stats aren't
+  decoration, so they stay); every other section removes its whole
+  quote+photo card, same as before.
+- Toggling the master switch or Home/Habits now updates the screen
+  immediately if it's open, instead of only on next visit.
+
+**3. Weight — moved from a hard-to-find spot into Diet, and now tracked.**
+Weight used to live in two disconnected places: a single static field in
+Settings → Diet & body stats (just fed BMI/calorie math, no history), and
+buried inside Health → Vitals mixed in with BP/Sugar (the one that
+actually had history, and that Weight goals quietly read from). Added a
+proper "⚖️ Weight" card at the top of the Diet tab — shows your latest
+logged weight and date, with a one-tap "Log weight" that writes to *both*
+places at once (`S.health.vitals` for real history/goal-tracking, and
+`S.diet.settings.weight` so BMI/calorie targets always use the latest
+number without a separate edit). Settings → Diet & body stats still has
+the manual field for a quick correction, and now shows whichever is
+actually most recent.
+
+**Bonus: WhatsApp-style formatting for Journal & Notes.**
+Added a small toolbar (Bold / Italic / Strikethrough / Monospace) above
+both the Journal entry composer and the Notes editor — tap to wrap the
+selected text in WhatsApp's own markdown syntax (`*bold*`, `_italic_`,
+`~strike~`, `` ```mono``` ``), tap again on the same selection to undo it.
+Deliberately kept as a plain textarea + toolbar rather than a full
+rich-text rebuild, to avoid reopening the exact caret-tracking bugs the
+v16.0.0 Journal rebuild just finished fixing — this is the same thing
+WhatsApp's own compose box does (raw markers while typing). The saved
+formatting now actually renders (bold/italic/strikethrough/monospace) in
+the Notes list, where the full note body is shown; Journal's list only
+ever showed a one-line truncated preview and is unchanged there.
+
+apps-script.gs untouched (SCRIPT_VERSION stays at v10.2.0) — nothing here
+changes what gets synced or how; weight already flows through the
+existing Diet/Health sync payloads. `APP_VERSION`/`sw.js` cache bumped to
+v16.1.0.
+
+---
+
+## v16.0.1
+
+**Journal — the new entry-composer modal (v16.0.0) put "Save entry" at
+the very bottom, below PDF/Word export and Delete — needed a scroll to
+reach on a real phone.**
+
+Moved Save (💾) up into the toolbar, right next to the font and color
+pickers, using the same compact icon-button style as the diary
+nav/customize buttons — so it's reachable the instant the modal opens,
+same as before the rebuild. Nothing about what Save does changed, only
+where it sits.
+
+---
+
 # Changelog — v16.0.0 (Journal rebuilt — composing now uses the standard bottom-sheet modal instead of an inline textarea) → history below
 
 ## v16.0.0

@@ -916,6 +916,11 @@ body{ background:var(--bg-gradient); }
   font-size:16px; line-height:28px; resize:vertical; overflow-y:auto; color:var(--diary-ink);
 }
 .journal-datebar{ display:flex; align-items:center; gap:8px; margin-bottom:12px; }
+/* v16.1.0 — shared format toolbar (Journal + Notes). Small, thumb-sized
+   buttons so it doesn't compete for space above a textarea on mobile. */
+.fmt-toolbar{ display:flex; gap:6px; margin:8px 0; }
+.fmt-toolbar button{ width:36px; height:32px; border-radius:8px; border:1px solid var(--line); background:var(--card2); color:var(--text); font-size:14px; display:flex; align-items:center; justify-content:center; }
+.fmt-toolbar button:active{ background:var(--accent); color:#fff; border-color:var(--accent); }
 .journal-datebar input[type=date]{ flex:1; }
 .journal-navbtn{ width:38px; height:38px; border-radius:11px; border:1px solid var(--line); background:var(--card2); flex-shrink:0; }
 .journal-hasentry{ width:8px; height:8px; border-radius:50%; background:var(--good); display:inline-block; margin-left:6px; }
@@ -1912,6 +1917,23 @@ nav.bottom, .fab{ transition:transform .18s ease; }
       </div>
       <div id="dietMotivationCard"></div>
       <div class="card" id="dietTargetsCard"></div>
+      <!-- v16.1.0 — weight used to only live in Settings → Diet & body
+           stats (a single static number, no history) or buried inside
+           Health → Vitals mixed in with BP/Sugar — hard to find and
+           didn't track over time. Moved a proper, trackable "log it"
+           entry point here where it's actually relevant, unified with
+           the same Health vitals history the Weight goal already reads
+           from — see logDietWeight() / latestWeightEntry(). -->
+      <div class="card" id="dietWeightCard" style="margin-bottom:12px;">
+        <div class="settings-row" style="padding:0;">
+          <div class="sr-label">⚖️ Weight<div class="sr-sub" id="dietWeightSub">Not logged yet</div></div>
+          <button class="link-btn" id="dietLogWeightBtn">Log weight</button>
+        </div>
+        <div id="dietWeightInputWrap" style="display:none; margin-top:10px;">
+          <input type="number" id="dietWeightInput" placeholder="kg" step="0.1">
+          <div class="btn-row" style="margin-top:8px;"><button class="btn primary" id="dietSaveWeightBtn">Save</button><button class="btn secondary" id="dietCancelWeightBtn">Cancel</button></div>
+        </div>
+      </div>
       <button class="btn secondary" id="openDietPlanBtn" style="margin-bottom:12px;">🩺 View my diet plan</button>
       <div class="seg" id="dietPeriod">
         <button data-p="day" class="active">Day</button>
@@ -2320,7 +2342,6 @@ nav.bottom, .fab{ transition:transform .18s ease; }
         <div class="settings-list">
           <div class="settings-row"><div class="sr-label">Auto-minimize other habits<div class="sr-sub">Expanding one habit collapses the rest, and tapping outside closes it</div></div><button class="switch" id="setAutoCollapse"></button></div>
           <div class="settings-row"><div class="sr-label">Show Undo on toasts<div class="sr-sub">Turn off if you find the Undo button distracting</div></div><button class="switch" id="setShowUndo"></button></div>
-          <div class="settings-row"><div class="sr-label">Motivational empty-state cards<div class="sr-sub">Photo + quote card when Habits, Routine, Diet, or Finance have nothing logged yet — rotates daily at midnight</div></div><button class="switch" id="setEmptyMotivation"></button></div>
         </div>
       </div>
 
@@ -2394,14 +2415,19 @@ nav.bottom, .fab{ transition:transform .18s ease; }
       <div class="settings-group" data-cat="photos">
         <h3>Photo cards</h3>
         <div class="settings-list">
-          <div class="hint" style="padding:14px 16px 0;">The photo behind Today's Focus, the habit quote card, and every module's motivation card (Finance, Routine, Diet, Goals, etc). These always show, on every screen, by default — this section controls how often the picture behind them changes. The quote text itself has its own rotation below.</div>
-          <div class="settings-row"><div class="sr-label">Rotate automatically<div class="sr-sub">Change every photo card on a schedule, even while you're looking at one</div></div><button class="switch" id="setBgAuto"></button></div>
+          <div class="hint" style="padding:14px 16px 0;">The photo behind Today's Focus, the habit quote card, and every module's motivation card (Finance, Routine, Diet, Goals, etc). These show, on every screen, by default.</div>
+          <div class="settings-row"><div class="sr-label">Show photo cards<div class="sr-sub">Master switch — off turns every photo card off across the whole app in one go</div></div><button class="switch" id="setEmptyMotivation"></button></div>
+          <div id="photoCardSubSettings">
+          <div class="settings-row" style="border-top:1px solid var(--line);"><div class="sr-label">Rotate automatically<div class="sr-sub">Change every photo card on a schedule, even while you're looking at one</div></div><button class="switch" id="setBgAuto"></button></div>
           <div style="padding:0 16px 14px;">
             <label class="fl">Rotate every</label>
             <select id="setBgInterval"><option value="0">Every app open</option><option value="15">15 minutes</option><option value="30">30 minutes</option><option value="60">1 hour</option><option value="180">3 hours</option><option value="1440">Once a day</option><option value="custom">Custom…</option></select>
             <input type="number" id="setBgIntervalCustom" min="1" max="10080" placeholder="Minutes (e.g. 45)" style="display:none; margin-top:8px;">
             <div class="btn-row" style="margin-top:12px;"><button class="btn secondary" id="shuffleBgBtn">🔀 Change now</button></div>
             <div class="hint">"Change now" instantly swaps every photo card currently on screen — not just the wallpaper below, and not just next time you open a screen. Random curated photos each time. If you're genuinely offline the new photos just won't load and your cards keep their current look — nothing breaks.</div>
+          </div>
+          <div class="settings-row" style="border-top:1px solid var(--line);"><div class="sr-label">Turn off per section<div class="sr-sub">Leave the master switch on above, but skip specific sections below. "Home" only drops the photo — your focus card, ring and stats stay; every other section below removes its whole quote+photo card.</div></div></div>
+          <div id="motivationModuleList"></div>
           </div>
         </div>
       </div>
@@ -2442,14 +2468,6 @@ nav.bottom, .fab{ transition:transform .18s ease; }
         <div class="settings-list">
           <div class="settings-row"><div class="sr-label">Show or hide sections<div class="sr-sub">Off = removed from Home, bottom bar and More. Handy for sharing a lighter version of the app.</div></div></div>
           <div id="moduleToggleList"></div>
-        </div>
-      </div>
-
-      <div class="settings-group" data-cat="modules">
-        <h3>Empty-state photos</h3>
-        <div class="settings-list">
-          <div class="settings-row"><div class="sr-label">Motivational photo + quote cards<div class="sr-sub">Shown when a module has nothing logged yet. Turn off per-module below, or all at once in General.</div></div></div>
-          <div id="motivationModuleList"></div>
         </div>
       </div>
 
@@ -2509,6 +2527,7 @@ nav.bottom, .fab{ transition:transform .18s ease; }
           <div style="padding:0 16px 14px;">
             <label class="fl">Height (cm)</label><input type="number" id="setHeight" placeholder="170">
             <label class="fl">Weight (kg)</label><input type="number" id="setWeight" placeholder="70">
+            <div class="hint">Tip: log weight with a history from the Diet tab itself (⚖️ Weight → Log weight) — it updates this field automatically.</div>
             <label class="fl">Age</label><input type="number" id="setAge" placeholder="30">
             <label class="fl">Sex (for calorie calc)</label>
             <select id="setSex"><option value="male">Male</option><option value="female">Female</option></select>
@@ -2654,7 +2673,7 @@ function wireAiSuggestButton(btnId, panelId, onGo){
   });
 }
 
-const APP_VERSION = 'v16.0.0'; // single source of truth for About screen & Settings row
+const APP_VERSION = 'v16.1.0'; // single source of truth for About screen & Settings row
 // v15.5.0 — Finance/Reports Calendar & Journal Customization upgrade:
 // (1) Finance gained a real Day/Month/Year period selector with ‹›/jump
 //     navigation through history (previously it only ever showed a fixed
@@ -3706,13 +3725,26 @@ const CATEGORY_KEYWORDS = {
   journal:'diary,journal', goals:'target,achievement', habits:'routine,morning',
   debts:'finance,budget'
 };
+/* v16.1.0 — real duplicate-image bug found: most modules only had 2-3
+   distinct `img` keyword slugs shared across 8-9 different quotes (e.g.
+   Diet cycled between just 'fresh-healthy-meal-bowl' and
+   'colorful-fruit-vegetables'). A 2-word flickr search only has a small
+   photo pool, so many different `lock` values land on the very same
+   actual photo regardless of which quote/day it's for — that's why the
+   same picture kept reappearing. Rather than hand-edit every quote's img
+   slug, this appends one more auto-picked qualifier word (varies by seed,
+   not by keyword) to widen the effective search on every single call —
+   multiplies the distinct photo pools without touching MOTIVATION_CARDS. */
+const PHOTO_QUALIFIERS = ['bright','closeup','soft light','minimal','vivid','cozy','morning','wide'];
 function photoUrl(seed, w, h, keywords){
   w = w||700; h = h||500;
   let hash = 0;
   const s = String(seed||'gpledger');
   for(let i=0;i<s.length;i++){ hash = (hash*31 + s.charCodeAt(i)) & 0xffffffff; }
   const lock = Math.abs(hash) % 100000;
-  const kw = keywords ? '/'+keywords.split(',').map(encodeURIComponent).join(',') : '';
+  const qualifier = PHOTO_QUALIFIERS[Math.abs(hash>>3) % PHOTO_QUALIFIERS.length];
+  const allKw = (keywords ? keywords+',' : '') + qualifier;
+  const kw = '/'+allKw.split(',').map(t=>encodeURIComponent(t.trim())).join(',');
   return `https://loremflickr.com/${w}/${h}${kw}?lock=${lock}`;
 }
 /* v13.9.0 — Trash. Wired into the 7 modules built this session (Tasks,
@@ -4209,15 +4241,82 @@ function scheduleQuoteRotation(){
    as possible in init) so a card whose photo is already warm applies it
    immediately with zero flash. */
 const __warmImgUrls = new Set();
+/* v16.1.0 — real bug: loremflickr proxies a live Flickr search per
+   request (no CDN, no guaranteed response time), so a slow/stuck request
+   never fired onload OR onerror — the Image object just sat there
+   forever, the card stayed on its fallback gradient with no visible
+   retry, and reopening the same screen re-requested the exact same
+   (still-stuck) URL. Now: give any single attempt 7s; if neither event
+   fires by then, treat it as failed and retry ONCE with a cache-busted
+   variant of the same URL (same seed/lock so it's still "this card's
+   photo", just a fresh request instead of whatever got stuck). Give up
+   quietly after that, same as before — never leaves a broken/blank card. */
 function setPhotoCardBg(el, url, darken){
   if(!el || !url) return;
   darken = darken || 'linear-gradient(180deg, rgba(0,0,0,.08), rgba(0,0,0,.7))';
   const apply = ()=>{ el.style.backgroundImage = `${darken}, url('${url}')`; };
   if(__warmImgUrls.has(url)){ apply(); return; }
-  const img = new Image();
-  img.onload = ()=>{ __warmImgUrls.add(url); apply(); };
-  img.onerror = ()=>{ /* leave the CSS default in place — never show a broken/blank card */ };
-  img.src = url;
+  const attempt = (attemptUrl, isRetry)=>{
+    let done = false;
+    const img = new Image();
+    const timer = setTimeout(()=>{
+      if(done) return; done = true;
+      if(!isRetry){ attempt(attemptUrl + (attemptUrl.includes('?')?'&':'?') + 'retry=1', true); }
+      // second attempt timing out too: leave the CSS default gradient in place, no error state to show
+    }, 7000);
+    img.onload = ()=>{ if(done) return; done = true; clearTimeout(timer); __warmImgUrls.add(url); apply(); };
+    img.onerror = ()=>{
+      if(done) return; done = true; clearTimeout(timer);
+      if(!isRetry){ attempt(attemptUrl + (attemptUrl.includes('?')?'&':'?') + 'retry=1', true); }
+    };
+    img.src = attemptUrl;
+  };
+  attempt(url, false);
+}
+/* v16.1.0 — lightweight WhatsApp-style formatting for Journal & Notes.
+   Deliberately NOT a rich-text/contenteditable rebuild (real risk of
+   reintroducing the exact caret-tracking bugs the v16.0.0 Journal rebuild
+   just finished stamping out — see the comment on .diary-textarea-modal).
+   Instead: plain textarea + a small toolbar that wraps the selection in
+   WhatsApp's own markdown syntax (*bold*, _italic_, ~strike~, ```mono```)
+   — same as how WhatsApp's own compose box behaves (raw markers while
+   typing) — and a renderer that turns those markers into real styling
+   wherever the saved text is shown in full (currently: the Notes list;
+   Journal's list only ever showed a truncated one-line preview, unchanged). */
+function wrapSelection(ta, marker){
+  const start = ta.selectionStart, end = ta.selectionEnd;
+  const val = ta.value;
+  const selected = val.slice(start, end);
+  const before = val.slice(0, start), after = val.slice(end);
+  let newVal, newStart, newEnd;
+  if(selected && selected.startsWith(marker) && selected.endsWith(marker) && selected.length >= marker.length*2){
+    // already wrapped — toggle off
+    const inner = selected.slice(marker.length, selected.length-marker.length);
+    newVal = before+inner+after; newStart = start; newEnd = start+inner.length;
+  } else if(selected){
+    newVal = before+marker+selected+marker+after; newStart = start+marker.length; newEnd = end+marker.length;
+  } else {
+    newVal = before+marker+marker+after; newStart = newEnd = start+marker.length;
+  }
+  ta.value = newVal;
+  ta.focus();
+  ta.setSelectionRange(newStart, newEnd);
+  ta.dispatchEvent(new Event('input', {bubbles:true}));
+}
+function attachFormatToolbar(toolbarId, textareaId){
+  const bar = document.getElementById(toolbarId), ta = document.getElementById(textareaId);
+  if(!bar || !ta) return;
+  bar.querySelectorAll('[data-fmt]').forEach(btn=>{
+    btn.addEventListener('click', (e)=>{ e.preventDefault(); wrapSelection(ta, btn.dataset.fmt); });
+  });
+}
+function renderWhatsappFormatting(str){
+  let s = String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  s = s.replace(/```([^`\n]+?)```/g, '<code>$1</code>');
+  s = s.replace(/(^|[\s(])\*([^*\n]+)\*(?=[\s).,!?]|$)/g, '$1<b>$2</b>');
+  s = s.replace(/(^|[\s(])_([^_\n]+)_(?=[\s).,!?]|$)/g, '$1<i>$2</i>');
+  s = s.replace(/(^|[\s(])~([^~\n]+)~(?=[\s).,!?]|$)/g, '$1<s>$2</s>');
+  return s.replace(/\n/g,'<br>');
 }
 const MOTIVATION_CARDS = {
   habits: [
@@ -5305,6 +5404,15 @@ function renderQuote(){
   if(s2) s2.textContent = text;
   const qCard = document.getElementById('habitQuoteCard');
   if(qCard){
+    // v16.1.0 — real bug: 'habits' was already listed in the Settings
+    // per-section photo-card list (MOTIVATION_MODULE_LABELS) but nothing
+    // ever checked it here, so toggling "Habits" off had zero visible
+    // effect. Wired up now, same master+per-module check every other
+    // module's card already used via motivationCardHtml().
+    const photoOff = (S.settings && S.settings.emptyStateMotivation===false) ||
+      (S.settings && (S.settings.motivationDisabledModules||[]).includes('habits'));
+    qCard.style.display = photoOff ? 'none' : '';
+    if(photoOff) return;
     // v13.4.0 — seed keyed on the actual displayed quote's index, not just
     // today's date, so shuffling the daily quote also changes the photo
     // (previously the photo was date-only and never moved on shuffle).
@@ -7742,10 +7850,16 @@ function openJournalEntryModal(ds, entryId){
         <option value="Special Elite">Vintage Typewriter</option>
       </select>
       <input type="color" id="journalEntryColor" value="${color}">
+      <button class="journal-navbtn" id="journalEntrySave" title="${entry?'Save changes':'Save entry'}">💾</button>
+    </div>
+    <div class="fmt-toolbar" id="journalFmtToolbar">
+      <button type="button" data-fmt="*" title="Bold"><b>B</b></button>
+      <button type="button" data-fmt="_" title="Italic"><i>I</i></button>
+      <button type="button" data-fmt="~" title="Strikethrough"><s>S</s></button>
+      <button type="button" data-fmt="\`\`\`" title="Monospace">&lt;/&gt;</button>
     </div>
     <textarea id="journalEntryText" class="diary-textarea-modal" placeholder="Dear diary…" style="font-family:${journalFontStack(font)}; color:${journalInkColor(color)};">${entry?(entry.text||''):''}</textarea>
     <div class="hint" style="margin:8px 0 4px;">${entry?`Last edited ${new Date(entry.updated||entry.created).toLocaleString()}`:`Writing a new entry for ${fmtDiaryDate(ds)}.`}</div>
-    <button class="btn primary" id="journalEntrySave" style="margin-top:10px;">Save entry</button>
     <div class="btn-row" style="margin-top:10px;">
       <button class="btn secondary" id="journalEntryPdf">⬇ PDF</button>
       <button class="btn secondary" id="journalEntryWord">⬇ Word</button>
@@ -7754,6 +7868,7 @@ function openJournalEntryModal(ds, entryId){
   `);
   document.getElementById('modalBody').classList.add('page-turn-modal');
   const ta = document.getElementById('journalEntryText');
+  attachFormatToolbar('journalFmtToolbar', 'journalEntryText');
   document.getElementById('journalEntryFont').value = font;
   document.getElementById('journalEntryFont').addEventListener('change', (e)=>{ ta.style.fontFamily = journalFontStack(e.target.value); });
   document.getElementById('journalEntryColor').addEventListener('input', (e)=>{ ta.style.color = journalInkColor(e.target.value); });
@@ -8075,8 +8190,39 @@ function dietMealsInPeriod(){
   dates.forEach(ds=> (S.diet.meals[ds]||[]).forEach(m=> out.push({...m, date:ds})));
   return out;
 }
+/* v16.1.0 — single source of truth for "what's my latest weight",
+   shared by Diet's BMI/calorie calc, the Weight goal (goalProgressCalc),
+   and this new quick-log card — previously two disconnected numbers
+   (S.diet.settings.weight, a static one-off field; and S.health.vitals
+   weight-by-date, the actual tracked history the Weight goal already
+   used) that never updated each other. */
+function latestWeightEntry(){
+  const dates = Object.keys(S.health.vitals||{}).sort();
+  for(let i=dates.length-1;i>=0;i--){
+    const v = S.health.vitals[dates[i]];
+    if(v && v.weight) return { value:Number(v.weight), date:dates[i] };
+  }
+  const legacy = S.diet.settings && S.diet.settings.weight;
+  return legacy ? { value:Number(legacy), date:null } : null;
+}
+function logWeightKg(val){
+  const today = todayStr();
+  const existing = S.health.vitals[today] || {};
+  S.health.vitals[today] = { ...existing, weight:String(val), updated:new Date().toISOString() };
+  S.diet.settings = S.diet.settings || {};
+  S.diet.settings.weight = String(val); // keeps BMI/calorie targets current without a separate edit
+  saveState();
+}
+function renderDietWeightCard(){
+  const sub = document.getElementById('dietWeightSub'); if(!sub) return;
+  const latest = latestWeightEntry();
+  sub.textContent = latest ? `${latest.value} kg${latest.date ? (latest.date===todayStr() ? ' · today' : ' · '+latest.date) : ''}` : 'Not logged yet';
+  const input = document.getElementById('dietWeightInput');
+  if(input && document.getElementById('dietWeightInputWrap').style.display==='none' && latest) input.value = latest.value;
+}
 function renderDiet(){
   renderTopMotivation('diet','dietMotivationCard');
+  renderDietWeightCard();
   const t = dietTargets();
   const targetsCard = document.getElementById('dietTargetsCard');
   const todayMeals = S.diet.meals[todayStr()]||[];
@@ -8624,6 +8770,33 @@ document.getElementById('dietGoalModeSeg').querySelectorAll('button').forEach(bt
     document.getElementById('manualCaloriesRow').style.display = btn.dataset.mode==='manual' ? 'block' : 'none';
   });
 });
+document.getElementById('dietLogWeightBtn').addEventListener('click', ()=>{
+  const wrap = document.getElementById('dietWeightInputWrap');
+  const opening = wrap.style.display==='none';
+  wrap.style.display = opening ? 'block' : 'none';
+  if(opening){
+    const latest = latestWeightEntry();
+    const input = document.getElementById('dietWeightInput');
+    input.value = latest ? latest.value : '';
+    input.focus();
+  }
+});
+document.getElementById('dietCancelWeightBtn').addEventListener('click', ()=>{
+  document.getElementById('dietWeightInputWrap').style.display = 'none';
+});
+document.getElementById('dietSaveWeightBtn').addEventListener('click', ()=>{
+  const val = Number(document.getElementById('dietWeightInput').value);
+  if(!val || val<=0){ showToast('Enter a valid weight', '⚠️'); return; }
+  logWeightKg(val);
+  document.getElementById('dietWeightInputWrap').style.display = 'none';
+  renderDietWeightCard();
+  renderDiet(); // refreshes targets/BMI card too, since weight feeds it
+  // keep Settings → Diet & body stats in sync if it happens to be open/reopened next
+  const setW = document.getElementById('setWeight'); if(setW) setW.value = val;
+  // a Weight goal (if any) reads straight from S.health.vitals, so just re-render Goals if that screen's warm
+  if(typeof renderGoals==='function' && document.getElementById('screen-goals') && document.getElementById('screen-goals').classList.contains('active')) renderGoals();
+  showToast('Weight logged', '⚖️');
+});
 document.getElementById('saveDietSettingsBtn').addEventListener('click', ()=>{
   S.diet.settings = {
     height: document.getElementById('setHeight').value, weight: document.getElementById('setWeight').value,
@@ -9154,6 +9327,7 @@ function loadSettingsForm(){
   document.getElementById('glassIntensityLabel').textContent = ((st.glassIntensity!==undefined) ? st.glassIntensity : 60)+'%';
   document.getElementById('setShowUndo').classList.toggle('on', st.showUndo!==false);
   document.getElementById('setEmptyMotivation').classList.toggle('on', st.emptyStateMotivation!==false);
+  { const sub = document.getElementById('photoCardSubSettings'); if(sub) sub.style.opacity = (st.emptyStateMotivation!==false) ? '1' : '.45'; }
   document.getElementById('setAutoSync').classList.toggle('on', !!st.autoSync);
   document.getElementById('setSheetUrl').value = st.sheetUrl||'';
   document.getElementById('setSheetId').value = st.sheetId||'';
@@ -9161,6 +9335,9 @@ function loadSettingsForm(){
   const ds = S.diet.settings;
   document.getElementById('setHeight').value = ds.height||'';
   document.getElementById('setWeight').value = ds.weight||'';
+  // v16.1.0 — prefer the actual latest logged weight (from Diet quick-log
+  // or Health vitals) over the possibly-stale static field, if newer.
+  { const lw = (typeof latestWeightEntry==='function') ? latestWeightEntry() : null; if(lw) document.getElementById('setWeight').value = lw.value; }
   document.getElementById('setAge').value = ds.age||'';
   document.getElementById('setSex').value = ds.sex||'male';
   document.getElementById('setActivity').value = ds.activity||'1.375';
@@ -9411,7 +9588,7 @@ function drawModuleToggleList(){
    independent of the General on/off switch and independent of whether the
    module itself is enabled (see MOTIVATION_CARDS for the exact key list). */
 const MOTIVATION_MODULE_LABELS = {
-  habits:'✅ Habits', routine:'⏱️ Routine', diet:'🥗 Diet', finance:'💰 Finance',
+  home:'🏠 Home (photo only)', habits:'✅ Habits', routine:'⏱️ Routine', diet:'🥗 Diet', finance:'💰 Finance',
   debts:'🏦 Debts / EMI', subscriptions:'🔁 Subscriptions', assets:'🏛️ Assets & Net Worth',
   documents:'🗂️ Documents Vault', goals:'🎯 Goals', health:'💊 Health', journal:'📔 Journal', tasks:'📝 Tasks',
   notes:'🗒️ Notes', travel:'✈️ Travel', learning:'📚 Learning', content:'💡 Content & Ideas', mealplanner:'🍽️ Meal Planner', people:'👥 People',
@@ -9432,6 +9609,10 @@ function drawMotivationModuleList(){
       if(idx>=0){ S.settings.motivationDisabledModules.splice(idx,1); this.classList.add('on'); }
       else { S.settings.motivationDisabledModules.push(key); this.classList.remove('on'); }
       saveState();
+      // v16.1.0 — Home/Habits live outside renderTopMotivation, so refresh
+      // them directly; other modules already re-render next time you open
+      // that screen (unchanged from before).
+      if(key==='home' || key==='habits'){ renderQuote(); renderDashboard(); }
     });
   });
 }
@@ -9514,7 +9695,14 @@ document.getElementById('setGlassIntensity').addEventListener('input', function(
 });
 document.getElementById('setEmptyMotivation').addEventListener('click', function(){
   S.settings.emptyStateMotivation = S.settings.emptyStateMotivation===false ? true : false;
-  this.classList.toggle('on', S.settings.emptyStateMotivation!==false); saveState();
+  const on = S.settings.emptyStateMotivation!==false;
+  this.classList.toggle('on', on);
+  const sub = document.getElementById('photoCardSubSettings'); if(sub) sub.style.opacity = on ? '1' : '.45';
+  saveState();
+  // v16.1.0 — reflect immediately on whichever screens are visible/warm,
+  // not just next time they're opened.
+  renderQuote(); renderDashboard();
+  if(document.getElementById('screen-diet').classList.contains('active')) renderDiet();
 });
 document.getElementById('setAutoSync').addEventListener('click', function(){
   S.settings.autoSync = !S.settings.autoSync; this.classList.toggle('on', S.settings.autoSync); saveState();
@@ -10778,11 +10966,22 @@ function renderDashboard(){
   // v14.4.7 — each Home tab now gets a photo matching its actual topic
   // instead of an arbitrary-but-consistent one (health→fitness, etc).
   const HERO_KEYWORDS = { focus:'motivation,sunrise', health:'fitness,wellness', productivity:'desk,work', finance:'money,savings' };
-  setPhotoCardBg(
-    document.getElementById('heroFocusCard'),
-    photoUrl((S.settings.bgSeed||'gpledger')+'-hero-'+tab, 700, 500, HERO_KEYWORDS[tab]||HERO_KEYWORDS.focus),
-    'linear-gradient(180deg, rgba(0,0,0,.05), rgba(0,0,0,.68))'
-  ); // v12.2 — no-flash load; CSS default gradient shows instantly until the photo is ready (see .hero-focus-card)
+  // v16.1.0 — "Home" in the per-section photo-card list only drops the
+  // photo layer, not the whole card: this widget also carries the live
+  // focus ring + today's stats, not just decoration, so turning it off
+  // shouldn't remove real data — it just falls back to its normal
+  // themed gradient background, same as before photo cards existed.
+  const homePhotoOff = (S.settings && S.settings.emptyStateMotivation===false) ||
+    (S.settings && (S.settings.motivationDisabledModules||[]).includes('home'));
+  if(!homePhotoOff){
+    setPhotoCardBg(
+      document.getElementById('heroFocusCard'),
+      photoUrl((S.settings.bgSeed||'gpledger')+'-hero-'+tab, 700, 500, HERO_KEYWORDS[tab]||HERO_KEYWORDS.focus),
+      'linear-gradient(180deg, rgba(0,0,0,.05), rgba(0,0,0,.68))'
+    ); // v12.2 — no-flash load; CSS default gradient shows instantly until the photo is ready (see .hero-focus-card)
+  } else {
+    document.getElementById('heroFocusCard').style.backgroundImage = '';
+  }
   document.getElementById('pcStats').innerHTML = tabStats(tab).map(r=>
     `<div class="pc-stat-row"><span class="psr-lbl">${r.lbl}</span><span class="psr-val">${r.val}</span></div>`).join('');
 
@@ -11657,7 +11856,7 @@ function renderNotes(){
       <div class="notebook-holes"><span></span><span></span><span></span></div>
       <div class="notebook-content">
         <div class="note-title" style="font-family:'${n.font||S.settings.notesFont||'Lora'}',sans-serif;">${n.pinned?'📌 ':''}${n.title||'(untitled)'}</div>
-        <div class="note-body" style="font-family:'${n.font||S.settings.notesFont||'Lora'}',sans-serif;">${(n.content||'').replace(/</g,'&lt;')}</div>
+        <div class="note-body" style="font-family:'${n.font||S.settings.notesFont||'Lora'}',sans-serif;">${renderWhatsappFormatting(n.content||'')}</div>
         <div class="note-meta">${n.category?`<span class="tag-badge" style="background:${noteCategoryColor(n.category)}22;color:${noteCategoryColor(n.category)};">${n.category}</span>`:''}<span>${new Date(n.updatedAt||n.createdAt).toLocaleDateString(undefined,{month:'short',day:'numeric'})}</span></div>
       </div>
     </div>`).join('');
@@ -11672,7 +11871,14 @@ function openNoteModal(id){
   openModal(`
     <div class="modal-head"><h3>${n?'Edit':'Add'} note</h3><button class="modal-close" data-close>✕</button></div>
     <label class="fl" style="margin-top:0;">Title</label><input type="text" id="noteTitle" value="${n?(n.title||'').replace(/"/g,'&quot;'):''}" placeholder="e.g. Wifi password for the office">
-    <label class="fl">Note</label><textarea id="noteContent" class="notebook-textarea" rows="5" placeholder="Type it before you forget it…" style="font-family:'${noteFont}',sans-serif;">${n?(n.content||''):''}</textarea>
+    <label class="fl">Note</label>
+    <div class="fmt-toolbar" id="noteFmtToolbar">
+      <button type="button" data-fmt="*" title="Bold"><b>B</b></button>
+      <button type="button" data-fmt="_" title="Italic"><i>I</i></button>
+      <button type="button" data-fmt="~" title="Strikethrough"><s>S</s></button>
+      <button type="button" data-fmt="\`\`\`" title="Monospace">&lt;/&gt;</button>
+    </div>
+    <textarea id="noteContent" class="notebook-textarea" rows="5" placeholder="Type it before you forget it…" style="font-family:'${noteFont}',sans-serif;">${n?(n.content||''):''}</textarea>
     <label class="fl">Font for this note</label>
     <select id="noteFontSel">${NOTE_FONT_OPTIONS.map(f=>`<option value="${f}" ${noteFont===f?'selected':''}>${f}</option>`).join('')}</select>
     <label class="fl">Category</label>
@@ -11688,6 +11894,7 @@ function openNoteModal(id){
   // itself resets this class defensively so it never leaks into whatever
   // modal opens next.
   document.getElementById('modalBody').classList.add('page-turn-modal');
+  attachFormatToolbar('noteFmtToolbar', 'noteContent');
   document.getElementById('noteFontSel').addEventListener('change', (e)=>{
     document.getElementById('noteContent').style.fontFamily = `'${e.target.value}',sans-serif`;
   });

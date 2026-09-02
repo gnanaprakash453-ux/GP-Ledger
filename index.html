@@ -177,8 +177,13 @@ header.top{
    tight. Just having Journal open with nothing focused now looks like
    every other screen: header and nav both visible. */
 body.journal-focus.kb-open header.top,
-body.journal-focus.kb-open nav.bottom,
-body.journal-focus.kb-open .fab{ display:none; }
+body.journal-focus.kb-open nav.bottom{ display:none; }
+/* v15.9.3 — the universal Add FAB sits at bottom:88px (right side).
+   The FAB's "add something" purpose doesn't really apply on Journal
+   anyway (Save now lives in the toolbar, Export/PDF/Word cover the
+   rest), so it's simplest to just hide it for the whole time you're on
+   Journal, not only while typing. */
+body.journal-focus .fab{ display:none; }
 body.journal-focus.kb-open #screen-journal{
   /* .screen's default padding reserves 96px at the bottom for the now-
      hidden nav/FAB, and a flat 14px at the top for the now-hidden
@@ -908,20 +913,12 @@ body{ background:var(--bg-gradient); }
    Browsing Journal with nothing focused keeps the normal 42vh — no more
    giant empty box greeting you before you've typed anything. */
 body.journal-focus.kb-open #journalText.diary-textarea{ min-height:58vh; }
-/* v15.9.0 — real bug: "Save entry" was a normal-flow button below the
-   textarea, so reaching it meant scrolling past however tall the
-   textarea currently was — 42vh normally, 58vh while typing — plus
-   whatever the on-screen keyboard was covering. On a long entry, or
-   mid-typing with the keyboard up, it could end up scrolled well out of
-   reach ("not always accessible"). It's now a sticky bar pinned to the
-   bottom of the Journal scroll area — it clamps into view immediately
-   regardless of how far down its normal position would be, and stays
-   put as you scroll through the entries list below, so Save is always
-   one tap away no matter where you are on the page. */
-#journalSaveRow{
-  position:sticky; bottom:calc(8px + var(--safe-b)); z-index:5;
-  background:var(--bg2); margin:8px -4px 12px; padding:8px 4px 0;
-}
+/* v15.9.5 — the old fixed bottom "Save entry"/"Print" bar (#journalSaveRow,
+   previously here through several fix attempts across v15.9.0–v15.9.3)
+   was removed at the user's request — it sat awkwardly over the bottom
+   nav and duplicated the Save button now in the toolbar (see
+   #journalSaveBtnToolbar in the HTML/JS) and the PDF/Word export buttons
+   already below the editor. */
 .journal-datebar{ display:flex; align-items:center; gap:8px; margin-bottom:12px; }
 .journal-datebar input[type=date]{ flex:1; }
 .journal-navbtn{ width:38px; height:38px; border-radius:11px; border:1px solid var(--line); background:var(--card2); flex-shrink:0; }
@@ -1886,15 +1883,17 @@ nav.bottom, .fab{ transition:transform .18s ease; }
                transition), opened in its own modal rather than crowding
                this already-busy toolbar further. -->
           <button class="journal-navbtn" id="diaryCustomizeBtn" title="Customize diary">🎨</button>
+          <!-- v15.9.5 — Save now lives here in the toolbar, always visible
+               regardless of focus/keyboard state. The old fixed bottom
+               "Save entry"/"Print" bar was removed entirely (see the CSS
+               near .journal-datebar for why) since it duplicated this
+               button and overlapped the bottom nav. -->
+          <button class="link-btn" id="journalSaveBtnToolbar" title="Save entry">💾 Save</button>
           <button class="link-btn" id="journalExportAllBtn">Export whole diary</button>
         </div>
         <textarea id="journalText" class="diary-textarea" placeholder="Dear diary…"></textarea>
       </div>
       <div class="hint" id="journalMeta" style="margin:8px 0 12px;"></div>
-      <div class="btn-row" id="journalSaveRow">
-        <button class="btn primary" id="journalSaveBtn">Save entry</button>
-        <button class="btn secondary" id="journalPrintBtn">🖨 Print</button>
-      </div>
       <div class="btn-row" style="margin-top:8px;">
         <button class="btn secondary" id="journalPdfBtn">⬇ PDF (this entry)</button>
         <button class="btn secondary" id="journalWordBtn">⬇ Word (this entry)</button>
@@ -2664,7 +2663,7 @@ function wireAiSuggestButton(btnId, panelId, onGo){
   });
 }
 
-const APP_VERSION = 'v15.9.0'; // single source of truth for About screen & Settings row
+const APP_VERSION = 'v15.9.5'; // single source of truth for About screen & Settings row
 // v15.5.0 — Finance/Reports Calendar & Journal Customization upgrade:
 // (1) Finance gained a real Day/Month/Year period selector with ‹›/jump
 //     navigation through history (previously it only ever showed a fixed
@@ -7692,7 +7691,7 @@ function renderJournal(){
   document.getElementById('journalColor').value = editing?.color || '#3b2f2a';
   document.getElementById('journalText').style.fontFamily = journalFontStack(editing?.font || defaultJournalFont);
   document.getElementById('journalText').style.color = journalInkColor(editing?.color || '#3b2f2a');
-  document.getElementById('journalSaveBtn').textContent = editing ? 'Save changes' : 'Save entry';
+  document.getElementById('journalSaveBtnToolbar').innerHTML = editing ? '💾 Save changes' : '💾 Save';
   document.getElementById('journalNewEntryBtn').style.display = editing ? 'inline-block' : 'none';
   document.getElementById('journalMeta').textContent = editing
     ? `Editing entry from ${new Date(editing.created).toLocaleString()}`
@@ -7745,7 +7744,7 @@ function saveJournalEntry(){
   saveState(); renderJournal();
   showToast(`Saved to ${fmtDiaryDate(journalDate)}`, '📔');
 }
-document.getElementById('journalSaveBtn').addEventListener('click', saveJournalEntry);
+document.getElementById('journalSaveBtnToolbar').addEventListener('click', saveJournalEntry);
 /* v14.3.0 (revised) — now supports all 6 Page Transition modes (spec),
    not just Classic Page Turn. Each mode is a {leave, enter, leaveMs,
    enterMs} pair of CSS class names + durations; 'none' skips the whole
@@ -7865,33 +7864,6 @@ function drawDiaryPageNumber(doc, n){
   doc.setFont('times','italic'); doc.setFontSize(10); doc.setTextColor(120,90,50);
   doc.text(`~ ${n} ~`, w/2, h-16, { align:'center' });
 }
-document.getElementById('journalPrintBtn').addEventListener('click', ()=>{
-  const entry = { text: document.getElementById('journalText').value, font: document.getElementById('journalFont').value, color: document.getElementById('journalColor').value };
-  if(!entry.text.trim()){ alert('Nothing in the editor to print.'); return; }
-  // v14.1.0 — decorative diary page for print/PDF-via-browser: warm
-  // parchment background, faint ruled lines (sized to match line-height
-  // exactly, same trick as the live editor), a notebook margin rule, and
-  // an italic serif date heading with a small ornamental rule underneath.
-  // Pure CSS — prints instantly, no image asset to load.
-  const ink = journalInkColor(entry.color);
-  const dateStr = new Date(journalDate+'T00:00:00').toLocaleDateString(undefined,{weekday:'long', month:'long', day:'numeric', year:'numeric'});
-  const w = window.open('', '_blank');
-  w.document.write(`<html><head><title>${fmtDiaryDate(journalDate)}</title>
-    <style>
-      @page{ margin:0; }
-      body{ margin:0; padding:36px 34px 34px 50px; background:linear-gradient(160deg,#f8f0dc,#efe1bf);
-            font-family:${journalFontStack(entry.font)}; color:${ink}; }
-      .page{ position:relative; }
-      .page::before{ content:''; position:absolute; left:-22px; top:-6px; bottom:-6px; width:1px; background:rgba(178,58,58,.4); }
-      h2{ font-family:Georgia,serif; font-style:italic; font-size:24px; margin:0 0 4px; color:#3b2f2a; }
-      .rule{ width:80px; height:2px; background:#a9823a; margin-bottom:22px; border-radius:2px; }
-      .body{ white-space:pre-wrap; line-height:28px; font-size:17px;
-             background:repeating-linear-gradient(to bottom, transparent, transparent 27px, rgba(120,90,50,.16) 28px); }
-      @media print{ body{ -webkit-print-color-adjust:exact; print-color-adjust:exact; } }
-    </style></head>
-    <body><div class="page"><h2>${dateStr}</h2><div class="rule"></div><div class="body">${(entry.text||'').replace(/</g,'&lt;')}</div></div></body></html>`);
-  w.document.close(); w.focus(); w.print();
-});
 document.getElementById('journalPdfBtn').addEventListener('click', ()=>{
   const text = document.getElementById('journalText').value; if(!text.trim()){ alert('Nothing in the editor to export.'); return; }
   const { jsPDF } = window.jspdf; const doc = new jsPDF();

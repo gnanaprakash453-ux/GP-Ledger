@@ -1,4 +1,71 @@
-# Changelog — v15.9.0 ("Save entry" always reachable in Journal) → history below
+# Changelog — v15.9.5 (Journal — Save moved into the toolbar, old bottom Save/Print bar removed) → history below
+
+## v15.9.5
+
+**Journal — added an always-visible Save button in the toolbar, then
+removed the old fixed bottom Save/Print bar entirely.**
+Previously the only way to save an entry was the fixed `#journalSaveRow`
+bar at the bottom of the screen, which only appeared while the textarea
+itself was focused (`body.journal-focus`) — tap away to change the font,
+ink color, or date and the Save action vanished with it. Added a Save
+button directly in the toolbar, right next to "Export whole diary", so
+it's always reachable regardless of focus state (wired to the same
+`saveJournalEntry()`).
+
+Once that toolbar button existed, the old bottom bar (`#journalSaveRow`
+— "Save entry" + "Print") was redundant and, per feedback, sitting
+awkwardly over the bottom nav — so it was removed outright, along with
+its dedicated `position:fixed` CSS, the FAB-hiding workaround it
+needed, and the extra bottom padding `#screen-journal` was carrying to
+clear it. "Save changes" vs "Save" label switching (edit vs new entry)
+now happens on the toolbar button instead. The "Print" action itself
+was dropped — PDF/Word export for the current entry already exists
+just below the editor and covers the same need.
+
+## v15.9.3
+
+**Journal — real bug: Save/Print was silently broken by its own container.**
+v15.9.2 made Save/Print `position:fixed`, but it was still living inside
+`#screen-journal`, and `.screen.active` carries `transform:translateZ(0)`
+(a scroll-perf hint). Any ancestor with a transform becomes the
+containing block for `position:fixed` descendants — so the bar was never
+actually anchored to the real viewport at all, it was anchored to the
+screen's own scrolling, clipped box, which broke both its position and,
+on some platforms, its tappability entirely: "can't save the journal
+entries now." Save/Print is now a sibling of the bottom nav and FAB at
+the app-shell level — same pattern, no transformed ancestor in the way —
+shown only while Journal is the active screen. Also hid the universal
+Add FAB while on Journal: it was sitting in the same vertical band as
+the new Save/Print bar and overlapping it.
+
+## v15.9.2
+
+**Journal — "Save entry"/"Print" is now truly fixed, not sticky.**
+v15.9.0/v15.9.1's sticky bar had a fundamental problem: `position:sticky`
+only pins an element once scrolling would carry it past a threshold — if
+the diary content above it is shorter than the screen (a fresh or short
+entry), the bar just renders at its normal in-flow position instead,
+which can land anywhere in the middle of the screen with empty space
+below it. Reported as "the button is stuck in the middle of the screen."
+Save/Print now uses `position:fixed`, the same proven pattern already
+used by the bottom nav and FAB — always in the same place at the true
+bottom of the screen, completely independent of entry length or scroll
+position. Journal's bottom padding is widened to match, so the entries
+list and other buttons below never get hidden underneath it.
+
+## v15.9.1
+
+**Journal — sticky "Save entry" bar no longer clashes with the nav.**
+v15.9.0's sticky save bar had two rough edges: it used the card-tint
+background color instead of the real page background (a visible color
+seam against the surrounding screen), and it wasn't full-bleed like
+every other sticky element in the app, so it read as a floating patch
+rather than an intentional toolbar. Worse, its bottom offset put it
+directly on top of the bottom nav whenever the nav was visible (i.e.
+whenever not actively typing) — the two were overlapping in the same
+strip of screen. Now: true page background, edge-to-edge, a top border
+for a clean boundary, and it sits just above the nav by default, only
+dropping to hug the true bottom edge once typing actually hides the nav.
 
 ## v15.9.0
 

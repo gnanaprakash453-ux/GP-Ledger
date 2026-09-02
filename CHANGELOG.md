@@ -1,4 +1,30 @@
-# Changelog — v15.10.2 (Journal — extra keyboard scroll-room buffer plus an outer-scroll correction, applied everywhere kb-open fires, not just one platform) → history below
+# Changelog — v15.10.3 (Journal — editor still cut off/blocked by the keyboard: fixed the scroll destination itself) → history below
+
+## v15.10.3
+
+**Journal — editor still cut off / half-blocked by the keyboard, even after v15.10.2.**
+Real bug, finally isolated: when the journal textarea is focused, the
+code scrolled `#screen-journal` to `top:0` on the assumption that the
+diary page (date heading + toolbar + textarea) sits right at the top
+of that container. It doesn't — `#journalMotivationCard` (the hero
+photo/quote card) renders above it. So `top:0` was surfacing the photo
+card instead, pushing the toolbar, date heading, and the textarea
+itself down past the bottom of the now keyboard-shrunk viewport — with
+no further scroll ever offered, since the code believed it had already
+arrived. That's exactly the reported symptom: the editor visible only
+as far as the date heading, then blocked/cut off by the keyboard, with
+no way to scroll further to reach the actual writing area.
+
+Fix: scroll to `#diaryPage`'s own measured offset instead of a
+hardcoded `0`. This lands the toolbar (Save + Customize included),
+date heading, and textarea at the top of the screen together — same
+intent as the original v15.9.6 fix, just measured rather than assumed,
+so it stays correct regardless of how much (or little) renders above
+the diary page. Nothing else about the editor changed — same paper
+page, same fonts/colors, same Save/Customize/export controls, same
+scrollable `.screen` — only the destination of the auto-scroll.
+
+---
 
 ## v15.10.2
 

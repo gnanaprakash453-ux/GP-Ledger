@@ -2674,7 +2674,7 @@ function wireAiSuggestButton(btnId, panelId, onGo){
   });
 }
 
-const APP_VERSION = 'v15.10.2'; // single source of truth for About screen & Settings row
+const APP_VERSION = 'v15.10.3'; // single source of truth for About screen & Settings row
 // v15.5.0 — Finance/Reports Calendar & Journal Customization upgrade:
 // (1) Finance gained a real Day/Month/Year period selector with ‹›/jump
 //     navigation through history (previously it only ever showed a fixed
@@ -10044,10 +10044,8 @@ function setupKeyboardHandling(){
       // it lands the viewport somewhere in the middle of that tall box,
       // showing blank ruled lines with no date heading or toolbar in
       // sight ("opens to the middle of the page"). For the journal
-      // specifically, scroll its screen container to the top instead:
-      // the toolbar/date heading sit directly above the textarea, so
-      // top:0 already puts the cursor in view along with them, with
-      // nothing to scroll past. (v15.10.1: this no longer races a
+      // specifically, scroll its screen container instead of centering
+      // the textarea itself. (v15.10.1: this no longer races a
       // header/nav/height change — those stay fixed now — so this is
       // just a plain scroll, nothing more.)
       // v15.10.2 — separate from the container scroll above: mobile
@@ -10060,11 +10058,28 @@ function setupKeyboardHandling(){
       // container scroll above can't fix it on its own. Forcing the
       // real window scroll position back to (0,0) undoes that outer
       // shift; harmless to call even when nothing actually needs it.
+      // v15.10.3 — real bug: the v15.9.6 fix above scrolled the
+      // container to top:0, which assumed the diary page (toolbar +
+      // date heading + textarea) sat right at the top of #screen-journal.
+      // It doesn't — #journalMotivationCard (the hero photo/quote card)
+      // renders above it — so top:0 was surfacing the photo card instead,
+      // pushing the toolbar and textarea themselves down past the bottom
+      // of the now keyboard-shrunk viewport, with no further scroll ever
+      // offered (the fix believed it was already "there"). That reads as
+      // the editor being permanently cut off / half-blocked behind the
+      // keyboard — exactly the reported bug. Scrolling to #diaryPage's
+      // own measured offset instead lands the toolbar + date heading +
+      // textarea at the top together — same intent as the original fix,
+      // just measured rather than assumed, so it's correct regardless of
+      // how much (or little) sits above the diary page.
       if(t.id === 'journalText'){
-        setTimeout(()=>{
-          document.getElementById('screen-journal')?.scrollTo({top:0, behavior:'smooth'});
+        const scrollDiaryIntoView = ()=>{
+          const sj = document.getElementById('screen-journal');
+          const dp = document.getElementById('diaryPage');
+          if(sj && dp) sj.scrollTo({ top: Math.max(dp.offsetTop - 8, 0), behavior:'smooth' });
           window.scrollTo(0,0);
-        }, 320);
+        };
+        setTimeout(scrollDiaryIntoView, 320);
         // v15.10.2 — the keyboard's own open animation can still be
         // running past 320ms on some devices, and iOS can re-apply its
         // outer-document shift once that animation finishes — after
@@ -10072,7 +10087,7 @@ function setupKeyboardHandling(){
         // later correction catches that case without adding any visible
         // extra motion when it wasn't needed (scrolling to where it
         // already is is a no-op).
-        setTimeout(()=>{ window.scrollTo(0,0); }, 650);
+        setTimeout(scrollDiaryIntoView, 650);
       } else {
         setTimeout(()=>{ try{ t.scrollIntoView({ block:'center', behavior:'smooth' }); }catch(err){} }, 320);
       }

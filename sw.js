@@ -299,13 +299,15 @@
 // time instead of hand-typed, so it can't go stale again. index.html
 // changed, so bump so installed copies actually receive this instead of
 // serving a cached v15.3.0.
-// v15.10.2: Journal — editor was getting cut off/stuck by the on-screen
-// keyboard in BOTH Safari and the installed home-screen app (not just
-// standalone PWA mode as first suspected). index.html changed (extra
-// keyboard scroll-room buffer + an outer-scroll correction — see
-// CHANGELOG.md), so bump so installed copies actually receive this
-// instead of serving a cached v15.9.7.
-const CACHE_NAME = 'gp-ledger-v15-10-2';
+// v15.10.4: App shell — #app now tracks the real visible viewport
+// (--vvh) at ALL times instead of only once body.kb-open gets added on
+// focus. That gate was itself a race against the keyboard's own open
+// animation: miss it on a given device and #app keeps its full,
+// pre-keyboard height for a beat while the keyboard slides up over the
+// editor — reported as "opens the keyboard and it blocks the view".
+// index.html changed, so bump so installed copies actually receive this
+// instead of serving a cached v15.10.3 that still has the old gate.
+const CACHE_NAME = 'gp-ledger-v15-10-4';
 const IMG_CACHE_NAME = 'gp-ledger-images-v1';
 const CORE_ASSETS = [
   './index.html',

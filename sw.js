@@ -307,7 +307,15 @@
 // editor — reported as "opens the keyboard and it blocks the view".
 // index.html changed, so bump so installed copies actually receive this
 // instead of serving a cached v15.10.3 that still has the old gate.
-const CACHE_NAME = 'gp-ledger-v15-10-4';
+// v15.10.5: apps-script.gs's Journal sheet-tab writer fixed (real bug —
+// it read each date's entry array as a single entry object, so every
+// row's Entry/Font/Color/Last Updated came out blank; see CHANGELOG.md).
+// index.html's APP_SCRIPT_VERSION check bumped to match. apps-script.gs
+// must be redeployed separately (Deploy → Manage deployments → New
+// version) for the fix to actually take effect server-side. index.html
+// also changed, so bump so installed copies actually receive this
+// instead of serving a cached v15.10.4.
+const CACHE_NAME = 'gp-ledger-v15-10-5';
 const IMG_CACHE_NAME = 'gp-ledger-images-v1';
 const CORE_ASSETS = [
   './index.html',

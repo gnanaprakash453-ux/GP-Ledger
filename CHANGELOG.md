@@ -1,4 +1,39 @@
-# Changelog — v15.10.4 (App shell — #app now always tracks the real visual viewport, not just while kb-open; this is what was still letting the keyboard cover the editor) → history below
+# Changelog — v15.10.5 (apps-script.gs — Journal sheet tab was writing blank rows for every entry; fixed) → history below
+
+## v15.10.5
+
+**Journal — the `Journal` tab in your Google Sheet has been writing
+blank rows since multi-entries-per-day shipped.**
+Requested as part of a "rebuild the Journal module" ask — inspected the
+full module first (data model, storage, backup/sync, everything that
+reads `S.journal`) rather than rewriting blind. The actual architecture
+turned out sound: stable per-entry IDs, one canonical
+`buildBackupSnapshot_()`/`restoreBackupSnapshot_()` pair already used
+everywhere (Save & Sync, Export Backup, Load from Sheet, Import
+Backup), a working migration for the old pre-array shape. No rebuild
+needed there.
+
+One real bug did turn up, in `apps-script.gs`'s Journal tab writer —
+separate from the `Data` tab that actually backs "Load from Sheet"/
+"Import Backup". It read `journal[ds]` (an *array* of entries, since
+index.html v12.0.7) as if it were a single entry object
+(`entry.text`/`.font`/`.color`/`.updated`) and wrote one row per DATE.
+Since a plain array has none of those properties, every field but the
+date came out blank — the tab has looked empty/broken since multi-
+entry days shipped, even though nothing was actually lost (the `Data`
+tab's full JSON snapshot was never affected).
+
+Fixed: now iterates each date's entry array and writes one row **per
+entry**, including the entry's own stable id, `created`, and `updated`
+timestamps so a Sheet row can be matched back to its exact entry. Also
+tolerates the older single-entry-per-date shape defensively, same as
+the client's own `normalizeJournal()`.
+
+`apps-script.gs` must be redeployed (Deploy → Manage deployments → ✏️
+→ New version → Deploy) for this to take effect — the version check in
+Settings will flag a mismatch until then.
+
+---
 
 ## v15.10.4
 

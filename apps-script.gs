@@ -119,7 +119,7 @@ const SS = SpreadsheetApp.getActiveSpreadsheet();
 // Bump this every time you paste updated code, so the app's "Test connection"
 // and sync-failure messages can tell you when a deployment is stale (i.e. you
 // edited/pasted new code but forgot Deploy > Manage deployments > New version).
-const SCRIPT_VERSION = 'v10.1.0';
+const SCRIPT_VERSION = 'v10.2.0'; // v10.2.0 — Journal sheet-tab writer fixed: it was reading each date's entry array as if it were a single entry object, so the Entry/Font/Color/Last Updated columns were always blank. Now writes one row per entry (with the entry's own id/created/updated). This tab is a human-readable mirror only — Load from Sheet/Import Backup always used the separate Data tab's full JSON snapshot, so no data was ever lost, just misrepresented here.
 
 // v10.0.0 — checkReminders() gained a Tasks due-today check. Tasks has had
 // dueDate/dueTime fields since it shipped, and the client's own
@@ -373,17 +373,41 @@ function handleSync(body) {
   writeSheet(debtsSheet, debtRows);
   rows.debts = (body.debts || []).length;
 
-  // 8) Journal tab — one row per calendar date, written in chronological order
+  // 8) Journal tab — one row per entry (a date can hold multiple entries;
+  //    see S.journal in index.html), written in chronological order.
+  //    v-next — real bug fixed: this used to read journal[ds] as if it
+  //    were a single entry object (entry.text/.font/.color/.updated)
+  //    and write one row per DATE. Since v12.0.7 (index.html), journal[ds]
+  //    is actually an ARRAY of entries — multiple entries per day are
+  //    supported client-side and have been since. Reading array-as-object
+  //    meant entry.text etc. were always undefined here, so every row
+  //    this tab wrote came out blank ('') for Entry/Font/Color/Last
+  //    Updated — the tab looked broken/empty no matter how much was
+  //    actually journaled. This is a human-readable MIRROR only (Load
+  //    from Sheet / Import Backup both read the separate 'Data' tab's
+  //    full JSON snapshot, never this one), so no journal data was ever
+  //    actually lost — just misrepresented here. Now iterates each
+  //    date's entry array and writes one row per entry, carrying the
+  //    entry's own stable id/created timestamp along so a row can be
+  //    matched back to its entry unambiguously. Also tolerates the older
+  //    (pre-array) single-entry-per-date shape, same as the client's own
+  //    normalizeJournal(), in case an old cached payload ever reaches
+  //    here directly.
   const journalSheet = getOrCreateSheet('Journal');
-  const journalRows = [['Date', 'Entry', 'Font', 'Color', 'Last Updated']];
+  const journalRows = [['Date', 'Entry ID', 'Text', 'Font', 'Color', 'Created', 'Last Updated']];
   const journal = body.journal || {};
   const journalDates = Object.keys(journal).sort(); // ISO date keys sort chronologically
+  let journalEntryCount = 0;
   journalDates.forEach(ds => {
-    const entry = journal[ds];
-    journalRows.push([ds, entry.text || '', entry.font || '', entry.color || '', entry.updated || '']);
+    const raw = journal[ds];
+    const entries = Array.isArray(raw) ? raw : (raw && typeof raw === 'object' ? [raw] : []);
+    entries.forEach(entry => {
+      journalRows.push([ds, entry.id || '', entry.text || '', entry.font || '', entry.color || '', entry.created || '', entry.updated || '']);
+      journalEntryCount++;
+    });
   });
   writeSheet(journalSheet, journalRows);
-  rows.journal = journalDates.length;
+  rows.journal = journalEntryCount;
 
   // 9) Diet tab — one row per logged meal
   const dietSheet = getOrCreateSheet('Diet');

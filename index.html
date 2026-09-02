@@ -2684,7 +2684,7 @@ function wireAiSuggestButton(btnId, panelId, onGo){
   });
 }
 
-const APP_VERSION = 'v15.10.4'; // single source of truth for About screen & Settings row
+const APP_VERSION = 'v15.10.5'; // single source of truth for About screen & Settings row
 // v15.5.0 — Finance/Reports Calendar & Journal Customization upgrade:
 // (1) Finance gained a real Day/Month/Year period selector with ‹›/jump
 //     navigation through history (previously it only ever showed a fixed
@@ -9679,7 +9679,7 @@ document.getElementById('testTgBtn').addEventListener('click', async ()=>{
 });
 
 /* ---------- Google Sheets sync ---------- */
-const APP_SCRIPT_VERSION = 'v10.1.0'; // must match SCRIPT_VERSION at the top of apps-script.gs — v10.1.0 added the background Nudges mirror (see apps-script.gs checkNudges_())
+const APP_SCRIPT_VERSION = 'v10.2.0'; // must match SCRIPT_VERSION at the top of apps-script.gs — v10.2.0 fixed the Journal sheet-tab writer (see CHANGELOG.md)
 function debugLog(msg){
   const box = document.getElementById('syncDebug'); box.style.display='block';
   box.textContent = `[${new Date().toLocaleTimeString()}] ${msg}\n` + box.textContent;

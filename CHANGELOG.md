@@ -1,4 +1,35 @@
-# Changelog — v15.10.1 (Journal — removed the keyboard-triggered hide/resize scheme entirely; header, nav, motivation card, and the diary page now stay put and just scroll) → history below
+# Changelog — v15.10.2 (Journal — fixed the editor getting stuck/cut off specifically in the installed home-screen app, an iOS standalone-PWA keyboard quirk that doesn't happen in Safari) → history below
+
+## v15.10.2
+
+**Journal — editor still cut off, but only in the installed (home-screen)
+app, never in Safari.**
+That split — same code, different behavior by how it's opened — points
+at a specific, documented WebKit quirk: standalone iOS PWAs don't
+reliably shrink `visualViewport`/`100dvh` when the on-screen keyboard
+opens, the way an ordinary Safari tab does. The keyboard just overlays
+the bottom of a viewport the browser still thinks is full-height, so
+nothing in the layout was making room for it — whatever was scrolled to
+the bottom of the screen (the diary textarea) got covered with no extra
+scroll room to pull it back above the keyboard. Reported as the screen
+"locking": scrolling had nowhere further to go, because as far as the
+browser was concerned nothing had gotten shorter.
+
+Two fixes, both scoped to only apply while actually typing in Journal:
+1. **Extra scroll room.** `#screen-journal` now gets a large bottom
+   padding buffer (`min(60vh, 420px)`) whenever a field on it is
+   focused — enough that there's always somewhere for the browser to
+   scroll the textarea *to*, independent of whether iOS ever reports
+   the keyboard's real height.
+2. **Outer-scroll correction.** Standalone PWAs have a second, separate
+   quirk where iOS can scroll the outer `<html>`/`<body>` itself to
+   bring a focused field into view — even though this app's `body` has
+   `overflow:hidden` and nothing of its own to scroll — which reads as
+   the whole app visually shifted. `window.scrollTo(0,0)` is now called
+   twice after focusing the journal textarea (once at 320ms, once at
+   650ms, to also catch a keyboard animation that's still finishing) to
+   undo that shift if it happens; harmless on platforms where it never
+   does.
 
 ## v15.10.1
 

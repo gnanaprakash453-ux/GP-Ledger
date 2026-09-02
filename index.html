@@ -178,6 +178,18 @@ header.top{
    every other screen: header and nav both visible. */
 body.journal-focus.kb-open header.top,
 body.journal-focus.kb-open nav.bottom{ display:none; }
+/* v15.9.7 — real bug: even with header/nav/FAB hidden, the motivational
+   photo card at the top of the screen (#journalMotivationCard, ~160px
+   with its own photo strip) plus the date heading/datebar/toolbar above
+   the textarea left no room, above a half-screen keyboard, to actually
+   see where you type — the visible area cut off right at the toolbar,
+   with the textarea itself scrolled just out of view below the fold
+   ("doesn't show the bottom half"). The quote card is purely decorative
+   and irrelevant once you're actively writing, so it's hidden the same
+   way header/nav are — only while the keyboard is actually up — freeing
+   enough space that the toolbar and the start of the textarea are both
+   visible together above the keyboard. */
+body.journal-focus.kb-open #journalMotivationCard{ display:none; }
 /* v15.9.3 — the universal Add FAB sits at bottom:88px (right side).
    The FAB's "add something" purpose doesn't really apply on Journal
    anyway (Save now lives in the toolbar, Export/PDF/Word cover the
@@ -2666,7 +2678,7 @@ function wireAiSuggestButton(btnId, panelId, onGo){
   });
 }
 
-const APP_VERSION = 'v15.9.6'; // single source of truth for About screen & Settings row
+const APP_VERSION = 'v15.9.7'; // single source of truth for About screen & Settings row
 // v15.5.0 — Finance/Reports Calendar & Journal Customization upgrade:
 // (1) Finance gained a real Day/Month/Year period selector with ‹›/jump
 //     navigation through history (previously it only ever showed a fixed

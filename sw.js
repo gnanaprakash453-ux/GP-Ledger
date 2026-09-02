@@ -1,4 +1,13 @@
-// GP Ledger service worker — v15.9.6
+// GP Ledger service worker — v15.9.7
+// v15.9.7: Journal — the motivational quote card at the top of the
+// screen (~160px with its photo strip) is now hidden while the
+// keyboard is up (index.html CSS only, no new assets). Combined with
+// the already-hidden header/nav, this frees enough room that the
+// toolbar and the start of the writing area are both visible above the
+// keyboard, instead of the visible area cutting off right at the
+// toolbar with the actual textarea scrolled out of view below the
+// fold. Bump so installed copies pick up the new index.html instead of
+// serving the cached v15.9.6 copy indefinitely.
 // v15.9.6: Journal — three real bugs fixed (index.html only, no new
 // assets). (1) Tapping Edit on a past entry called window.scrollTo,
 // but body{overflow:hidden} means the window never scrolls in this app
@@ -290,7 +299,7 @@
 // time instead of hand-typed, so it can't go stale again. index.html
 // changed, so bump so installed copies actually receive this instead of
 // serving a cached v15.3.0.
-const CACHE_NAME = 'gp-ledger-v15-9-6';
+const CACHE_NAME = 'gp-ledger-v15-9-7';
 const IMG_CACHE_NAME = 'gp-ledger-images-v1';
 const CORE_ASSETS = [
   './index.html',

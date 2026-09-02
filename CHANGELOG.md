@@ -1,4 +1,20 @@
-# Changelog — v15.9.6 (Journal — mobile keyboard-open scroll fixed, Save button made compact) → history below
+# Changelog — v15.9.7 (Journal — motivational quote card now hides while typing, so the writing area is actually visible above the keyboard) → history below
+
+## v15.9.7
+
+**Journal — the bottom half (the actual writing area) wasn't visible
+above the keyboard on mobile.**
+v15.9.6 fixed the textarea's focus scroll to land at the top of the
+page instead of centering the tall keyboard-open textarea. But "the
+top of the page" on Journal still includes the motivational photo
+card (~160px, with its own photo strip) above the date heading,
+datebar, and toolbar — together tall enough that, above a half-screen
+keyboard, the visible area cut off right at the toolbar, with the
+textarea itself scrolled just out of view below the fold. That card is
+purely decorative and irrelevant while actively writing, so it's now
+hidden the same way the header/nav already are — only while the
+keyboard is up — freeing enough room that the toolbar and the start of
+the writing area are both visible together.
 
 ## v15.9.6
 

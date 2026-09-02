@@ -1,4 +1,64 @@
-# Changelog — v15.10.6 (Journal — keyboard was still hiding the toolbar/textarea after scrolling; fixed) → history below
+# Changelog — v16.0.0 (Journal rebuilt — composing now uses the standard bottom-sheet modal instead of an inline textarea) → history below
+
+## v16.0.0
+
+**Journal — full rebuild. Requested as "the current one is buggy/broken and hard to fix, rebuild it."**
+
+The old Journal put its entry textarea directly on the main scrollable
+screen: an unbounded, auto-growing `<textarea>` inside a tall decorative
+"diary page" block (sketch/ribbon/date heading/toolbar, *then* the
+textarea). Getting the on-screen keyboard to not cover that setup took
+8 separate fix attempts across v15.6.0 → v15.10.7 (hide-on-focus
+scheme, three different scroll-anchor strategies, a fixed padding
+buffer, a caret-position mirror tracker measuring every keystroke) —
+and it was still being reported as broken. Each fix solved one symptom
+of the same root problem: an unbounded field growing inside the app's
+normal scroll flow will always be a moving target for keyboard-aware
+positioning, on some device or some entry length.
+
+This version removes the inline textarea entirely. Writing or editing
+an entry now opens the exact same bottom-sheet modal every other text
+field in this app already uses (`openModal()` — Notes' editor, Debt
+notes, etc.), which has never had a keyboard-covering report: it's
+bounded (`max-height:88%`), scrolls its own content
+(`overflow-y:auto`), and already sits inside `#app`'s existing
+keyboard-aware height (`--vvh`). There is no Journal-specific keyboard
+code left to maintain — the entire caret-mirror tracker
+(`getJournalCaretCoords`/`setupJournalCaretTracking`), the triple-retry
+`scrollDiaryIntoView` correction, the `journal-focus` class, and the
+`body.kb-open #screen-journal` padding hack are all deleted.
+
+**What changed:**
+- The Journal screen is now a **read view**: date navigation, the
+  diary decoration/theme, and the entries list for that date. Nothing
+  on it is a focusable text field.
+- **"+ New entry"** and tapping an existing entry both open the new
+  compose modal — its own font picker, color picker, a bounded
+  (`max-height:44vh`, internally scrolling) textarea, Save, Delete, and
+  per-entry PDF/Word export.
+- Each entry card in the list now has quick ⬇ PDF and 🗑 delete actions
+  without needing to open the editor first.
+
+**What did NOT change (all preserved exactly):**
+- **Multiple entries per day**, stored and shown in **chronological
+  order** — same `S.journal[date] = [{id, text, font, color, created,
+  updated}, …]` array, same `journalEntries()`/`normalizeJournal()`.
+- Per-entry **customization** (5 fonts, ink color).
+- The 7 diary artwork styles and 6 page-turn transition modes
+  (Customize diary 🎨).
+- PDF export (single entry + "Export whole diary") and Word export.
+- The "Allow deleting entries" setting.
+- **Backup**: `S.journal` was already part of the canonical
+  `buildBackupSnapshot_()`/`restoreBackupSnapshot_()` used by Save &
+  Sync (your Apps Script Google Sheet), Export Backup, Load from Sheet,
+  and Import Backup — confirmed unchanged, no separate work needed
+  there. `apps-script.gs`'s Journal sheet-tab writer (fixed in
+  v15.10.5) is likewise untouched and still correct.
+
+`sw.js`'s `CACHE_NAME` bumped to `gp-ledger-v16-0-0` so installed
+copies actually receive this instead of the old broken editor.
+
+---
 
 ## v15.10.6
 

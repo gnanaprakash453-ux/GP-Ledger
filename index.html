@@ -161,19 +161,15 @@ header.top{
    bar stays comfortable without ever compressing the tap targets unevenly
    relative to each other — .icon-btn and .sync-btn keep the same height
    as one another at every width. */
-/* v15.10.1 — the entire "journal-focus" hide-on-keyboard-open scheme
-   (header/nav/motivation-card disappearing, textarea jumping to 58vh)
-   is removed. Each of v15.6.0 through v15.9.7 patched a fresh symptom
-   of the same root problem: toggling several elements' display and a
-   vh-based height the instant the keyboard opens is a race against
-   Safari's own keyboard-open viewport animation, and losing that race
-   (even briefly) is exactly what produces a "half the page, cut off,
-   with the photo card caught mid-transition" frame — matching the
-   latest report. A plain page that never rehides or resizes itself on
-   focus can't show that frame: header, nav, and the motivation card
-   now stay put the same as on every other screen, and the diary page
-   is simply part of the normal scrollable flow underneath them. */
-body.journal-focus .fab{ display:none; }
+/* v16.0.0 — Journal rebuild: the entire "journal-focus"/kb-open-journal
+   hide-and-resize scheme (and everything that came after it — the
+   scrollDiaryIntoView triple-correction, the caret-mirror tracker) is
+   gone along with the inline-textarea Journal screen it existed to
+   patch. Writing now happens in the same bottom-sheet modal every other
+   text entry in this app already uses (Notes, etc.) — a proven surface
+   that never had a keyboard-covering report — so there is no
+   journal-specific focus class left to hide/resize anything. See
+   CHANGELOG v16.0.0. */
 
 @media (max-width:360px){
   header.top{ padding-left:14px; padding-right:14px; }
@@ -208,18 +204,12 @@ main{ flex:1; overflow:hidden; position:relative; }
    only: exactly one layer is ever promoted, everything else stays a normal
    (cheap) paint layer. */
 .screen.active{ display:block; transform:translateZ(0); will-change:scroll-position; }
-/* v15.10.2 — real bug: the on-screen keyboard can cover the bottom of
-   the screen (the diary textarea) without the page layout ever getting
-   shorter in a way the browser reacts to, on both Safari and the
-   installed home-screen app — so there was nothing for the browser to
-   scroll the textarea *to* that would clear the keyboard, reading as
-   "cuts off, can't see the edit window" / a "locked" page with nowhere
-   further to scroll. This adds a generous fixed buffer of extra scroll
-   room at the bottom of the Journal screen specifically while a field
-   on it is focused, sized to comfortably clear a full-height keyboard —
-   independent of whether/when the browser ever reports the keyboard's
-   real height. */
-body.kb-open #screen-journal{ padding-bottom:min(60vh, 420px); }
+/* v16.0.0 — the body.kb-open #screen-journal padding-bottom buffer (and
+   the whole class of "how much extra room does the keyboard need"
+   guesswork it represented) is removed along with the inline textarea
+   it was compensating for. #screen-journal is now a plain read/browse
+   screen — nothing on it takes text input — so it needs no
+   keyboard-aware padding of its own. See CHANGELOG v16.0.0. */
 
 
 /* ============ v12.0.3: sticky back button — was scrolling away with
@@ -910,33 +900,21 @@ body{ background:var(--bg-gradient); }
 /* v14.1.0 — ruled lines via a repeating gradient sized to line-height, so
    lines fall exactly under the text baseline; background-attachment:local
    makes them scroll with the content instead of staying fixed under it. */
-/* v15.10.1 — the kb-open-only 58vh bump is gone along with the rest of
-   the journal-focus hide/resize scheme above: the textarea keeps one
-   constant min-height (bumped slightly from 42vh to 46vh so writing
-   still gets a comfortably tall box) whether or not the keyboard is
-   up, so nothing about its size changes at the exact moment focus/blur
-   fires — one less thing that can race the keyboard animation and
-   render a half-updated frame. */
-#journalText.diary-textarea{
-  width:100%; min-height:46vh; background:
+/* v16.0.0 — Journal rebuild: the entry editor is now .diary-textarea-modal,
+   a plain BOUNDED textarea living inside the standard bottom-sheet modal
+   (#modalBody, same as Notes/every other text editor in the app) instead
+   of an unbounded auto-growing block sitting inline in the main
+   scrollable screen. Bounded + inside .modal's own overflow-y:auto is
+   what makes the keyboard "just work" here: the modal sheet is already
+   the proven surface every other text field in this app uses, so there
+   is nothing Journal-specific left to get wrong. */
+.diary-textarea-modal{
+  width:100%; min-height:220px; max-height:44vh; background:
     repeating-linear-gradient(to bottom, transparent, transparent 27px, var(--diary-line) 28px);
-  background-attachment:local;
-  border:none; border-radius:8px; padding:6px 10px 16px 8px;
-  font-size:16px; line-height:28px; resize:vertical;
-  /* v15.10.0 — belt-and-suspenders alongside the .diary-page overflow
-     fix above: a resize:vertical drag (or a browser autofilling more
-     height than min-height) can never make the textarea taller than the
-     page around it now, since max-height:none + the parent's
-     overflow-y:visible mean growth always pushes .diary-page's own
-     height out rather than clipping. */
-  max-height:none;
+  background-attachment:local; background-color:color-mix(in srgb, var(--diary-paper-1) 94%, transparent);
+  border:1px solid rgba(120,90,50,.2); border-radius:10px; padding:8px 10px 16px 8px;
+  font-size:16px; line-height:28px; resize:vertical; overflow-y:auto; color:var(--diary-ink);
 }
-/* v15.9.5 — the old fixed bottom "Save entry"/"Print" bar (#journalSaveRow,
-   previously here through several fix attempts across v15.9.0–v15.9.3)
-   was removed at the user's request — it sat awkwardly over the bottom
-   nav and duplicated the Save button now in the toolbar (see
-   #journalSaveBtnToolbar in the HTML/JS) and the PDF/Word export buttons
-   already below the editor. */
 .journal-datebar{ display:flex; align-items:center; gap:8px; margin-bottom:12px; }
 .journal-datebar input[type=date]{ flex:1; }
 .journal-navbtn{ width:38px; height:38px; border-radius:11px; border:1px solid var(--line); background:var(--card2); flex-shrink:0; }
@@ -951,6 +929,16 @@ body{ background:var(--bg-gradient); }
 .diary-entry-card .de-mid{ flex:1; min-width:0; }
 .diary-entry-card .de-text{ font-family:'Lora',serif; font-style:italic; color:var(--diary-ink); font-size:13.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .diary-entry-card .de-time{ font-size:11px; color:color-mix(in srgb, var(--diary-ink) 65%, transparent); margin-top:2px; }
+/* v16.0.0 — compact action row (Edit / PDF / Word / Delete) on each
+   entry card, reusing the existing square .journal-navbtn look at a
+   smaller size so it reads as part of the diary chrome, not the app's
+   generic dark UI. */
+.de-actions{ display:flex; gap:6px; flex-shrink:0; }
+.de-actions button{
+  width:30px; height:30px; border-radius:9px; border:1px solid rgba(120,90,50,.28);
+  background:color-mix(in srgb, var(--diary-paper-1) 85%, transparent); color:var(--diary-ink);
+  font-size:13px; display:flex; align-items:center; justify-content:center;
+}
 
 /* v15.5.0 — the 6 new premium Journal themes (spec §6). Each overrides
    the --diary-* custom properties that .diary-page/.diary-textarea/
@@ -1867,17 +1855,23 @@ nav.bottom, .fab{ transition:transform .18s ease; }
     </section>
 
     <!-- ===================== JOURNAL / DIARY ===================== -->
+    <!-- v16.0.0 — full rebuild. The old screen embedded an unbounded,
+         auto-growing textarea directly in the main scrollable page, which
+         needed 8 rounds of custom keyboard/scroll-correction patches
+         (v15.6.0–v15.10.7) and was still getting reported as broken. This
+         version has NO focusable text field on the main screen at all —
+         writing/editing an entry now opens the same bottom-sheet modal
+         every other text field in this app already uses (see Notes'
+         openNoteModal), which has never had a keyboard-covering report.
+         Everything the old Journal could do is still here: multiple
+         entries per day, chronological order, per-entry font/color,
+         diary artwork/page-transition customization, PDF/Word export
+         (single entry and whole diary), and the same S.journal data
+         model — already included in Save & Sync / Export Backup / Load
+         from Sheet / Import Backup, unchanged. -->
     <section class="screen" id="screen-journal">
       <button class="link-btn" data-back="more" style="margin-bottom:8px;">‹ More</button>
       <div id="journalMotivationCard"></div>
-      <!-- v14.1.0 — Journal redesigned to actually feel like a diary
-           (previously: a plain textarea on the app's regular dark card
-           background — functionally fine, but nothing about it said
-           "diary"). The page itself now has a warm parchment background,
-           faint ruled lines, a notebook-style margin rule, and a large
-           handwritten-style date heading — see .diary-page/.diary-textarea
-           CSS. All done with CSS gradients (no image files), so it's
-           instant and works fully offline like the rest of the app. -->
       <div class="diary-page" id="diaryPage">
         <div class="diary-sketch" id="diarySketch" aria-hidden="true"></div>
         <div class="diary-ribbon"></div>
@@ -1889,38 +1883,14 @@ nav.bottom, .fab{ transition:transform .18s ease; }
           <button class="journal-navbtn" id="jTodayBtn" title="Jump to today">●</button>
         </div>
         <div class="journal-toolbar">
-          <select id="journalFont">
-            <option value="Caveat">Elegant Handwriting</option>
-            <option value="Nunito">Clean Journal</option>
-            <option value="Lora">Classic Serif</option>
-            <option value="Inter">Modern Minimal</option>
-            <option value="Special Elite">Vintage Typewriter</option>
-          </select>
-          <input type="color" id="journalColor" value="#3b2f2a">
-          <!-- v14.3.0 — premium diary customization (artwork style + page
-               transition), opened in its own modal rather than crowding
-               this already-busy toolbar further. -->
           <button class="journal-navbtn" id="diaryCustomizeBtn" title="Customize diary">🎨</button>
-          <!-- v15.9.6 — real bug: as a text link ("💾 Save"/"💾 Save
-               changes") this was wide enough that it wrapped onto its own
-               second line on narrow phones, landing far from Customize
-               instead of next to it as intended. Switched to the same
-               compact square icon-button style as Customize/prev/next/
-               today (.journal-navbtn) so the two sit flush together
-               regardless of screen width; the state (new vs editing) is
-               now conveyed via the title tooltip instead of button text. -->
-          <button class="journal-navbtn" id="journalSaveBtnToolbar" title="Save entry">💾</button>
           <button class="link-btn" id="journalExportAllBtn">Export whole diary</button>
         </div>
-        <textarea id="journalText" class="diary-textarea" placeholder="Dear diary…"></textarea>
+        <div class="hint" id="journalMeta" style="margin:2px 0 12px;"></div>
+        <button class="btn primary" id="journalNewEntryBtn" style="width:100%;">✎ New entry</button>
+        <div class="section-head" style="margin-top:18px;"><h2 id="journalEntriesHeading">Entries for this day</h2></div>
+        <div id="journalEntriesList"></div>
       </div>
-      <div class="hint" id="journalMeta" style="margin:8px 0 12px;"></div>
-      <div class="btn-row" style="margin-top:8px;">
-        <button class="btn secondary" id="journalPdfBtn">⬇ PDF (this entry)</button>
-        <button class="btn secondary" id="journalWordBtn">⬇ Word (this entry)</button>
-      </div>
-      <div class="section-head" style="margin-top:18px;"><h2 id="journalEntriesHeading">Entries for this day</h2><button class="link-btn" id="journalNewEntryBtn" style="display:none;">+ New entry</button></div>
-      <div id="journalEntriesList"></div>
     </section>
 
     <!-- ===================== DIET / NUTRITION ===================== -->
@@ -2684,7 +2654,7 @@ function wireAiSuggestButton(btnId, panelId, onGo){
   });
 }
 
-const APP_VERSION = 'v15.10.6'; // single source of truth for About screen & Settings row
+const APP_VERSION = 'v16.0.0'; // single source of truth for About screen & Settings row
 // v15.5.0 — Finance/Reports Calendar & Journal Customization upgrade:
 // (1) Finance gained a real Day/Month/Year period selector with ‹›/jump
 //     navigation through history (previously it only ever showed a fixed
@@ -7678,7 +7648,6 @@ function normalizeJournal(){
 }
 function journalEntries(ds){ return Array.isArray(S.journal[ds]) ? S.journal[ds] : []; }
 function journalLatest(ds){ const list=journalEntries(ds); return list.length ? list[list.length-1] : null; }
-let journalEditingId = null; // null = composing a new entry; set = editing an existing one
 /* v14.1.0 — Journal diary redesign. The old default text color
    (#eef1f7, near-white) was chosen for the previous dark textarea
    background — with the new cream paper background that would be
@@ -7695,28 +7664,18 @@ function journalInkColor(hex){
   const luminance = (0.299*r + 0.587*g + 0.114*b)/255;
   return luminance > 0.7 ? 'var(--diary-ink)' : hex;
 }
+/* v16.0.0 — renderJournal() is now a pure READ view: date heading + the
+   entries list for that date. It never touches a live textarea (there
+   isn't one on this screen any more), so nothing here can race a
+   keyboard animation. Writing/editing happens in openJournalEntryModal()
+   below. */
 function renderJournal(){
   renderTopMotivation('journal','journalMotivationCard');
   document.getElementById('journalDateInput').value = journalDate;
   const dDate = new Date(journalDate+'T00:00:00');
   document.getElementById('journalDecoDate').textContent = dDate.toLocaleDateString(undefined,{weekday:'long', month:'long', day:'numeric', year:'numeric'});
   const list = journalEntries(journalDate);
-  const editing = journalEditingId ? list.find(e=>e.id===journalEditingId) : null;
-  // v14.4.1 — new entries now default to the font you last picked
-  // (S.settings.journalDefaultFont, set in saveJournalEntry()) instead of
-  // always hardcoding 'Caveat'. Editing an existing entry is unaffected —
-  // it still shows whatever font that entry was actually saved with.
-  const defaultJournalFont = S.settings.journalDefaultFont || 'Caveat';
-  document.getElementById('journalText').value = editing ? editing.text : '';
-  document.getElementById('journalFont').value = editing?.font || defaultJournalFont;
-  document.getElementById('journalColor').value = editing?.color || '#3b2f2a';
-  document.getElementById('journalText').style.fontFamily = journalFontStack(editing?.font || defaultJournalFont);
-  document.getElementById('journalText').style.color = journalInkColor(editing?.color || '#3b2f2a');
-  document.getElementById('journalSaveBtnToolbar').title = editing ? 'Save changes' : 'Save entry';
-  document.getElementById('journalNewEntryBtn').style.display = editing ? 'inline-block' : 'none';
-  document.getElementById('journalMeta').textContent = editing
-    ? `Editing entry from ${new Date(editing.created).toLocaleString()}`
-    : `Writing a new entry for ${fmtDiaryDate(journalDate)}.`;
+  document.getElementById('journalMeta').textContent = `${fmtDiaryDate(journalDate)}`;
   const wrap = document.getElementById('journalEntriesList');
   document.getElementById('journalEntriesHeading').textContent = `Entries for ${fmtDiaryDate(journalDate)} (${list.length})`;
   if(list.length===0){
@@ -7726,56 +7685,104 @@ function renderJournal(){
     // v14.1.0 — restyled as small diary-page snippets (diary-entry-card)
     // instead of the app's generic tx-row list, so browsing past entries
     // still feels like flipping through a diary, not a plain log.
+    // v16.0.0 — entries are stored/pushed in the order written (oldest
+    // first, per date); shown newest-first here (.reverse()) so the most
+    // recent entry for the day is always the first thing you see, same
+    // as before — the underlying array itself stays chronological, which
+    // is what the Apps Script Journal tab and PDF export both read.
     wrap.innerHTML = list.slice().reverse().map(e=>`
       <div class="diary-entry-card" data-jid="${e.id}">
         <div class="tx-icon" style="background:#a9823a22;color:#a9823a">📔</div>
-        <div class="de-mid">
+        <div class="de-mid" data-jopen="${e.id}" style="cursor:pointer;">
           <div class="de-text" style="font-family:'${e.font||'Lora'}',serif; color:${journalInkColor(e.color)};">${(e.text||'').split('\n')[0].slice(0,60) || '(empty entry)'}</div>
           <div class="de-time">${new Date(e.created).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</div>
         </div>
-        <button class="link-btn" data-jedit="${e.id}" style="margin-right:${showDelete?'10px':'0'};">Edit</button>
-        ${showDelete ? `<button class="link-btn" data-jdel="${e.id}" style="color:var(--danger);">Delete</button>` : ''}
+        <div class="de-actions">
+          <button data-jpdf="${e.id}" title="Download PDF">⬇</button>
+          ${showDelete ? `<button data-jdel="${e.id}" title="Delete" style="color:var(--danger);">🗑</button>` : ''}
+        </div>
       </div>`).join('');
-    wrap.querySelectorAll('[data-jedit]').forEach(btn=> btn.onclick = ()=>{
-      journalEditingId = btn.dataset.jedit; renderJournal();
-      // v15.9.6 — real bug: this used window.scrollTo, but body{overflow:
-      // hidden} means the window itself never scrolls in this app —
-      // .screen (here #screen-journal) is the actual scrollable element.
-      // window.scrollTo was therefore a no-op, so tapping Edit left the
-      // view wherever the entries list happened to be scrolled, well
-      // past the toolbar/date heading — the "opens in the middle of the
-      // page" report. Scrolling the real container fixes it.
-      document.getElementById('screen-journal').scrollTo({top:0, behavior:'smooth'});
+    wrap.querySelectorAll('[data-jopen]').forEach(el=> el.onclick = ()=> openJournalEntryModal(journalDate, el.dataset.jopen));
+    wrap.querySelectorAll('[data-jpdf]').forEach(btn=> btn.onclick = ()=>{
+      const e = journalEntries(journalDate).find(x=>x.id===btn.dataset.jpdf);
+      if(e) exportJournalEntryPdf(journalDate, e.text||'');
     });
     wrap.querySelectorAll('[data-jdel]').forEach(btn=> btn.onclick = ()=>{
       if(!confirm('Delete this journal entry?')) return;
       S.journal[journalDate] = journalEntries(journalDate).filter(e=>e.id!==btn.dataset.jdel);
-      if(journalEditingId===btn.dataset.jdel) journalEditingId = null;
       saveState(); renderJournal();
     });
   }
 }
-document.getElementById('journalNewEntryBtn').addEventListener('click', ()=>{ journalEditingId = null; renderJournal(); });
-function saveJournalEntry(){
-  const text = document.getElementById('journalText').value;
-  if(!text.trim()){ showToast('Nothing to save', '📔'); return; }
-  const font = document.getElementById('journalFont').value, color = document.getElementById('journalColor').value;
-  // v14.4.1 — remember whatever font was used on this save as the default
-  // for the next NEW entry (see renderJournal()'s defaultJournalFont).
-  S.settings.journalDefaultFont = font;
-  const list = journalEntries(journalDate);
-  if(journalEditingId){
-    const e = list.find(x=>x.id===journalEditingId);
-    if(e){ e.text=text; e.font=font; e.color=color; e.updated=new Date().toISOString(); }
-  } else {
-    list.push({ id:uid(), text, font, color, created:new Date().toISOString(), updated:new Date().toISOString() });
+/* v16.0.0 — the entry composer, rebuilt as a standard bottom-sheet modal
+   (openModal — the same one Notes/Debts/everything else already uses)
+   instead of an inline textarea on the main screen. This is the actual
+   fix for the long-running keyboard-covering bug: .modal already lives
+   inside #app (which correctly shrinks for the keyboard — see --vvh),
+   is capped at max-height:88% with its own overflow-y:auto, and the
+   app's existing generic focusin handler already scrolls any modal
+   field into view on focus (the same path Notes' textarea uses) — so
+   there is nothing Journal-specific left to write or maintain here. */
+function openJournalEntryModal(ds, entryId){
+  const list = journalEntries(ds);
+  const entry = entryId ? list.find(e=>e.id===entryId) : null;
+  // v14.4.1 — a new entry still defaults to whichever font you used last
+  // (S.settings.journalDefaultFont); editing an existing entry shows
+  // whatever font it was actually saved with.
+  const defaultFont = S.settings.journalDefaultFont || 'Caveat';
+  const font = entry?.font || defaultFont, color = entry?.color || '#3b2f2a';
+  openModal(`
+    <div class="modal-head"><h3>📔 ${entry?'Edit':'New'} entry — ${fmtDiaryDate(ds)}</h3><button class="modal-close" data-close>✕</button></div>
+    <div class="journal-toolbar">
+      <select id="journalEntryFont">
+        <option value="Caveat">Elegant Handwriting</option>
+        <option value="Nunito">Clean Journal</option>
+        <option value="Lora">Classic Serif</option>
+        <option value="Inter">Modern Minimal</option>
+        <option value="Special Elite">Vintage Typewriter</option>
+      </select>
+      <input type="color" id="journalEntryColor" value="${color}">
+    </div>
+    <textarea id="journalEntryText" class="diary-textarea-modal" placeholder="Dear diary…" style="font-family:${journalFontStack(font)}; color:${journalInkColor(color)};">${entry?(entry.text||''):''}</textarea>
+    <div class="hint" style="margin:8px 0 4px;">${entry?`Last edited ${new Date(entry.updated||entry.created).toLocaleString()}`:`Writing a new entry for ${fmtDiaryDate(ds)}.`}</div>
+    <button class="btn primary" id="journalEntrySave" style="margin-top:10px;">Save entry</button>
+    <div class="btn-row" style="margin-top:10px;">
+      <button class="btn secondary" id="journalEntryPdf">⬇ PDF</button>
+      <button class="btn secondary" id="journalEntryWord">⬇ Word</button>
+    </div>
+    ${entry && S.settings.journalDeleteEnabled!==false ? `<button class="btn danger" id="journalEntryDelete" style="margin-top:10px;">Delete entry</button>` : ''}
+  `);
+  document.getElementById('modalBody').classList.add('page-turn-modal');
+  const ta = document.getElementById('journalEntryText');
+  document.getElementById('journalEntryFont').value = font;
+  document.getElementById('journalEntryFont').addEventListener('change', (e)=>{ ta.style.fontFamily = journalFontStack(e.target.value); });
+  document.getElementById('journalEntryColor').addEventListener('input', (e)=>{ ta.style.color = journalInkColor(e.target.value); });
+  document.getElementById('journalEntrySave').onclick = ()=>{
+    const text = ta.value;
+    if(!text.trim()){ showToast('Nothing to save', '📔'); return; }
+    const f = document.getElementById('journalEntryFont').value, c = document.getElementById('journalEntryColor').value;
+    S.settings.journalDefaultFont = f; // v14.4.1 — remember for the next NEW entry
+    const curList = journalEntries(ds);
+    if(entry){
+      entry.text=text; entry.font=f; entry.color=c; entry.updated=new Date().toISOString();
+    } else {
+      curList.push({ id:uid(), text, font:f, color:c, created:new Date().toISOString(), updated:new Date().toISOString() });
+      S.journal[ds] = curList;
+    }
+    saveState(); renderJournal(); closeModal();
+    showToast(`Saved to ${fmtDiaryDate(ds)}`, '📔');
+  };
+  document.getElementById('journalEntryPdf').onclick = ()=> exportJournalEntryPdf(ds, ta.value);
+  document.getElementById('journalEntryWord').onclick = ()=> exportJournalEntryWord(ds, ta.value, document.getElementById('journalEntryFont').value);
+  if(entry && document.getElementById('journalEntryDelete')){
+    document.getElementById('journalEntryDelete').onclick = ()=>{
+      if(!confirm('Delete this journal entry?')) return;
+      S.journal[ds] = journalEntries(ds).filter(e=>e.id!==entry.id);
+      saveState(); renderJournal(); closeModal();
+    };
   }
-  S.journal[journalDate] = list;
-  journalEditingId = null;
-  saveState(); renderJournal();
-  showToast(`Saved to ${fmtDiaryDate(journalDate)}`, '📔');
 }
-document.getElementById('journalSaveBtnToolbar').addEventListener('click', saveJournalEntry);
+document.getElementById('journalNewEntryBtn').addEventListener('click', ()=> openJournalEntryModal(journalDate, null));
 /* v14.3.0 (revised) — now supports all 6 Page Transition modes (spec),
    not just Classic Page Turn. Each mode is a {leave, enter, leaveMs,
    enterMs} pair of CSS class names + durations; 'none' skips the whole
@@ -7791,7 +7798,7 @@ const JOURNAL_TRANSITIONS = {
 };
 function navigateJournalDate(newDate, direction){
   const page = document.getElementById('diaryPage');
-  journalDate = newDate; journalEditingId = null;
+  journalDate = newDate;
   const mode = JOURNAL_TRANSITIONS[S.settings.journalTransition] !== undefined ? S.settings.journalTransition : 'pageturn';
   const cfg = JOURNAL_TRANSITIONS[mode];
   if(!page || !cfg){ renderJournal(); return; } // 'none', or page not in DOM yet
@@ -7870,8 +7877,6 @@ function openDiaryCustomizeModal(){
   }));
 }
 document.getElementById('diaryCustomizeBtn').addEventListener('click', openDiaryCustomizeModal);
-document.getElementById('journalFont').addEventListener('change', (e)=>{ document.getElementById('journalText').style.fontFamily = journalFontStack(e.target.value); });
-document.getElementById('journalColor').addEventListener('input', (e)=>{ document.getElementById('journalText').style.color = journalInkColor(e.target.value); });
 /* v14.1.0 — shared diary-page decoration for jsPDF exports (this-entry PDF
    and the full diary export below): parchment fill, a double-line
    ornamental border frame, faint ruled lines, and a small flourish mark
@@ -7895,30 +7900,35 @@ function drawDiaryPageNumber(doc, n){
   doc.setFont('times','italic'); doc.setFontSize(10); doc.setTextColor(120,90,50);
   doc.text(`~ ${n} ~`, w/2, h-16, { align:'center' });
 }
-document.getElementById('journalPdfBtn').addEventListener('click', ()=>{
-  const text = document.getElementById('journalText').value; if(!text.trim()){ alert('Nothing in the editor to export.'); return; }
+/* v16.0.0 — pulled out of their old journalPdfBtn/journalWordBtn click
+   handlers (which read from the now-removed #journalText/#journalFont
+   main-screen fields) into plain functions that take the date/text/font
+   directly. Callable both from inside the compose modal (this entry, as
+   currently being edited) and from each entry card's ⬇ button (a saved
+   entry, no editor open at all). */
+function exportJournalEntryPdf(ds, text){
+  if(!text || !text.trim()){ alert('Nothing to export.'); return; }
   const { jsPDF } = window.jspdf; const doc = new jsPDF();
   drawDiaryPageBackground(doc); // v14.1.0
   doc.setFont('times','italic'); doc.setTextColor(59,47,42); doc.setFontSize(18);
-  doc.text(fmtDiaryDate(journalDate), 22, 28);
+  doc.text(fmtDiaryDate(ds), 22, 28);
   doc.setDrawColor(169,130,58); doc.setLineWidth(0.6); doc.line(22, 32, 70, 32);
   doc.setFont('times','normal'); doc.setFontSize(12); doc.setTextColor(59,47,42);
   doc.text(doc.splitTextToSize(text, 168), 22, 46, { lineHeightFactor:1.7 });
   drawDiaryPageNumber(doc, 1);
-  doc.save(`Journal-${journalDate}.pdf`);
-});
-document.getElementById('journalWordBtn').addEventListener('click', ()=>{
-  const text = document.getElementById('journalText').value; if(!text.trim()){ alert('Nothing in the editor to export.'); return; }
-  const font = document.getElementById('journalFont').value;
-  const dateStr = new Date(journalDate+'T00:00:00').toLocaleDateString(undefined,{weekday:'long', month:'long', day:'numeric', year:'numeric'});
+  doc.save(`Journal-${ds}.pdf`);
+}
+function exportJournalEntryWord(ds, text, font){
+  if(!text || !text.trim()){ alert('Nothing to export.'); return; }
+  const dateStr = new Date(ds+'T00:00:00').toLocaleDateString(undefined,{weekday:'long', month:'long', day:'numeric', year:'numeric'});
   // v14.1.0 — Word's HTML-as-.doc converter doesn't render gradients or
   // ::before/::after, but flat background-color + a border survive fine,
   // so this gets a toned-down parchment look rather than the full CSS
   // treatment used for Print/PDF.
-  const html = `<html><head><meta charset="utf-8"></head><body style="background:#f4ecd8; padding:30px 30px 30px 44px; border:1px solid #c9a35c;"><h2 style="font-family:Georgia,serif; font-style:italic; color:#3b2f2a; border-bottom:2px solid #a9823a; padding-bottom:6px; display:inline-block;">${dateStr}</h2><p style="white-space:pre-wrap; font-family:${journalFontStack(font)}; color:#3b2f2a; line-height:1.8; font-size:14pt;">${text.replace(/</g,'&lt;')}</p></body></html>`;
+  const html = `<html><head><meta charset="utf-8"></head><body style="background:#f4ecd8; padding:30px 30px 30px 44px; border:1px solid #c9a35c;"><h2 style="font-family:Georgia,serif; font-style:italic; color:#3b2f2a; border-bottom:2px solid #a9823a; padding-bottom:6px; display:inline-block;">${dateStr}</h2><p style="white-space:pre-wrap; font-family:${journalFontStack(font||'Lora')}; color:#3b2f2a; line-height:1.8; font-size:14pt;">${text.replace(/</g,'&lt;')}</p></body></html>`;
   const blob = new Blob(['\ufeff', html], { type:'application/msword' });
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `Journal-${journalDate}.doc`; a.click();
-});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `Journal-${ds}.doc`; a.click();
+}
 document.getElementById('journalExportAllBtn').addEventListener('click', ()=>{
   const dates = Object.keys(S.journal).filter(ds=>journalEntries(ds).length).sort(); // ISO date keys sort chronologically
   if(dates.length===0){ alert('No journal entries saved yet.'); return; }
@@ -8866,12 +8876,9 @@ function goToScreen(name, opts){
   document.body.classList.remove('kb-open');
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   target.classList.add('active');
-  // v15.10.1 — the header/nav/motivation-card hiding and textarea
-  // resize that used to depend on this class are gone (see the CSS
-  // near .diary-page). The only thing journal-focus still does is hide
-  // the FAB while on Journal (body.journal-focus .fab), so this toggle
-  // stays but no longer changes anything keyboard-related.
-  document.body.classList.toggle('journal-focus', name==='journal');
+  // v16.0.0 — the journal-focus class (and everything that used to key
+  // off it) is removed entirely along with the inline Journal textarea —
+  // see the v16.0.0 comment near .diary-page in the CSS.
   try{ localStorage.setItem('gpl_lastScreen', name); }catch(e){} // v12.3 — see init()'s restore logic
   if(!opts.fromPopstate){
     try{ history.pushState({ screen:name }, '', '#'+name); }catch(e){}
@@ -10047,103 +10054,13 @@ function setupKeyboardHandling(){
     if(t && (t.tagName==='INPUT' || t.tagName==='TEXTAREA' || t.tagName==='SELECT')){
       document.body.classList.add('kb-open');
       setTimeout(setVH, 50);
-      // v15.9.6 — real bug: t.scrollIntoView({block:'center'}) was used
-      // for every field including #journalText. Centering makes sense
-      // for a short input elsewhere in the app, but the journal textarea
-      // is a tall box (see #journalText.diary-textarea) — so "centering"
-      // it lands the viewport somewhere in the middle of that tall box,
-      // showing blank ruled lines with no date heading or toolbar in
-      // sight ("opens to the middle of the page"). For the journal
-      // specifically, scroll its screen container instead of centering
-      // the textarea itself. (v15.10.1: this no longer races a
-      // header/nav/height change — those stay fixed now — so this is
-      // just a plain scroll, nothing more.)
-      // v15.10.2 — separate from the container scroll above: mobile
-      // WebKit (Safari and the installed home-screen app alike) can
-      // scroll the outer <html>/<body> itself to bring a focused field
-      // into view, even though body{overflow:hidden} here means it has
-      // nothing of its own to scroll. The result reads as the whole app
-      // visually shifted/offset — reported as the screen "locking" —
-      // and it happens one level above #screen-journal, so the
-      // container scroll above can't fix it on its own. Forcing the
-      // real window scroll position back to (0,0) undoes that outer
-      // shift; harmless to call even when nothing actually needs it.
-      // v15.10.3 — real bug: the v15.9.6 fix above scrolled the
-      // container to top:0, which assumed the diary page (toolbar +
-      // date heading + textarea) sat right at the top of #screen-journal.
-      // It doesn't — #journalMotivationCard (the hero photo/quote card)
-      // renders above it — so top:0 was surfacing the photo card instead,
-      // pushing the toolbar and textarea themselves down past the bottom
-      // of the now keyboard-shrunk viewport, with no further scroll ever
-      // offered (the fix believed it was already "there"). That reads as
-      // the editor being permanently cut off / half-blocked behind the
-      // keyboard — exactly the reported bug. Scrolling to #diaryPage's
-      // own measured offset instead lands the toolbar + date heading +
-      // textarea at the top together — same intent as the original fix,
-      // just measured rather than assumed, so it's correct regardless of
-      // how much (or little) sits above the diary page.
-      // v15.10.6 — real bug (still reported): #diaryPage itself is one
-      // tall block — sketch/ribbon, date heading, date bar, toolbar,
-      // *then* the textarea (min-height 46vh) — and on a real phone with
-      // the keyboard up, that whole block is routinely taller than what's
-      // left of the visible viewport. Scrolling to dp's own top (the
-      // v15.10.3 fix) reliably brings the date heading into view, but
-      // that's the top of a block that doesn't fit — the toolbar and the
-      // textarea underneath it still land below the fold, hidden behind
-      // the keyboard. That matches the report exactly: heading visible,
-      // editable box gone. The heading isn't what needs to be reachable
-      // while typing — the toolbar + textarea are. Anchoring the scroll
-      // to the toolbar (the row directly above the textarea) instead
-      // pushes the heading/date bar off the top and gives the textarea
-      // the maximum share of whatever keyboard-shrunk space remains.
-      // Measured via getBoundingClientRect rather than offsetTop, since
-      // #diaryPage is a positioned ancestor (for its sketch/ribbon
-      // decorations) and offsetTop chains through it would be relative
-      // to the wrong element.
-      if(t.id === 'journalText'){
-        const scrollDiaryIntoView = ()=>{
-          const sj = document.getElementById('screen-journal');
-          const toolbar = document.querySelector('#diaryPage .journal-toolbar');
-          if(sj && toolbar){
-            const sjRect = sj.getBoundingClientRect();
-            const tbRect = toolbar.getBoundingClientRect();
-            const delta = tbRect.top - sjRect.top - 8;
-            sj.scrollTo({ top: sj.scrollTop + delta, behavior:'smooth' });
-          }
-          window.scrollTo(0,0);
-        };
-        setTimeout(scrollDiaryIntoView, 320);
-        // v15.10.2 — the keyboard's own open animation can still be
-        // running past 320ms on some devices, and iOS can re-apply its
-        // outer-document shift once that animation finishes — after
-        // which the first correction above is already stale. A second,
-        // later correction catches that case without adding any visible
-        // extra motion when it wasn't needed (scrolling to where it
-        // already is is a no-op).
-        setTimeout(scrollDiaryIntoView, 650);
-        // v15.10.6 — belt-and-suspenders alongside the two fixed-delay
-        // corrections above: 320ms/650ms are good guesses, not a
-        // guarantee, and a slower device or a slower keyboard animation
-        // can still finish after both have already fired, leaving the
-        // last correction stale. While the keyboard is settling, also
-        // re-run the same correction on every visualViewport resize
-        // event (that's what fires as the keyboard's height changes),
-        // for a short window after focus — so the position keeps
-        // catching up to wherever the keyboard actually ends up,
-        // regardless of how long its animation takes on this device.
-        const vv = window.visualViewport;
-        if(vv){
-          const untilTs = Date.now() + 1200;
-          const onVVResize = ()=>{
-            scrollDiaryIntoView();
-            if(Date.now() >= untilTs) vv.removeEventListener('resize', onVVResize);
-          };
-          vv.addEventListener('resize', onVVResize);
-          setTimeout(()=> vv.removeEventListener('resize', onVVResize), 1200);
-        }
-      } else {
-        setTimeout(()=>{ try{ t.scrollIntoView({ block:'center', behavior:'smooth' }); }catch(err){} }, 320);
-      }
+      // v16.0.0 — the #journalText special case (and the seven patches
+      // that came after v15.9.6 trying to fix it) is removed along with
+      // the element itself. Every focusable field, including the new
+      // Journal compose modal's #journalEntryText, now goes through this
+      // one plain path — the same one Notes' textarea and every other
+      // modal field already use without incident.
+      setTimeout(()=>{ try{ t.scrollIntoView({ block:'center', behavior:'smooth' }); }catch(err){} }, 320);
     }
   });
   document.addEventListener('focusout', (e)=>{
@@ -10184,96 +10101,20 @@ function setupKeyboardHandling(){
   document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) healKbOpen(); });
   window.addEventListener('pageshow', healKbOpen);
 }
-// v15.10.7 — real bug (still reported): everything above gets the diary
-// page positioned correctly ONCE, right when the keyboard first opens —
-// but #journalText is an auto-GROWING textarea (min-height:46vh,
-// max-height:none — see .diary-textarea), not an internally-scrolling
-// box. As someone keeps typing a longer entry, the caret moves further
-// down the page than that one-time correction ever accounted for, and
-// nothing re-checks after the 1200ms window above ends. iOS Safari does
-// not reliably auto-scroll an ancestor container to follow the caret in
-// a plain textarea on its own — especially once #app is being pinned to
-// a JS-measured --vvh instead of the real layout viewport — so the
-// caret silently walks behind the keyboard the longer the entry gets,
-// exactly as reported ("especially when writing longer entries").
-// This adds a continuous, lightweight correction that runs on every
-// keystroke/selection change/keyboard-height change while #journalText
-// is focused: it measures the caret's actual pixel position (via a
-// hidden mirror element that copies the textarea's own font/padding/
-// line-height, so it's exact rather than estimated) and nudges
-// #screen-journal's scroll position just enough to keep that exact
-// point inside the visible visualViewport — never more than needed, so
-// normal scrolling/reading isn't disturbed. Runs in both mobile Safari
-// and the installed PWA since it only depends on the visualViewport API
-// (no UA/standalone branching needed).
-function getJournalCaretCoords(textarea, position){
-  const mirror = document.createElement('div');
-  const cs = window.getComputedStyle(textarea);
-  const copyProps = ['boxSizing','width','paddingTop','paddingRight','paddingBottom','paddingLeft',
-    'borderTopWidth','borderRightWidth','borderBottomWidth','borderLeftWidth',
-    'fontFamily','fontSize','fontWeight','fontStyle','fontVariant','letterSpacing',
-    'lineHeight','textTransform','wordSpacing','textIndent'];
-  copyProps.forEach(p=>{ mirror.style[p] = cs[p]; });
-  mirror.style.position = 'absolute';
-  mirror.style.visibility = 'hidden';
-  mirror.style.whiteSpace = 'pre-wrap';
-  mirror.style.wordWrap = 'break-word';
-  mirror.style.top = '0';
-  mirror.style.left = '-9999px';
-  mirror.style.height = 'auto';
-  mirror.textContent = textarea.value.substring(0, position);
-  const span = document.createElement('span');
-  span.textContent = textarea.value.substring(position) || '.';
-  mirror.appendChild(span);
-  document.body.appendChild(mirror);
-  const coords = { top: span.offsetTop, left: span.offsetLeft, height: (parseFloat(cs.lineHeight) || 28) };
-  document.body.removeChild(mirror);
-  return coords;
-}
-function setupJournalCaretTracking(){
-  const ta = document.getElementById('journalText');
-  const sj = document.getElementById('screen-journal');
-  if(!ta || !sj) return;
-  let raf = null;
-  function ensureCaretVisible(){
-    raf = null;
-    if(document.activeElement !== ta) return;
-    const vv = window.visualViewport;
-    const viewTop = vv ? vv.offsetTop : 0;
-    const viewBottom = vv ? (vv.offsetTop + vv.height) : window.innerHeight;
-    const taRect = ta.getBoundingClientRect();
-    const coords = getJournalCaretCoords(ta, ta.selectionStart);
-    const caretTop = taRect.top + coords.top;
-    const caretBottom = caretTop + coords.height;
-    const margin = 18;
-    if(caretBottom > viewBottom - margin){
-      sj.scrollTop += (caretBottom - (viewBottom - margin));
-    } else if(caretTop < viewTop + margin){
-      sj.scrollTop -= ((viewTop + margin) - caretTop);
-    }
-  }
-  function scheduleCheck(){
-    if(raf) return;
-    raf = requestAnimationFrame(ensureCaretVisible);
-  }
-  ta.addEventListener('input', scheduleCheck);
-  ta.addEventListener('keyup', scheduleCheck);
-  ta.addEventListener('click', scheduleCheck);
-  ta.addEventListener('focus', ()=> setTimeout(scheduleCheck, 350));
-  document.addEventListener('selectionchange', ()=>{ if(document.activeElement === ta) scheduleCheck(); });
-  if(window.visualViewport){
-    window.visualViewport.addEventListener('resize', ()=>{ if(document.activeElement === ta) scheduleCheck(); });
-  }
-}
+// v16.0.0 — the caret-mirror tracking system that used to live here
+// (getJournalCaretCoords/setupJournalCaretTracking) existed solely to
+// compensate for #journalText being an unbounded, auto-growing textarea
+// sitting in the main scrollable screen. The Journal rebuild's compose
+// modal textarea (#journalEntryText) is bounded (max-height + its own
+// overflow-y:auto — see .diary-textarea-modal) and lives inside the
+// standard bottom-sheet modal, so the browser's native caret-follow
+// behavior inside a normal scrollable box is all that's needed — no
+// per-keystroke measurement required. See CHANGELOG v16.0.0.
 function init(){
   // v14.4.1 — always attach the keyboard/kb-open handling first (see the
   // comment on setupKeyboardHandling above), before any step below that
   // could throw and abort the rest of init().
   try{ setupKeyboardHandling(); }catch(err){ console.error('setupKeyboardHandling failed', err); }
-  // v15.10.7 — see setupJournalCaretTracking above; attached alongside
-  // setupKeyboardHandling so a caret-tracking failure can't take down
-  // the rest of init() either.
-  try{ setupJournalCaretTracking(); }catch(err){ console.error('setupJournalCaretTracking failed', err); }
   try{ history.replaceState({ screen:'dashboard' }, '', '#dashboard'); }catch(e){}
   // v14.4.1 — every step from here down that touches saved/derived data is
   // now individually try/caught. Before this, one uncaught exception
@@ -11421,7 +11262,7 @@ function renderSearchResults(q){
   const add = (score, item)=>{ if(score>0) results.push(Object.assign({score}, item)); };
   S.habits.forEach(h=> add(searchScore([h.name],words), {icon:habitIcon(h),tag:'Habit',title:h.name,sub:`Target ${h.target}${h.unit}`,go:()=>{closeModal();goToScreen('habits');}}));
   S.transactions.forEach(t=> add(searchScore([t.note||t.category||'', t.category||''],words), {icon:t.type==='in'?'↓':'↑',tag:'Finance',title:t.note||t.category,sub:`${fmtMoney(t.amount)} · ${t.date}`,go:()=>{goToScreen('finance');openTxModal(t.id);}}));
-  Object.keys(S.journal).forEach(ds=>{ journalEntries(ds).forEach(e=>{ if(e.text) add(searchScore([e.text],words), {icon:'📔',tag:'Journal',title:ds,sub:e.text.slice(0,60),go:()=>{ journalDate=ds; journalEditingId=e.id; goToScreen('journal'); }}); }); });
+  Object.keys(S.journal).forEach(ds=>{ journalEntries(ds).forEach(e=>{ if(e.text) add(searchScore([e.text],words), {icon:'📔',tag:'Journal',title:ds,sub:e.text.slice(0,60),go:()=>{ journalDate=ds; goToScreen('journal'); openJournalEntryModal(ds, e.id); }}); }); });
   Object.keys(S.diet.meals).forEach(ds=>{ (S.diet.meals[ds]||[]).forEach(m=> add(searchScore([m.name],words), {icon:'🍽️',tag:'Diet',title:m.name,sub:`${ds} · ${Math.round(m.calories||0)} kcal`,go:()=>goToScreen('diet')})); });
   S.debts.forEach(d=> add(searchScore([d.name],words), {icon:'🏦',tag:'Debt',title:d.name,sub:`Balance ${fmtMoney(d.balance)}`,go:()=>{goToScreen('debts');openDebtModal(d.id);}}));
   S.goals.forEach(g=> add(searchScore([g.title],words), {icon:GOAL_ICONS[g.mode]||'⭐',tag:'Goal',title:g.title,sub:'',go:()=>{goToScreen('goals');openGoalModal(g.id);}}));

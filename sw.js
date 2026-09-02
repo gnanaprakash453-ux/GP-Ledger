@@ -320,7 +320,19 @@
 // fold behind the keyboard; now anchors to the toolbar instead, see the
 // APP_VERSION comment block in index.html for full detail). CACHE_NAME
 // bumped to match so the fixed index.html actually reaches installed apps.
-const CACHE_NAME = 'gp-ledger-v15-10-6';
+// v16.0.0: Journal rebuilt. The old inline auto-growing textarea (which
+// needed 8 rounds of keyboard/scroll patches, v15.6.0 through the
+// undocumented caret-mirror tracker) is gone. Writing/editing an entry
+// now opens in the same bottom-sheet modal every other text field in
+// this app already uses (Notes' editor, etc.) — proven, no
+// Journal-specific keyboard code left at all. Data model (multiple
+// entries per day, chronological order), diary theming, page-turn
+// transitions, and PDF/Word export are all unchanged — same
+// S.journal[date] array, already covered by Save & Sync/Export
+// Backup/Load from Sheet/Import Backup. index.html changed, so bump so
+// installed copies actually receive this instead of serving a cached
+// v15.10.6 with the old broken editor.
+const CACHE_NAME = 'gp-ledger-v16-0-0';
 const IMG_CACHE_NAME = 'gp-ledger-images-v1';
 const CORE_ASSETS = [
   './index.html',

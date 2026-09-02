@@ -1,9 +1,17 @@
-// GP Ledger service worker — v15.9.5
-// v15.9.5: Journal — Save moved into the toolbar (always-visible, next to
-// "Export whole diary") and the old fixed bottom "Save entry"/"Print" bar
-// removed entirely (index.html only, no new assets). Bump so installed
-// copies pick up the new index.html instead of serving the cached
-// v15.9.3 copy indefinitely.
+// GP Ledger service worker — v15.9.6
+// v15.9.6: Journal — three real bugs fixed (index.html only, no new
+// assets). (1) Tapping Edit on a past entry called window.scrollTo,
+// but body{overflow:hidden} means the window never scrolls in this app
+// — it was a no-op, so Edit opened wherever the entries list happened
+// to be scrolled instead of at the top. (2) Focusing the journal
+// textarea called scrollIntoView({block:'center'}), which centered the
+// textarea's 58vh-tall keyboard-open box instead of showing the date
+// heading/toolbar above it — "opens to the middle of the page, keyboard
+// covering it". (3) The toolbar Save button was a wide text link that
+// wrapped onto its own line on narrow phones; now a compact icon button
+// sitting flush next to Customize. Bump so installed copies pick up the
+// new index.html instead of serving the cached v15.9.5 copy
+// indefinitely.
 // v15.6.1: kb-open self-heal fix (index.html JS only) — real bug, the
 // grey-strip-below-nav report was kb-open getting stuck after
 // backgrounding the app with a field focused, pinning #app to a stale
@@ -282,7 +290,7 @@
 // time instead of hand-typed, so it can't go stale again. index.html
 // changed, so bump so installed copies actually receive this instead of
 // serving a cached v15.3.0.
-const CACHE_NAME = 'gp-ledger-v15-9-5';
+const CACHE_NAME = 'gp-ledger-v15-9-6';
 const IMG_CACHE_NAME = 'gp-ledger-images-v1';
 const CORE_ASSETS = [
   './index.html',

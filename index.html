@@ -1883,12 +1883,15 @@ nav.bottom, .fab{ transition:transform .18s ease; }
                transition), opened in its own modal rather than crowding
                this already-busy toolbar further. -->
           <button class="journal-navbtn" id="diaryCustomizeBtn" title="Customize diary">🎨</button>
-          <!-- v15.9.5 — Save now lives here in the toolbar, always visible
-               regardless of focus/keyboard state. The old fixed bottom
-               "Save entry"/"Print" bar was removed entirely (see the CSS
-               near .journal-datebar for why) since it duplicated this
-               button and overlapped the bottom nav. -->
-          <button class="link-btn" id="journalSaveBtnToolbar" title="Save entry">💾 Save</button>
+          <!-- v15.9.6 — real bug: as a text link ("💾 Save"/"💾 Save
+               changes") this was wide enough that it wrapped onto its own
+               second line on narrow phones, landing far from Customize
+               instead of next to it as intended. Switched to the same
+               compact square icon-button style as Customize/prev/next/
+               today (.journal-navbtn) so the two sit flush together
+               regardless of screen width; the state (new vs editing) is
+               now conveyed via the title tooltip instead of button text. -->
+          <button class="journal-navbtn" id="journalSaveBtnToolbar" title="Save entry">💾</button>
           <button class="link-btn" id="journalExportAllBtn">Export whole diary</button>
         </div>
         <textarea id="journalText" class="diary-textarea" placeholder="Dear diary…"></textarea>
@@ -2663,7 +2666,7 @@ function wireAiSuggestButton(btnId, panelId, onGo){
   });
 }
 
-const APP_VERSION = 'v15.9.5'; // single source of truth for About screen & Settings row
+const APP_VERSION = 'v15.9.6'; // single source of truth for About screen & Settings row
 // v15.5.0 — Finance/Reports Calendar & Journal Customization upgrade:
 // (1) Finance gained a real Day/Month/Year period selector with ‹›/jump
 //     navigation through history (previously it only ever showed a fixed
@@ -7691,7 +7694,7 @@ function renderJournal(){
   document.getElementById('journalColor').value = editing?.color || '#3b2f2a';
   document.getElementById('journalText').style.fontFamily = journalFontStack(editing?.font || defaultJournalFont);
   document.getElementById('journalText').style.color = journalInkColor(editing?.color || '#3b2f2a');
-  document.getElementById('journalSaveBtnToolbar').innerHTML = editing ? '💾 Save changes' : '💾 Save';
+  document.getElementById('journalSaveBtnToolbar').title = editing ? 'Save changes' : 'Save entry';
   document.getElementById('journalNewEntryBtn').style.display = editing ? 'inline-block' : 'none';
   document.getElementById('journalMeta').textContent = editing
     ? `Editing entry from ${new Date(editing.created).toLocaleString()}`
@@ -7715,7 +7718,17 @@ function renderJournal(){
         <button class="link-btn" data-jedit="${e.id}" style="margin-right:${showDelete?'10px':'0'};">Edit</button>
         ${showDelete ? `<button class="link-btn" data-jdel="${e.id}" style="color:var(--danger);">Delete</button>` : ''}
       </div>`).join('');
-    wrap.querySelectorAll('[data-jedit]').forEach(btn=> btn.onclick = ()=>{ journalEditingId = btn.dataset.jedit; renderJournal(); window.scrollTo({top:0,behavior:'smooth'}); });
+    wrap.querySelectorAll('[data-jedit]').forEach(btn=> btn.onclick = ()=>{
+      journalEditingId = btn.dataset.jedit; renderJournal();
+      // v15.9.6 — real bug: this used window.scrollTo, but body{overflow:
+      // hidden} means the window itself never scrolls in this app —
+      // .screen (here #screen-journal) is the actual scrollable element.
+      // window.scrollTo was therefore a no-op, so tapping Edit left the
+      // view wherever the entries list happened to be scrolled, well
+      // past the toolbar/date heading — the "opens in the middle of the
+      // page" report. Scrolling the real container fixes it.
+      document.getElementById('screen-journal').scrollTo({top:0, behavior:'smooth'});
+    });
     wrap.querySelectorAll('[data-jdel]').forEach(btn=> btn.onclick = ()=>{
       if(!confirm('Delete this journal entry?')) return;
       S.journal[journalDate] = journalEntries(journalDate).filter(e=>e.id!==btn.dataset.jdel);
@@ -10019,7 +10032,23 @@ function setupKeyboardHandling(){
     if(t && (t.tagName==='INPUT' || t.tagName==='TEXTAREA' || t.tagName==='SELECT')){
       document.body.classList.add('kb-open');
       setTimeout(setVH, 50);
-      setTimeout(()=>{ try{ t.scrollIntoView({ block:'center', behavior:'smooth' }); }catch(err){} }, 320);
+      // v15.9.6 — real bug: t.scrollIntoView({block:'center'}) was used
+      // for every field including #journalText. Centering makes sense
+      // for a short input elsewhere in the app, but the journal textarea
+      // grows to min-height:58vh the moment the keyboard opens (see
+      // body.journal-focus.kb-open #journalText.diary-textarea) — so
+      // "centering" it lands the viewport somewhere in the middle of
+      // that tall box, showing blank ruled lines with no date heading or
+      // toolbar in sight ("opens to the middle of the page"). For the
+      // journal specifically, scroll its screen container to the top
+      // instead: the toolbar/date heading sit directly above the
+      // textarea, so top:0 already puts the cursor in view along with
+      // them, with nothing to scroll past.
+      if(t.id === 'journalText'){
+        setTimeout(()=>{ document.getElementById('screen-journal')?.scrollTo({top:0, behavior:'smooth'}); }, 320);
+      } else {
+        setTimeout(()=>{ try{ t.scrollIntoView({ block:'center', behavior:'smooth' }); }catch(err){} }, 320);
+      }
     }
   });
   document.addEventListener('focusout', (e)=>{

@@ -1,4 +1,30 @@
-# Changelog — v15.9.5 (Journal — Save moved into the toolbar, old bottom Save/Print bar removed) → history below
+# Changelog — v15.9.6 (Journal — mobile keyboard-open scroll fixed, Save button made compact) → history below
+
+## v15.9.6
+
+**Journal — fixed three real bugs reported on mobile.**
+1. Tapping **Edit** on a past entry called `window.scrollTo({top:0})`,
+   but this app's `body` has `overflow:hidden` — the window itself
+   never scrolls, so that call was a silent no-op. Edit opened wherever
+   the entries list happened to be scrolled to already, instead of at
+   the top of the page. Now scrolls the actual scrollable element
+   (`#screen-journal`) to the top.
+2. Focusing the diary textarea used `scrollIntoView({block:'center'})`,
+   same as every other input in the app. That's fine for a short field,
+   but the journal textarea grows to `min-height:58vh` the instant the
+   keyboard opens — centering it landed the viewport in the middle of
+   that tall box, showing blank ruled lines with no date heading or
+   toolbar in view ("opens to the middle of the page, have to scroll to
+   see the start"). The journal textarea is now special-cased to scroll
+   its screen container to the top instead, so the toolbar and date
+   heading are visible together with the cursor, nothing to scroll past.
+3. The toolbar Save button was a text link ("💾 Save"/"💾 Save
+   changes"), wide enough to wrap onto its own second line on narrow
+   phones — landing far from the Customize button instead of next to
+   it. Switched to the same compact square icon style as Customize/
+   prev/next/today, so the two now sit flush together regardless of
+   screen width; new-vs-editing state is conveyed via the button's
+   tooltip instead of its text.
 
 ## v15.9.5
 

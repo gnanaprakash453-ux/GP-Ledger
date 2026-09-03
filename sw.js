@@ -337,6 +337,8 @@
 // on a real phone. Save (💾) moved up into the toolbar, next to the
 // font/color pickers, so it's reachable without scrolling. index.html
 // changed, so bump so installed copies actually receive this.
+// v16.5.0: unified iOS keyboard/visualViewport handling in index.html; bump
+// the cache so installed PWA copies receive the new viewport logic.
 // v16.1.0: photo-card fixes (fixed the dead "Habits" disable toggle, added
 // a "Home" toggle, widened photo keyword diversity, added a load
 // timeout+retry), consolidated Photo card settings into one place, weight
@@ -344,7 +346,7 @@
 // WhatsApp-style formatting toolbar (Bold/Italic/Strike/Mono) added to
 // Journal + Notes. index.html changed, so bump so installed copies
 // actually receive this.
-const CACHE_NAME = 'gp-ledger-v16-3-0';
+const CACHE_NAME = 'gp-ledger-v16-5-0';
 const IMG_CACHE_NAME = 'gp-ledger-images-v1';
 const CORE_ASSETS = [
   './index.html',

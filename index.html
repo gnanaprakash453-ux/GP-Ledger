@@ -83,68 +83,38 @@ h1,h2,h3,h4{ font-family:var(--font-head); font-weight:var(--font-weight-head); 
 .mono{ font-family:var(--font-mono); }
 ::-webkit-scrollbar{ display:none; }
 
-/* v14.4.8 — real bug (superseded by v15.10.4 below): #app's height was
-   pinned to the JS-measured --vvh at ALL times. Native `100dvh` already
-   tracks Safari's bottom URL-bar chrome expanding/collapsing in real
-   time, continuously, with zero JS involved. Pinning #app to a JS
-   snapshot instead meant it could lag one event behind Safari's actual
-   chrome state (a resize/scroll event has to fire and be handled before
-   --vvh catches up), and during that lag #app renders shorter than the
-   true viewport — showing a strip of the page's own background between
-   the bottom nav and Safari's toolbar. The fix at the time was to use
-   native 100dvh normally and only switch to the JS-measured --vvh while
-   body.kb-open is set.
-   v15.10.4 — real bug: that gate is itself a race, and a worse one. It
-   depends on the SAME focusin handler that starts the keyboard's own
-   open animation also having (a) added the kb-open class and (b) had
-   setVH() run an updated --vvh, all before the browser paints — miss
-   that window on a given device/keyboard-animation speed and #app keeps
-   rendering at full (pre-keyboard) height for a beat, which is exactly
-   what the "opens the keyboard and it blocks/covers the editor" reports
-   describe: content that should have moved up above the keyboard
-   didn't, because #app hadn't shrunk yet. An older, simpler build of
-   this app (kept as a reference alongside this file) applied --vvh
-   unconditionally, with 100dvh only as the pre-JS fallback, and never
-   had this problem — so that's restored here. The one-frame chrome-
-   collapse flash the v14.4.8 gate traded it away to avoid is a strictly
-   smaller, cosmetic issue than a keyboard permanently covering the
-   editor, and --vvh only ever differs from dvh right after a real
-   visualViewport resize/scroll event fires, so it tracks Safari's
-   chrome too, just one JS tick behind instead of natively instant. */
+/* v14.4.8 → v16.3.0 (superseded): six rounds of patches tried to get
+   #app's HEIGHT right by racing native 100dvh against a JS-measured
+   --vvh (from visualViewport), because plain 100dvh alone couldn't
+   track the on-screen keyboard. Every round fixed one timing window and
+   opened another — a stale/short first --vvh reading (address bar not
+   yet collapsed, standalone-mode inset not yet settled) could stick for
+   a whole session with nothing afterward to correct it, exposing a
+   strip of the page's own flat background below the nav; the v16.3.0
+   "whichever is taller" clamp fixed that case but still depended on JS
+   height math being correct at the right instant.
+   v17.0.0 — real fix: stop computing #app's size at all for the normal
+   (no-keyboard) case. #app is now `position:fixed` with all four insets
+   pinned straight to the true viewport edges (the same technique
+   nav.bottom has used since v15.7.0, for the same reason) — it always
+   exactly matches the visible screen the instant the browser paints,
+   natively, with zero JS math and nothing to lag behind. The keyboard
+   case (the one thing a plain fixed box can't track without help on
+   every browser) still uses the JS-measured --vvh, but now only has to
+   set a `bottom` offset instead of getting the whole box's height right
+   from scratch — see body.kb-open below. */
 #app{
-  height:100%; height:100dvh; height:var(--app-vh, 100dvh);
-  min-height:0; display:flex; flex-direction:column; max-width:560px; margin:0 auto;
-  position:relative; background:var(--bg-gradient); overflow:hidden;
+  position:fixed; top:0; right:var(--edge-gap); bottom:0; left:var(--edge-gap);
+  display:flex; flex-direction:column; background:var(--bg-gradient);
 }
-/* v16.5.0 — single app-wide iOS viewport source of truth. The previous build
-   mixed native dvh, a JS visualViewport snapshot, and a focus-only kb-open gate.
-   On iOS those can disagree during keyboard animation and Safari/PWA chrome
-   changes. --app-vh is now FULL visual height when the keyboard is closed and
-   the ACTUAL visual viewport height only while the keyboard is genuinely open. */
-body:not(.kb-open) #app{ height:100dvh; max-height:100dvh; }
-body.kb-open #app{ height:var(--app-vh, 100dvh); max-height:var(--app-vh, 100dvh); }
-/* v16.3.0 — real bug: the trade-off the v15.10.4 comment above accepted
-   ("one JS tick behind") assumed --vvh only ever lags dvh by a frame. In
-   practice, on first load — in a plain browser tab (address bar hasn't
-   collapsed yet) and just as much in standalone/home-screen mode (status
-   bar / gesture-nav inset settles after the first paint) — nothing the
-   page does afterward necessarily fires another visualViewport
-   resize/scroll event, so that first, too-short reading can simply stick
-   for the rest of the session, not just one frame. nav.bottom is
-   position:fixed straight off the real viewport (v15.7.0), so it still
-   lands in the right place — it's #app's own bottom edge that comes up
-   short, exposing a strip of the plain page background beneath it. Since
-   this only ever needs to matter while no keyboard is open (dvh is
-   already exactly right then — the whole reason --vvh exists is the one
-   case dvh can't track, the keyboard), clamp #app to whichever is
-   TALLER of the two while body.kb-open is absent: a stale/short --vvh
-   reading can no longer under-report #app's height, and the moment
-   kb-open is set this rule stops applying, so the keyboard-shrink
-   behavior above is untouched. */
-/* v16.5.0 supersedes the older --vvh clamp. The closed-keyboard state is
-   intentionally native 100dvh; the JS visual viewport is used only for the
-   keyboard state, preventing stale measurements from creating a grey strip. */
-body:not(.kb-open) #app{ height:100dvh; max-height:100dvh; }
+/* v17.0.0 — the one case native `position:fixed` can't track on every
+   browser: the on-screen keyboard. While a field is focused, pin #app's
+   bottom edge to the JS-measured visible-viewport height (--vvh) instead
+   of the true screen bottom, so content shrinks up above the keyboard
+   instead of sitting behind it. `bottom:auto` + an explicit `height` (not
+   just a `bottom` offset) so this works even on the very first focus,
+   before any visualViewport event has fired and corrected --vvh. */
+body.kb-open #app{ bottom:auto; height:var(--vvh, 100dvh); }
 
 /* ============ HEADER ============ */
 /* v13.13.0 — two-row header. Row 1 is the greeting alone (full width, never
@@ -655,7 +625,7 @@ label.fl{ display:block; font-size:12px; color:var(--sub); font-weight:700; marg
   pointer-events:none;
 }
 .bg-layer.on{ opacity:var(--bg-opacity, .16); }
-#app{ position:relative; z-index:1; background:transparent; }
+#app{ z-index:1; background:transparent; }
 body{ background:var(--bg-gradient); }
 
 /* ============ v9.5: THEME PICKER ============ */
@@ -697,19 +667,10 @@ body{ background:var(--bg-gradient); }
 }
 .modal-backdrop.open{ display:flex; }
 .modal{
-  background:var(--bg2); width:100%; max-height:88%; min-height:0;
-  border-radius:22px 22px 0 0; padding:16px 18px calc(20px + var(--safe-b));
-  overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain;
-  border-top:1px solid var(--line); animation:slideUp .22s ease;
+  background:var(--bg2); width:100%; max-height:88%; border-radius:22px 22px 0 0; padding:16px 18px calc(20px + var(--safe-b));
+  overflow-y:auto; -webkit-overflow-scrolling:touch; border-top:1px solid var(--line);
+  animation:slideUp .22s ease;
 }
-/* v16.5.0 — when iOS is showing its keyboard, the modal must be bounded by
-   the keyboard-free visual viewport, not the larger layout viewport. */
-body.kb-open .modal{
-  max-height:calc(var(--app-vh, 100dvh) - 8px);
-  height:min(88%, calc(var(--app-vh, 100dvh) - 8px));
-  padding-bottom:calc(12px + var(--safe-b));
-}
-body.kb-open .modal-backdrop{ align-items:flex-end; }
 @keyframes slideUp{ from{ transform:translateY(24px); opacity:.4; } to{ transform:translateY(0); opacity:1; } }
 .modal-handle{ width:36px; height:4px; border-radius:3px; background:var(--line); margin:2px auto 14px; }
 .modal-head{
@@ -960,14 +921,12 @@ body.kb-open .modal-backdrop{ align-items:flex-end; }
    the proven surface every other text field in this app uses, so there
    is nothing Journal-specific left to get wrong. */
 .diary-textarea-modal{
-  width:100%; min-height:180px; max-height:44vh; background:
+  width:100%; min-height:220px; max-height:44vh; background:
     repeating-linear-gradient(to bottom, transparent, transparent 27px, var(--diary-line) 28px);
   background-attachment:local; background-color:color-mix(in srgb, var(--diary-paper-1) 94%, transparent);
   border:1px solid rgba(120,90,50,.2); border-radius:10px; padding:8px 10px 16px 8px;
   font-size:16px; line-height:28px; resize:vertical; overflow-y:auto; color:var(--diary-ink);
 }
-/* Keep long Journal text inside the keyboard-safe modal viewport. */
-body.kb-open .diary-textarea-modal{ max-height:min(44vh, calc(var(--app-vh, 100dvh) - 220px)); min-height:160px; }
 .journal-datebar{ display:flex; align-items:center; gap:8px; margin-bottom:12px; }
 /* v16.1.0 — shared format toolbar (Journal + Notes). Small, thumb-sized
    buttons so it doesn't compete for space above a textarea on mobile. */
@@ -1625,6 +1584,7 @@ body.exp-layout-gamified .dash-tile .dt-fill{ background:linear-gradient(90deg, 
    above the keyboard and swallow touches meant for the field. ------------ */
 body.kb-open nav.bottom, body.kb-open .fab{ transform:translateY(140%); pointer-events:none; transition:transform .18s ease; }
 nav.bottom, .fab{ transition:transform .18s ease; }
+body.kb-open .screen{ padding-bottom:14px; }
 </style>
 </head>
 <body>
@@ -2741,11 +2701,7 @@ function wireAiSuggestButton(btnId, panelId, onGo){
   });
 }
 
-const APP_VERSION = 'v16.5.0'; // single source of truth for About screen & Settings row
-// v16.5.0 — unified iOS keyboard/visual-viewport fix. Closed state uses native
-// 100dvh; only a genuinely detected software-keyboard state uses visualViewport.height.
-// Removed the old focus-time smooth center scroll because it raced iOS keyboard animation.
-// Modals and long Journal/Notes editors are now bounded by the keyboard-free viewport.
+const APP_VERSION = 'v17.0.0'; // single source of truth for About screen & Settings row
 // v16.3.0 — real bug: grey strip below the bottom nav, present from the
 // moment the app opens (not just around the keyboard). #app's height was
 // pinned to a JS-measured --vvh snapshot taken once early on; if that
@@ -10320,102 +10276,68 @@ function renderAll(){
    first, before any of the steps that could realistically throw, means
    the keyboard behavior no longer depends on the rest of init() succeeding. */
 function setupKeyboardHandling(){
-  let keyboardOpen = false;
-  let raf = 0;
-
-  function isEditable(el){
-    return !!el && (el.tagName==='INPUT' || el.tagName==='TEXTAREA' || el.tagName==='SELECT' || el.isContentEditable);
-  }
-
-  function syncViewport(){
+  function setVH(){
     const vv = window.visualViewport;
-    const layoutH = window.innerHeight || document.documentElement.clientHeight || 0;
-    const visualH = vv ? vv.height : layoutH;
-    // iOS Safari/PWA: a real software keyboard normally removes substantially
-    // more than the browser chrome from the visual viewport. Do not treat the
-    // normal URL-bar collapse/expand as a keyboard.
-    const keyboardByViewport = !!vv && (layoutH - visualH > 120);
-    const focused = isEditable(document.activeElement);
-    const shouldUseKeyboardViewport = focused && keyboardByViewport;
-
-    if(shouldUseKeyboardViewport){
-      keyboardOpen = true;
-      document.documentElement.style.setProperty('--vvh', visualH + 'px');
-      document.documentElement.style.setProperty('--app-vh', visualH + 'px');
-      document.body.classList.add('kb-open');
-    }else if(!focused || !keyboardByViewport){
-      keyboardOpen = false;
-      document.body.classList.remove('kb-open');
-      document.documentElement.style.removeProperty('--app-vh');
-      document.documentElement.style.setProperty('--vvh', visualH + 'px');
-    }
+    const h = vv ? vv.height : window.innerHeight;
+    document.documentElement.style.setProperty('--vvh', h + 'px');
   }
-
-  function scheduleSync(){
-    cancelAnimationFrame(raf);
-    raf = requestAnimationFrame(()=>{
-      syncViewport();
-      requestAnimationFrame(syncViewport);
-    });
-  }
-
-  scheduleSync();
+  setVH();
   if(window.visualViewport){
-    window.visualViewport.addEventListener('resize', scheduleSync, {passive:true});
-    window.visualViewport.addEventListener('scroll', scheduleSync, {passive:true});
+    window.visualViewport.addEventListener('resize', setVH);
+    window.visualViewport.addEventListener('scroll', setVH);
   }
-  window.addEventListener('resize', scheduleSync, {passive:true});
-  window.addEventListener('orientationchange', ()=>setTimeout(scheduleSync, 120), {passive:true});
-
+  window.addEventListener('resize', setVH);
   document.addEventListener('focusin', (e)=>{
     const t = e.target;
-    if(!isEditable(t)) return;
-    // Do not immediately force scrollIntoView(center). That was causing the
-    // Journal/Notes editor to jump to a position chosen before iOS finished
-    // resizing the visual viewport. Let the browser preserve the caret first.
-    document.body.classList.add('kb-open');
-    scheduleSync();
-    setTimeout(scheduleSync, 80);
-    setTimeout(scheduleSync, 250);
-    setTimeout(scheduleSync, 500);
-
-    // For inputs inside a scrolling modal, nearest is the least disruptive
-    // anchor: it exposes the focused control without moving the whole page.
-    setTimeout(()=>{
-      try{
-        if(t.closest('.modal')) t.scrollIntoView({block:'nearest', inline:'nearest', behavior:'auto'});
-      }catch(err){}
-      scheduleSync();
-    }, 350);
-  });
-
-  document.addEventListener('focusout', (e)=>{
-    if(!isEditable(e.target)) return;
-    setTimeout(()=>{
-      if(!isEditable(document.activeElement)){
-        keyboardOpen = false;
-        document.body.classList.remove('kb-open');
-        document.documentElement.style.removeProperty('--app-vh');
-        scheduleSync();
-      }
-    }, 80);
-  });
-
-  function healKbOpen(){
-    if(!isEditable(document.activeElement)){
-      keyboardOpen = false;
-      document.body.classList.remove('kb-open');
-      document.documentElement.style.removeProperty('--app-vh');
+    if(t && (t.tagName==='INPUT' || t.tagName==='TEXTAREA' || t.tagName==='SELECT')){
+      document.body.classList.add('kb-open');
+      setTimeout(setVH, 50);
+      // v16.0.0 — the #journalText special case (and the seven patches
+      // that came after v15.9.6 trying to fix it) is removed along with
+      // the element itself. Every focusable field, including the new
+      // Journal compose modal's #journalEntryText, now goes through this
+      // one plain path — the same one Notes' textarea and every other
+      // modal field already use without incident.
+      setTimeout(()=>{ try{ t.scrollIntoView({ block:'center', behavior:'smooth' }); }catch(err){} }, 320);
     }
-    scheduleSync();
-  }
-  document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) setTimeout(healKbOpen, 50); });
-  window.addEventListener('pageshow', ()=>setTimeout(healKbOpen, 50));
-  window.addEventListener('pagehide', ()=>{
-    keyboardOpen = false;
-    document.body.classList.remove('kb-open');
-    document.documentElement.style.removeProperty('--app-vh');
   });
+  document.addEventListener('focusout', (e)=>{
+    const t = e.target;
+    if(t && (t.tagName==='INPUT' || t.tagName==='TEXTAREA' || t.tagName==='SELECT')){
+      setTimeout(()=>{
+        const active = document.activeElement;
+        if(!active || (active.tagName!=='INPUT' && active.tagName!=='TEXTAREA' && active.tagName!=='SELECT')){
+          document.body.classList.remove('kb-open'); setVH();
+        }
+      }, 120);
+    }
+  });
+  // v15.6.1 — real bug: the v14.4.8 fix (#app uses native 100dvh except
+  // while body.kb-open is set, since dvh alone can't track the on-screen
+  // keyboard) assumed kb-open always gets cleared by a normal focusout.
+  // It doesn't when the app is backgrounded while a field is focused —
+  // switching to another app (e.g. to share a screenshot) and back is a
+  // routine way to do that on Android/iOS alike, and neither the OS
+  // dismissing the keyboard nor the tab losing focus reliably fires
+  // focusout on return. kb-open is then stuck true with #app pinned to
+  // whatever --vvh happened to measure last (often a shorter,
+  // keyboard-open height), which is exactly the "grey strip of the
+  // page's own background below the nav" report from v14.4.8 — just
+  // reached via backgrounding instead of the load/navigation timing gap
+  // that fix already covers. Re-checking on visibilitychange/pageshow
+  // (the events that fire when the app becomes visible again) means a
+  // stuck kb-open can't survive a round trip through another app: if
+  // nothing is actually focused when the app comes back, the class is
+  // cleared and setVH() re-synced immediately, before the person ever
+  // sees the gap.
+  function healKbOpen(){
+    const active = document.activeElement;
+    const focused = active && (active.tagName==='INPUT' || active.tagName==='TEXTAREA' || active.tagName==='SELECT');
+    if(!focused && document.body.classList.contains('kb-open')) document.body.classList.remove('kb-open');
+    setVH();
+  }
+  document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) healKbOpen(); });
+  window.addEventListener('pageshow', healKbOpen);
 }
 // v16.0.0 — the caret-mirror tracking system that used to live here
 // (getJournalCaretCoords/setupJournalCaretTracking) existed solely to

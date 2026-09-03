@@ -1,4 +1,46 @@
-# Changelog — v16.3.0 (Grey strip below bottom nav fixed) → history below
+# Changelog — v17.0.0 (Mobile keyboard/layout gap fixes) → history below
+
+## v17.0.0
+
+**Two real mobile-only layout bugs, both reported with screenshots.**
+
+**1. "Keyboard cuts the screen in the middle" — a tall blank gap between
+a field and the keyboard.**
+Root cause: `.screen` (the scrollable content area behind every tab)
+reserves `calc(96px + safe-area-bottom)` of bottom padding at all times,
+so content never sits behind the fixed bottom nav bar. While typing,
+`body.kb-open` already hides that nav bar (and the FAB) — but the
+padding that existed to clear it stayed reserved anyway. Editing a
+habit's custom-amount field (the one in the screenshot) sits low enough
+in the list that this leftover reserved space is exactly what showed up
+as a large blank strip between the input row and the keyboard's own
+toolbar. Fixed by collapsing `.screen`'s bottom padding to a plain 14px
+while `body.kb-open` is set, since there's nothing left at the bottom to
+clear once the nav is hidden.
+
+**2. Grey strip at the bottom of the page — mobile only, not desktop.**
+Six earlier releases (v14.4.8 through v16.3.0) tried to fix this by
+getting `#app`'s *height* right — racing native `100dvh` against a
+JS-measured `--vvh` from `visualViewport`, because plain `100dvh` alone
+can't track the on-screen keyboard. Every round closed one timing window
+and opened another: a stale/short first `--vvh` reading (address bar not
+yet collapsed in a browser tab, or the standalone/home-screen safe-area
+inset not yet settled) could still stick for a whole session if nothing
+afterward triggered another `visualViewport` event, leaving `#app`'s
+bottom edge short of the true screen and exposing a strip of the plain
+page background beneath it.
+The real fix: stop computing `#app`'s size via height at all for the
+normal (no-keyboard) case. `#app` is now `position:fixed` with its
+top/left/right/bottom pinned directly to the true viewport edges — the
+same technique `nav.bottom` has used since v15.7.0, for the same reason.
+That match is native and instant, with no JS math involved and nothing
+to lag behind. The keyboard-open case still uses the JS-measured
+`--vvh` (the one thing a plain fixed box can't track without help on
+every browser), but now it only has to set a `bottom:auto; height:...`
+override instead of getting the whole box right from scratch every
+time.
+
+Both fixes are CSS-only — no data model or feature changes.
 
 ## v16.3.0
 

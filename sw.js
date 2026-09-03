@@ -1,4 +1,20 @@
-// GP Ledger service worker — v15.9.7
+// GP Ledger service worker — v17.0.0
+// v17.0.0: Two real mobile-only layout bugs fixed (index.html CSS only,
+// no new assets). (1) "Grey strip below the nav" — #app's HEIGHT was
+// computed by racing native 100dvh against a JS-measured --vvh
+// (visualViewport), and a stale/short first reading could stick for a
+// whole session with nothing to correct it. #app is now `position:fixed`
+// with its top/left/right/bottom pinned straight to the true viewport
+// edges (like nav.bottom already was since v15.7.0) — no JS height math
+// for the normal case at all, so there's nothing left to race or lag.
+// (2) "Keyboard cuts the screen in the middle" — .screen reserves
+// calc(96px + safe-b) of bottom padding to clear the fixed nav bar, but
+// that padding stayed reserved even while body.kb-open hides the nav
+// (e.g. editing a habit's custom-amount field), showing up as a tall
+// blank gap between the field and the keyboard. Collapsed to 14px while
+// kb-open, since there's nothing left at the bottom to clear. Bump so
+// installed copies pick up the new index.html instead of serving the
+// cached v16.3.0 copy indefinitely.
 // v15.9.7: Journal — the motivational quote card at the top of the
 // screen (~160px with its photo strip) is now hidden while the
 // keyboard is up (index.html CSS only, no new assets). Combined with
@@ -337,8 +353,6 @@
 // on a real phone. Save (💾) moved up into the toolbar, next to the
 // font/color pickers, so it's reachable without scrolling. index.html
 // changed, so bump so installed copies actually receive this.
-// v16.5.0: unified iOS keyboard/visualViewport handling in index.html; bump
-// the cache so installed PWA copies receive the new viewport logic.
 // v16.1.0: photo-card fixes (fixed the dead "Habits" disable toggle, added
 // a "Home" toggle, widened photo keyword diversity, added a load
 // timeout+retry), consolidated Photo card settings into one place, weight
@@ -346,7 +360,7 @@
 // WhatsApp-style formatting toolbar (Bold/Italic/Strike/Mono) added to
 // Journal + Notes. index.html changed, so bump so installed copies
 // actually receive this.
-const CACHE_NAME = 'gp-ledger-v16-5-0';
+const CACHE_NAME = 'gp-ledger-v17-0-0';
 const IMG_CACHE_NAME = 'gp-ledger-images-v1';
 const CORE_ASSETS = [
   './index.html',
